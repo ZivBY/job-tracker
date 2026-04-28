@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jobs">
+<meta name="theme-color" content="#1a1a1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Job Tracker</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; color: #1a1a1a; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+
+.page { max-width: 780px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+@media (min-width: 600px) { .page { padding: 2rem 1.5rem 3rem; } }
+
+.page-title { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+.page-sub { font-size: 13px; color: #888; margin-top: 3px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px; }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+@media (min-width: 480px) { .stats-row { grid-template-columns: repeat(6, 1fr); } }
+.stat { background: white; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px; }
+.stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.stat-val { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+
+.toolbar { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.toolbar::-webkit-scrollbar { display: none; }
+.filter-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid #d0cdc6; background: transparent; color: #666; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+.filter-btn.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+.add-btn { margin-left: auto; font-size: 13px; padding: 7px 16px; border-radius: 8px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; flex-shrink: 0; }
+
+.jobs-list { display: flex; flex-direction: column; gap: 10px; }
+
+.job-card { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
+
+.job-top { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; cursor: pointer; user-select: none; }
+.company-logo { width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0; }
+.job-info { flex: 1; min-width: 0; }
+.job-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.job-company { font-size: 12px; color: #888; margin-top: 2px; }
+.job-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.chevron { font-size: 11px; color: #aaa; transition: transform 0.2s; margin-top: 4px; flex-shrink: 0; }
+.chevron.open { transform: rotate(180deg); }
+
+.stage-area { padding: 10px 14px 14px; border-top: 0.5px solid #f0ede8; }
+.stage-area-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+.pizza-track { display: flex; align-items: flex-start; position: relative; }
+.pizza-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+
+.pizza-line-before { position: absolute; top: 14px; left: 0; width: 50%; height: 2px; background: #e8e5e0; z-index: 0; }
+.pizza-line-after { position: absolute; top: 14px; left: 50%; width: 50%; height: 2px; background: #e8e5e0; z-index: 0; }
+.pizza-step:first-child .pizza-line-before { display: none; }
+.pizza-step:last-child .pizza-line-after { display: none; }
+.pizza-line-before.done { background: #1D9E75; }
+.pizza-line-after.done { background: #1D9E75; }
+
+.pizza-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #e0ddd6; background: white; display: flex; align-items: center; justify-content: center; font-size: 12px; position: relative; z-index: 1; cursor: pointer; transition: all 0.2s; }
+.pizza-dot.done { background: #1D9E75; border-color: #1D9E75; color: white; }
+.pizza-dot.current { background: #185FA5; border-color: #185FA5; color: white; }
+.pizza-dot.rejected-dot { background: #E24B4A; border-color: #E24B4A; color: white; }
+.pizza-dot.offer-dot { background: #3B6D11; border-color: #3B6D11; color: white; }
+.pizza-step-label { font-size: 9px; color: #aaa; margin-top: 5px; text-align: center; line-height: 1.2; max-width: 48px; }
+.pizza-step-label.current-label { color: #185FA5; font-weight: 600; }
+.pizza-step-label.done-label { color: #1D9E75; }
+.pizza-step-label.offer-label { color: #3B6D11; font-weight: 600; }
+
+.job-notes { padding: 12px 14px; border-top: 0.5px solid #f0ede8; display: none; }
+.job-notes.open { display: block; }
+.notes-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+.notes-title { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+.notes-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.reject-btn { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #e0ddd6; background: transparent; color: #888; cursor: pointer; }
+.reject-btn.active { background: #fef2f2; color: #A32D2D; border-color: #F09595; }
+.archive-btn { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #e0ddd6; background: transparent; color: #aaa; cursor: pointer; }
+.restore-btn { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #C0DD97; background: #EAF3DE; color: #3B6D11; cursor: pointer; }
+.confirm-inline { font-size: 11px; color: #854F0B; display: flex; align-items: center; gap: 4px; }
+.confirm-inline button { font-size: 11px; padding: 3px 8px; border-radius: 20px; border: 0.5px solid #FAC775; background: transparent; color: #854F0B; cursor: pointer; }
+
+.field-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.url-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.url-input { flex: 1; font-size: 13px; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; min-width: 0; }
+.job-link { display: inline-flex; align-items: center; font-size: 12px; color: #185FA5; text-decoration: none; padding: 6px 12px; border-radius: 20px; border: 0.5px solid #B5D4F4; background: #E6F1FB; white-space: nowrap; }
+textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 72px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
+
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+@media (min-width: 600px) { .modal-overlay { align-items: center; } }
+.modal { background: white; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; }
+@media (min-width: 600px) { .modal { border-radius: 14px; padding: 1.5rem; } }
+.modal-handle { width: 36px; height: 4px; background: #e0ddd6; border-radius: 2px; margin: 0 auto 1.25rem; }
+@media (min-width: 600px) { .modal-handle { display: none; } }
+.modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+.form-row { margin-bottom: 10px; }
+.form-row label { font-size: 12px; color: #888; display: block; margin-bottom: 4px; }
+.form-row input, .form-row select { width: 100%; padding: 10px 12px; font-size: 15px; border: 0.5px solid #d0cdc6; border-radius: 10px; background: #faf9f7; color: #1a1a1a; font-family: inherit; outline: none; }
+.modal-btns { display: flex; gap: 8px; margin-top: 1.25rem; }
+.btn-cancel { flex: 1; font-size: 15px; padding: 12px; border-radius: 10px; border: 0.5px solid #d0cdc6; background: transparent; color: #888; cursor: pointer; }
+.btn-save { flex: 2; font-size: 15px; padding: 12px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 600; }
+
+.empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
+.save-indicator { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); right: 1rem; background: #1D9E75; color: white; font-size: 12px; padding: 6px 14px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50; }
+.save-indicator.show { opacity: 1; }
+
+@keyframes pulse-blue { 0%,100%{box-shadow:0 0 0 0 rgba(24,95,165,0.25)} 50%{box-shadow:0 0 0 5px rgba(24,95,165,0)} }
+.pizza-dot.current { animation: pulse-blue 2s infinite; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="page-title">Applications</div>
+      <div class="page-sub">Track every role in your pipeline</div>
+    </div>
+    <button class="add-btn" onclick="showModal()">+ Add</button>
+  </div>
+
+  <div class="stats-row" id="stats"></div>
+
+  <div class="toolbar">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+    <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
+    <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
+    <button class="filter-btn" onclick="setFilter('archived',this)">Archive</button>
+  </div>
+
+  <div class="jobs-list" id="jobs-list"></div>
+</div>
+
+<div class="save-indicator" id="save-indicator">Saved</div>
+
+<div id="modal" style="display:none;">
+  <div class="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Add application</h3>
+      <div class="form-row"><label>Company</label><input id="f-company" placeholder="e.g. Stripe" autocomplete="organization" /></div>
+      <div class="form-row"><label>Role</label><input id="f-role" placeholder="e.g. Head of Operations" /></div>
+      <div class="form-row"><label>Location</label><input id="f-loc" placeholder="e.g. San Francisco, CA" autocomplete="off" /></div>
+      <div class="form-row"><label>Employment type</label>
+        <select id="f-type"><option>Full-time</option><option>Contract</option><option>Part-time</option></select>
+      </div>
+      <div class="form-row"><label>Current stage</label>
+        <select id="f-stage">
+          <option value="0">Applied</option>
+          <option value="1">Screen</option>
+          <option value="2">Interview</option>
+          <option value="3">Final round</option>
+          <option value="4">Offer</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Job posting URL</label><input id="f-url" placeholder="https://..." type="url" autocomplete="off" /></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="hideModal()">Cancel</button>
+        <button class="btn-save" onclick="addJob()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STAGES = ['Applied','Screen','Interview','Final round','Offer'];
+const ICONS = ['📋','📞','🎙️','🏆','🎉'];
+const PALETTE = ['#635BFF','#FF5A5F','#0D99FF','#FF6B35','#1D9E75','#BA7517','#8B5CF6','#E24B4A'];
+const STORAGE_KEY = 'job-tracker-data';
+
+function loadJobs() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [
+    { id:1, company:'Stripe', role:'Head of Operations', loc:'San Francisco, CA', type:'Full-time', stage:2, rejected:false, archived:false, notes:'Reached out via LinkedIn. Strong fit on vendor ops background.', emoji:'S', color:'#635BFF', url:'https://stripe.com/jobs' },
+    { id:2, company:'Airbnb', role:'Sr. Program Manager', loc:'San Francisco, CA', type:'Full-time', stage:3, rejected:false, archived:false, notes:'Referral from former colleague. Final round next week.', emoji:'A', color:'#FF5A5F', url:'' },
+    { id:3, company:'Figma', role:'Operations Lead', loc:'Remote', type:'Full-time', stage:4, rejected:false, archived:false, notes:'Verbal offer received. Negotiating comp.', emoji:'F', color:'#0D99FF', url:'' },
+    { id:4, company:'Waymo', role:'Vendor Ops Manager', loc:'Mountain View, CA', type:'Full-time', stage:1, rejected:true, archived:false, notes:'Rejected after phone screen.', emoji:'W', color:'#1A73E8', url:'' },
+  ];
+}
+
+function saveJobs() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+    localStorage.setItem(STORAGE_KEY + '-nextId', String(nextId));
+    showSaved();
+  } catch(e) {}
+}
+
+function showSaved() {
+  const el = document.getElementById('save-indicator');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+let jobs = loadJobs();
+let nextId = parseInt(localStorage.getItem(STORAGE_KEY + '-nextId') || '10');
+let currentFilter = 'all';
+let openNotes = new Set();
+let pendingArchive = null;
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function handleOverlayClick(e) {
+  if (e.target.classList.contains('modal-overlay')) hideModal();
+}
+
+function showModal() {
+  document.getElementById('modal').style.display = 'block';
+  setTimeout(() => document.getElementById('f-company').focus(), 100);
+}
+
+function hideModal() {
+  document.getElementById('modal').style.display = 'none';
+  ['f-company','f-role','f-loc','f-url'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-stage').value = '0';
+}
+
+function addJob() {
+  const company = document.getElementById('f-company').value.trim();
+  const role = document.getElementById('f-role').value.trim();
+  if (!company || !role) return;
+  jobs.unshift({
+    id: nextId++,
+    company, role,
+    loc: document.getElementById('f-loc').value.trim(),
+    type: document.getElementById('f-type').value,
+    stage: parseInt(document.getElementById('f-stage').value),
+    rejected: false,
+    archived: false,
+    notes: '',
+    url: document.getElementById('f-url').value.trim(),
+    emoji: company[0].toUpperCase(),
+    color: PALETTE[Math.floor(Math.random() * PALETTE.length)]
+  });
+  hideModal();
+  saveJobs();
+  render();
+}
+
+function advanceStage(id, step) {
+  const j = jobs.find(x => x.id === id);
+  if (!j || j.rejected || j.archived) return;
+  j.stage = (step === j.stage && j.stage > 0) ? j.stage - 1 : step;
+  saveJobs();
+  render();
+}
+
+function toggleRejected(id) {
+  const j = jobs.find(x => x.id === id);
+  if (!j) return;
+  j.rejected = !j.rejected;
+  saveJobs();
+  render();
+}
+
+function toggleNotes(id) {
+  if (openNotes.has(id)) openNotes.delete(id);
+  else openNotes.add(id);
+  render();
+}
+
+function updateNote(id, val) {
+  const j = jobs.find(x => x.id === id);
+  if (j) { j.notes = val; saveJobs(); }
+}
+
+function updateUrl(id, val) {
+  const j = jobs.find(x => x.id === id);
+  if (j) { j.url = val.trim(); saveJobs(); render(); }
+}
+
+function archiveJob(id) {
+  pendingArchive = id;
+  render();
+}
+
+function confirmArchive(id) {
+  const j = jobs.find(x => x.id === id);
+  if (j) j.archived = true;
+  openNotes.delete(id);
+  pendingArchive = null;
+  saveJobs();
+  render();
+}
+
+function cancelArchive() {
+  pendingArchive = null;
+  render();
+}
+
+function restoreJob(id) {
+  const j = jobs.find(x => x.id === id);
+  if (j) j.archived = false;
+  saveJobs();
+  render();
+}
+
+function renderStats() {
+  const archived = jobs.filter(j => j.archived).length;
+  const total    = jobs.filter(j => !j.archived).length;
+  const active   = jobs.filter(j => !j.archived && !j.rejected && j.stage < 4).length;
+  const intvs    = jobs.filter(j => !j.archived && !j.rejected && j.stage >= 2).length;
+  const offers   = jobs.filter(j => !j.archived && !j.rejected && j.stage === 4).length;
+  const rejected = jobs.filter(j => !j.archived && j.rejected).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val">${total}</div></div>
+    <div class="stat"><div class="stat-label">Active</div><div class="stat-val">${active}</div></div>
+    <div class="stat"><div class="stat-label">Interviews</div><div class="stat-val">${intvs}</div></div>
+    <div class="stat"><div class="stat-label">Offers</div><div class="stat-val">${offers}</div></div>
+    <div class="stat"><div class="stat-label">Rejected</div><div class="stat-val">${rejected}</div></div>
+    <div class="stat" style="border-color:#e8e0d0;"><div class="stat-label" style="color:#BA7517;">Archived</div><div class="stat-val" style="color:#BA7517;">${archived}</div></div>
+  `;
+}
+
+function render() {
+  renderStats();
+  let visible = jobs.filter(j => !j.archived);
+  if (currentFilter === 'active')   visible = jobs.filter(j => !j.archived && !j.rejected && j.stage < 4);
+  else if (currentFilter === 'offer')    visible = jobs.filter(j => !j.archived && !j.rejected && j.stage === 4);
+  else if (currentFilter === 'rejected') visible = jobs.filter(j => !j.archived && j.rejected);
+  else if (currentFilter === 'archived') visible = jobs.filter(j => j.archived);
+
+  const list = document.getElementById('jobs-list');
+  if (!visible.length) {
+    list.innerHTML = '<div class="empty">No applications here yet.</div>';
+    return;
+  }
+
+  list.innerHTML = visible.map(j => {
+    const typeBadgeStyle = j.type === 'Contract'
+      ? 'background:#FAEEDA;color:#854F0B;'
+      : j.type === 'Part-time'
+      ? 'background:#EAF3DE;color:#3B6D11;'
+      : 'background:#E6F1FB;color:#185FA5;';
+
+    const statusBadge = j.archived
+      ? `<span class="badge" style="background:#f5f0e8;color:#854F0B;">Archived</span>`
+      : j.rejected
+      ? `<span class="badge" style="background:#FCEBEB;color:#A32D2D;">Rejected</span>`
+      : j.stage === 4
+      ? `<span class="badge" style="background:#EAF3DE;color:#3B6D11;">🎉 Offer</span>`
+      : `<span class="badge" style="background:#f0ede8;color:#555;">${STAGES[j.stage]}</span>`;
+
+    const steps = STAGES.map((s, i) => {
+      let dotCls = 'pizza-dot';
+      let labelCls = 'pizza-step-label';
+      let icon = ICONS[i];
+      let beforeCls = 'pizza-line-before';
+      let afterCls = 'pizza-line-after';
+      const clickable = !j.archived;
+
+      if (j.rejected || j.archived) {
+        if (i < j.stage) { dotCls += ' done'; icon = '✓'; beforeCls += ' done'; afterCls += ' done'; labelCls += ' done-label'; }
+        else if (i === j.stage) { dotCls += ' rejected-dot'; beforeCls += ' done'; }
+      } else if (i < j.stage) {
+        dotCls += ' done'; icon = '✓'; beforeCls += ' done'; afterCls += ' done'; labelCls += ' done-label';
+      } else if (i === j.stage) {
+        dotCls += j.stage === 4 ? ' offer-dot' : ' current';
+        labelCls += j.stage === 4 ? ' offer-label' : ' current-label';
+        beforeCls += ' done';
+      }
+
+      return `<div class="pizza-step">
+        <div class="${beforeCls}"></div>
+        <div class="${afterCls}"></div>
+        <div class="${dotCls}" ${clickable ? `onclick="advanceStage(${j.id}, ${i})"` : ''}>${icon}</div>
+        <div class="${labelCls}">${s}</div>
+      </div>`;
+    }).join('');
+
+    const notesOpen = openNotes.has(j.id);
+
+    const actionButtons = j.archived
+      ? `<button class="restore-btn" onclick="restoreJob(${j.id})">Restore</button>`
+      : `<button class="reject-btn ${j.rejected ? 'active' : ''}" onclick="toggleRejected(${j.id})">${j.rejected ? 'Reactivate' : 'Mark rejected'}</button>
+         ${pendingArchive === j.id
+           ? `<span class="confirm-inline">Archive? <button onclick="confirmArchive(${j.id})">Yes</button><button onclick="cancelArchive()">No</button></span>`
+           : `<button class="archive-btn" onclick="archiveJob(${j.id})">Archive</button>`
+         }`;
+
+    return `<div class="job-card">
+      <div class="job-top" onclick="toggleNotes(${j.id})">
+        <div class="company-logo" style="background:${j.color}18;color:${j.color};">${j.emoji}</div>
+        <div class="job-info">
+          <div class="job-title">${j.role}</div>
+          <div class="job-company">${j.company}${j.loc ? ' · ' + j.loc : ''}</div>
+          <div class="job-meta">
+            <span class="badge" style="${typeBadgeStyle}">${j.type}</span>
+            ${statusBadge}
+          </div>
+        </div>
+        <span class="chevron ${notesOpen ? 'open' : ''}">▾</span>
+      </div>
+      <div class="stage-area">
+        <div class="stage-area-label">Pipeline${!j.archived ? ' — tap a stage to advance' : ''}</div>
+        <div class="pizza-track">${steps}</div>
+      </div>
+      <div class="job-notes ${notesOpen ? 'open' : ''}">
+        <div class="notes-header">
+          <span class="notes-title">Details</span>
+          <div class="notes-actions">${actionButtons}</div>
+        </div>
+        <div class="field-label">Job posting URL</div>
+        <div class="url-row">
+          <input class="url-input" type="url" value="${j.url || ''}" onchange="updateUrl(${j.id}, this.value)" placeholder="https://..." ${j.archived ? 'readonly' : ''} />
+          ${j.url ? `<a href="${j.url}" target="_blank" class="job-link">↗ Open</a>` : ''}
+        </div>
+        <div class="field-label">Notes</div>
+        <textarea onchange="updateNote(${j.id}, this.value)" placeholder="Context, contacts, next steps, salary..." ${j.archived ? 'readonly' : ''}>${j.notes || ''}</textarea>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+render();
+</script>
+</body>
+</html>
