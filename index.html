@@ -314,7 +314,35 @@ function fillForm(data) {
     const match = [...sel.options].find(o => o.text.toLowerCase().includes(data.type.toLowerCase()));
     if (match) sel.value = match.value;
   }
-  setJdStatus('✓ Fields filled — review and save', 'success');
+  // Store extracted post date (may be null if not found)
+  _extractedPostDate = data.postedDate || null;
+  const dateMsg = _extractedPostDate
+    ? ` · Posted ${formatPostDate(_extractedPostDate)}`
+    : '';
+  setJdStatus(`✓ Fields filled — review and save${dateMsg}`, 'success');
+}
+
+function formatPostDate(isoOrNull) {
+  if (!isoOrNull) return null;
+  try {
+    const d = new Date(isoOrNull);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return null; }
+}
+
+function postDateDisplay(j) {
+  // Returns { label, date, isExtracted }
+  if (j.postedDate) {
+    const formatted = formatPostDate(j.postedDate);
+    if (formatted) return { label: 'Posted', date: formatted, isExtracted: true, ts: new Date(j.postedDate).getTime() };
+  }
+  // Fallback to createdAt
+  if (j.createdAt?.toMillis) {
+    const d = new Date(j.createdAt.toMillis());
+    return { label: 'Added', date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), isExtracted: false, ts: j.createdAt.toMillis() };
+  }
+  return null;
 }
 
 async function callClaude(content) {
@@ -329,6 +357,9 @@ async function callClaude(content) {
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
+
+// Store extracted post date so addJob can pick it up
+let _extractedPostDate = null;
 
 async function extractFromUrl() {
   const url = document.getElementById('jd-url').value.trim();
@@ -385,6 +416,7 @@ function hideModal() {
   ['f-company','f-role','f-loc','f-url','jd-url','jd-text'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-stage').value = '0';
   document.getElementById('f-type').value = 'Full-time';
+  _extractedPostDate = null;
   setJdStatus('', '');
 }
 
@@ -407,6 +439,7 @@ async function addJob() {
     color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
     stageHistory: [{ stage: parseInt(document.getElementById('f-stage').value), ts }],
     attachments: [],
+    postedDate: _extractedPostDate || null,
     createdAt: serverTimestamp()
   };
   hideModal();
@@ -592,7 +625,17 @@ function render() {
 
     // Timing row
     const total = totalTime(j);
-    const timingRow = total ? `<div class="timing-row">
+    const postInfo = postDateDisplay(j);
+    const postChip = postInfo ? (() => {
+      const age = formatDuration(now() - postInfo.ts);
+      const sourceStyle = postInfo.isExtracted
+        ? 'color:#185FA5;'
+        : 'color:#aaa;font-style:italic;';
+      const label = postInfo.isExtracted ? 'Posted' : 'Added to tracker';
+      return `<span class="timing-chip" title="${postInfo.isExtracted ? 'Date extracted from job posting' : 'Posting date not found — showing date you added this job'}">${label}: <span style="${sourceStyle}">${postInfo.date}</span> · <span>${age} ago</span></span>`;
+    })() : '';
+    const timingRow = (total || postChip) ? `<div class="timing-row">
+      ${postChip}
       <span class="timing-chip">Total in process: <span>${formatDuration(total)}</span></span>
       ${j.stage > 0 ? `<span class="timing-chip">Current stage: <span>${formatDuration(now() - stageEnteredAt(j))}</span></span>` : ''}
     </div>` : '';
