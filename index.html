@@ -368,19 +368,29 @@ async function extractFromUrl() {
   btn.disabled = true; btn.textContent = 'Fetching...';
   setJdStatus('Fetching page...', 'loading');
   try {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
-    const data = await res.json();
-    const tmp = document.createElement('div');
-    tmp.innerHTML = data.contents || '';
-    const text = tmp.innerText || tmp.textContent || '';
-    if (text.length < 100) throw new Error('Could not read page');
-    setJdStatus('Extracting with Claude...', 'loading');
-    const extracted = await callClaude(text);
+    // Send URL to worker — it fetches the page server-side then calls Claude
+    const res = await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) throw new Error(`Worker error ${res.status}`);
+    const workerData = await res.json();
+
+    // Check if worker returned a fetch error instead of Claude response
+    if (workerData.error) {
+      throw new Error(workerData.error);
+    }
+
+    const text = workerData.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(clean);
     if (!extracted.url) extracted.url = url;
     fillForm(extracted);
   } catch(e) {
-    setJdStatus('Could not fetch this URL. Paste the job description text below instead.', 'error');
+    setJdStatus('Could not fetch this URL automatically — paste the job description text below instead.', 'error');
+    // Auto-focus the text area to guide the user to the fallback
+    setTimeout(() => document.getElementById('jd-text').focus(), 100);
   }
   btn.disabled = false; btn.textContent = 'Extract';
 }
