@@ -216,7 +216,7 @@ const jobsCol = collection(db, 'jobs');
 const STAGES = ['Applied','Screen','Interview','Final round','Offer'];
 const ICONS = ['📋','📞','🎙️','🏆','🎉'];
 const PALETTE = ['#635BFF','#FF5A5F','#0D99FF','#FF6B35','#1D9E75','#BA7517','#8B5CF6','#E24B4A'];
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_API = 'https://jd-proxy.benyehuda-ziv.workers.dev';
 
 let jobs = [];
 let currentFilter = 'all';
@@ -253,20 +253,8 @@ function fillForm(data) {
 async function callClaude(content) {
   const res = await fetch(ANTHROPIC_API, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': '', // handled by proxy — leave blank, browser will use Anthropic's auth
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-ipc': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
-      messages: [{
-        role: 'user',
-        content: `Extract job details from the following content and respond ONLY with a JSON object with these exact keys: company, role, location, type (one of: Full-time, Contract, Part-time), url. If you cannot find a value, use an empty string. No markdown, no explanation, just the JSON object.\n\nContent:\n${content.slice(0, 8000)}`
-      }]
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: content })
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = await res.json();
