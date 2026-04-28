@@ -28,16 +28,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
 .stat-val { font-size: 22px; font-weight: 600; color: #1a1a1a; }
 
-.toolbar { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.toolbar { display: flex; gap: 6px; margin-bottom: 1rem; align-items: center; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
 .toolbar::-webkit-scrollbar { display: none; }
 .filter-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid #d0cdc6; background: transparent; color: #666; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .filter-btn.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
 .add-btn { margin-left: auto; font-size: 13px; padding: 7px 16px; border-radius: 8px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; flex-shrink: 0; }
 
 .jobs-list { display: flex; flex-direction: column; gap: 10px; }
-
 .job-card { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
-
 .job-top { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; cursor: pointer; user-select: none; }
 .company-logo { width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0; }
 .job-info { flex: 1; min-width: 0; }
@@ -50,17 +48,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 .stage-area { padding: 10px 14px 14px; border-top: 0.5px solid #f0ede8; }
 .stage-area-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
-
 .pizza-track { display: flex; align-items: flex-start; position: relative; }
 .pizza-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
-
-.pizza-line-before { position: absolute; top: 14px; left: 0; width: 50%; height: 2px; background: #e8e5e0; z-index: 0; }
-.pizza-line-after { position: absolute; top: 14px; left: 50%; width: 50%; height: 2px; background: #e8e5e0; z-index: 0; }
+.pizza-line-before { position: absolute; top: 15px; left: 0; width: 50%; height: 2px; background: #e8e5e0; z-index: 0; }
+.pizza-line-after { position: absolute; top: 15px; left: 50%; width: 50%; height: 2px; background: #e8e5e0; z-index: 0; }
 .pizza-step:first-child .pizza-line-before { display: none; }
 .pizza-step:last-child .pizza-line-after { display: none; }
 .pizza-line-before.done { background: #1D9E75; }
 .pizza-line-after.done { background: #1D9E75; }
-
 .pizza-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #e0ddd6; background: white; display: flex; align-items: center; justify-content: center; font-size: 12px; position: relative; z-index: 1; cursor: pointer; transition: all 0.2s; }
 .pizza-dot.done { background: #1D9E75; border-color: #1D9E75; color: white; }
 .pizza-dot.current { background: #185FA5; border-color: #185FA5; color: white; }
@@ -104,8 +99,12 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .btn-save { flex: 2; font-size: 15px; padding: 12px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 600; }
 
 .empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
-.save-indicator { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); right: 1rem; background: #1D9E75; color: white; font-size: 12px; padding: 6px 14px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50; }
-.save-indicator.show { opacity: 1; }
+.loading { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
+.toast { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 12px; padding: 8px 18px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
+.toast.synced { background: #1D9E75; color: white; }
+.toast.syncing { background: #444; color: white; }
+.toast.error { background: #E24B4A; color: white; }
+.toast.show { opacity: 1; }
 
 @keyframes pulse-blue { 0%,100%{box-shadow:0 0 0 0 rgba(24,95,165,0.25)} 50%{box-shadow:0 0 0 5px rgba(24,95,165,0)} }
 .pizza-dot.current { animation: pulse-blue 2s infinite; }
@@ -120,9 +119,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
     </div>
     <button class="add-btn" onclick="showModal()">+ Add</button>
   </div>
-
   <div class="stats-row" id="stats"></div>
-
   <div class="toolbar">
     <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
     <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
@@ -130,11 +127,10 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
     <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
     <button class="filter-btn" onclick="setFilter('archived',this)">Archive</button>
   </div>
-
-  <div class="jobs-list" id="jobs-list"></div>
+  <div class="jobs-list" id="jobs-list"><div class="loading">Connecting to database...</div></div>
 </div>
 
-<div class="save-indicator" id="save-indicator">Saved</div>
+<div class="toast" id="toast"></div>
 
 <div id="modal" style="display:none;">
   <div class="modal-overlay" onclick="handleOverlayClick(event)">
@@ -165,45 +161,59 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDUNgIm11WNevESCPMbN440xnu-TGbdURE",
+  authDomain: "job-tracker-c23c5.firebaseapp.com",
+  projectId: "job-tracker-c23c5",
+  storageBucket: "job-tracker-c23c5.firebasestorage.app",
+  messagingSenderId: "847394813329",
+  appId: "1:847394813329:web:2370a4c3cd9a59a8b21630"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const jobsCol = collection(db, 'jobs');
+
 const STAGES = ['Applied','Screen','Interview','Final round','Offer'];
 const ICONS = ['📋','📞','🎙️','🏆','🎉'];
 const PALETTE = ['#635BFF','#FF5A5F','#0D99FF','#FF6B35','#1D9E75','#BA7517','#8B5CF6','#E24B4A'];
-const STORAGE_KEY = 'job-tracker-data';
 
-function loadJobs() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return [
-    { id:1, company:'Stripe', role:'Head of Operations', loc:'San Francisco, CA', type:'Full-time', stage:2, rejected:false, archived:false, notes:'Reached out via LinkedIn. Strong fit on vendor ops background.', emoji:'S', color:'#635BFF', url:'https://stripe.com/jobs' },
-    { id:2, company:'Airbnb', role:'Sr. Program Manager', loc:'San Francisco, CA', type:'Full-time', stage:3, rejected:false, archived:false, notes:'Referral from former colleague. Final round next week.', emoji:'A', color:'#FF5A5F', url:'' },
-    { id:3, company:'Figma', role:'Operations Lead', loc:'Remote', type:'Full-time', stage:4, rejected:false, archived:false, notes:'Verbal offer received. Negotiating comp.', emoji:'F', color:'#0D99FF', url:'' },
-    { id:4, company:'Waymo', role:'Vendor Ops Manager', loc:'Mountain View, CA', type:'Full-time', stage:1, rejected:true, archived:false, notes:'Rejected after phone screen.', emoji:'W', color:'#1A73E8', url:'' },
-  ];
-}
-
-function saveJobs() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
-    localStorage.setItem(STORAGE_KEY + '-nextId', String(nextId));
-    showSaved();
-  } catch(e) {}
-}
-
-function showSaved() {
-  const el = document.getElementById('save-indicator');
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 1500);
-}
-
-let jobs = loadJobs();
-let nextId = parseInt(localStorage.getItem(STORAGE_KEY + '-nextId') || '10');
+let jobs = [];
 let currentFilter = 'all';
 let openNotes = new Set();
 let pendingArchive = null;
+
+function showToast(msg, type = 'synced', duration = 2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+const q = query(jobsCol, orderBy('createdAt', 'desc'));
+onSnapshot(q, snapshot => {
+  jobs = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+  render();
+}, err => {
+  showToast('Connection error', 'error', 4000);
+  console.error(err);
+});
+
+async function saveField(firestoreId, fields) {
+  try {
+    showToast('Saving...', 'syncing', 60000);
+    await updateDoc(doc(db, 'jobs', firestoreId), fields);
+    showToast('Synced ✓', 'synced');
+  } catch(e) {
+    showToast('Save failed', 'error', 4000);
+    console.error(e);
+  }
+}
 
 function setFilter(f, btn) {
   currentFilter = f;
@@ -227,12 +237,11 @@ function hideModal() {
   document.getElementById('f-stage').value = '0';
 }
 
-function addJob() {
+async function addJob() {
   const company = document.getElementById('f-company').value.trim();
   const role = document.getElementById('f-role').value.trim();
   if (!company || !role) return;
-  jobs.unshift({
-    id: nextId++,
+  const job = {
     company, role,
     loc: document.getElementById('f-loc').value.trim(),
     type: document.getElementById('f-type').value,
@@ -242,57 +251,43 @@ function addJob() {
     notes: '',
     url: document.getElementById('f-url').value.trim(),
     emoji: company[0].toUpperCase(),
-    color: PALETTE[Math.floor(Math.random() * PALETTE.length)]
-  });
+    color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+    createdAt: serverTimestamp()
+  };
   hideModal();
-  saveJobs();
+  try {
+    showToast('Saving...', 'syncing', 60000);
+    await addDoc(jobsCol, job);
+    showToast('Synced ✓', 'synced');
+  } catch(e) {
+    showToast('Save failed', 'error', 4000);
+  }
+}
+
+async function advanceStage(firestoreId, currentStage, step) {
+  const newStage = (step === currentStage && currentStage > 0) ? currentStage - 1 : step;
+  await saveField(firestoreId, { stage: newStage });
+}
+
+async function toggleRejected(firestoreId, current) {
+  await saveField(firestoreId, { rejected: !current });
+}
+
+function toggleNotes(firestoreId) {
+  if (openNotes.has(firestoreId)) openNotes.delete(firestoreId);
+  else openNotes.add(firestoreId);
   render();
 }
 
-function advanceStage(id, step) {
-  const j = jobs.find(x => x.id === id);
-  if (!j || j.rejected || j.archived) return;
-  j.stage = (step === j.stage && j.stage > 0) ? j.stage - 1 : step;
-  saveJobs();
+function archiveJob(firestoreId) {
+  pendingArchive = firestoreId;
   render();
 }
 
-function toggleRejected(id) {
-  const j = jobs.find(x => x.id === id);
-  if (!j) return;
-  j.rejected = !j.rejected;
-  saveJobs();
-  render();
-}
-
-function toggleNotes(id) {
-  if (openNotes.has(id)) openNotes.delete(id);
-  else openNotes.add(id);
-  render();
-}
-
-function updateNote(id, val) {
-  const j = jobs.find(x => x.id === id);
-  if (j) { j.notes = val; saveJobs(); }
-}
-
-function updateUrl(id, val) {
-  const j = jobs.find(x => x.id === id);
-  if (j) { j.url = val.trim(); saveJobs(); render(); }
-}
-
-function archiveJob(id) {
-  pendingArchive = id;
-  render();
-}
-
-function confirmArchive(id) {
-  const j = jobs.find(x => x.id === id);
-  if (j) j.archived = true;
-  openNotes.delete(id);
+async function confirmArchive(firestoreId) {
   pendingArchive = null;
-  saveJobs();
-  render();
+  openNotes.delete(firestoreId);
+  await saveField(firestoreId, { archived: true });
 }
 
 function cancelArchive() {
@@ -300,11 +295,20 @@ function cancelArchive() {
   render();
 }
 
-function restoreJob(id) {
-  const j = jobs.find(x => x.id === id);
-  if (j) j.archived = false;
-  saveJobs();
-  render();
+async function restoreJob(firestoreId) {
+  await saveField(firestoreId, { archived: false });
+}
+
+const noteTimers = {};
+function updateNote(firestoreId, val) {
+  clearTimeout(noteTimers[firestoreId]);
+  noteTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { notes: val }), 1000);
+}
+
+const urlTimers = {};
+function updateUrl(firestoreId, val) {
+  clearTimeout(urlTimers[firestoreId]);
+  urlTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { url: val.trim() }).then(() => render()), 800);
 }
 
 function renderStats() {
@@ -327,7 +331,7 @@ function renderStats() {
 function render() {
   renderStats();
   let visible = jobs.filter(j => !j.archived);
-  if (currentFilter === 'active')   visible = jobs.filter(j => !j.archived && !j.rejected && j.stage < 4);
+  if (currentFilter === 'active')    visible = jobs.filter(j => !j.archived && !j.rejected && j.stage < 4);
   else if (currentFilter === 'offer')    visible = jobs.filter(j => !j.archived && !j.rejected && j.stage === 4);
   else if (currentFilter === 'rejected') visible = jobs.filter(j => !j.archived && j.rejected);
   else if (currentFilter === 'archived') visible = jobs.filter(j => j.archived);
@@ -339,6 +343,7 @@ function render() {
   }
 
   list.innerHTML = visible.map(j => {
+    const fid = j.firestoreId;
     const typeBadgeStyle = j.type === 'Contract'
       ? 'background:#FAEEDA;color:#854F0B;'
       : j.type === 'Part-time'
@@ -359,7 +364,7 @@ function render() {
       let icon = ICONS[i];
       let beforeCls = 'pizza-line-before';
       let afterCls = 'pizza-line-after';
-      const clickable = !j.archived;
+      const clickable = !j.archived && !j.rejected;
 
       if (j.rejected || j.archived) {
         if (i < j.stage) { dotCls += ' done'; icon = '✓'; beforeCls += ' done'; afterCls += ' done'; labelCls += ' done-label'; }
@@ -373,25 +378,23 @@ function render() {
       }
 
       return `<div class="pizza-step">
-        <div class="${beforeCls}"></div>
-        <div class="${afterCls}"></div>
-        <div class="${dotCls}" ${clickable ? `onclick="advanceStage(${j.id}, ${i})"` : ''}>${icon}</div>
+        <div class="${beforeCls}"></div><div class="${afterCls}"></div>
+        <div class="${dotCls}" ${clickable ? `onclick="window._adv('${fid}',${j.stage},${i})"` : ''}>${icon}</div>
         <div class="${labelCls}">${s}</div>
       </div>`;
     }).join('');
 
-    const notesOpen = openNotes.has(j.id);
-
+    const notesOpen = openNotes.has(fid);
     const actionButtons = j.archived
-      ? `<button class="restore-btn" onclick="restoreJob(${j.id})">Restore</button>`
-      : `<button class="reject-btn ${j.rejected ? 'active' : ''}" onclick="toggleRejected(${j.id})">${j.rejected ? 'Reactivate' : 'Mark rejected'}</button>
-         ${pendingArchive === j.id
-           ? `<span class="confirm-inline">Archive? <button onclick="confirmArchive(${j.id})">Yes</button><button onclick="cancelArchive()">No</button></span>`
-           : `<button class="archive-btn" onclick="archiveJob(${j.id})">Archive</button>`
+      ? `<button class="restore-btn" onclick="window._restore('${fid}')">Restore</button>`
+      : `<button class="reject-btn ${j.rejected ? 'active' : ''}" onclick="window._rej('${fid}',${j.rejected})">${j.rejected ? 'Reactivate' : 'Mark rejected'}</button>
+         ${pendingArchive === fid
+           ? `<span class="confirm-inline">Archive? <button onclick="window._confArch('${fid}')">Yes</button><button onclick="window._canArch()">No</button></span>`
+           : `<button class="archive-btn" onclick="window._arch('${fid}')">Archive</button>`
          }`;
 
     return `<div class="job-card">
-      <div class="job-top" onclick="toggleNotes(${j.id})">
+      <div class="job-top" onclick="window._notes('${fid}')">
         <div class="company-logo" style="background:${j.color}18;color:${j.color};">${j.emoji}</div>
         <div class="job-info">
           <div class="job-title">${j.role}</div>
@@ -404,7 +407,7 @@ function render() {
         <span class="chevron ${notesOpen ? 'open' : ''}">▾</span>
       </div>
       <div class="stage-area">
-        <div class="stage-area-label">Pipeline${!j.archived ? ' — tap a stage to advance' : ''}</div>
+        <div class="stage-area-label">Pipeline${!j.archived && !j.rejected ? ' — tap a stage to advance' : ''}</div>
         <div class="pizza-track">${steps}</div>
       </div>
       <div class="job-notes ${notesOpen ? 'open' : ''}">
@@ -414,23 +417,34 @@ function render() {
         </div>
         <div class="field-label">Job posting URL</div>
         <div class="url-row">
-          <input class="url-input" type="url" value="${j.url || ''}" onchange="updateUrl(${j.id}, this.value)" placeholder="https://..." ${j.archived ? 'readonly' : ''} />
+          <input class="url-input" type="url" value="${j.url || ''}" oninput="window._url('${fid}',this.value)" placeholder="https://..." ${j.archived ? 'readonly' : ''} />
           ${j.url ? `<a href="${j.url}" target="_blank" class="job-link">↗ Open</a>` : ''}
         </div>
         <div class="field-label">Notes</div>
-        <textarea onchange="updateNote(${j.id}, this.value)" placeholder="Context, contacts, next steps, salary..." ${j.archived ? 'readonly' : ''}>${j.notes || ''}</textarea>
+        <textarea oninput="window._note('${fid}',this.value)" placeholder="Context, contacts, next steps, salary..." ${j.archived ? 'readonly' : ''}>${j.notes || ''}</textarea>
       </div>
     </div>`;
   }).join('');
 }
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
+window._adv      = advanceStage;
+window._rej      = toggleRejected;
+window._notes    = toggleNotes;
+window._arch     = archiveJob;
+window._confArch = confirmArchive;
+window._canArch  = cancelArchive;
+window._restore  = restoreJob;
+window._note     = updateNote;
+window._url      = updateUrl;
+window.showModal = showModal;
+window.hideModal = hideModal;
+window.addJob    = addJob;
+window.setFilter = setFilter;
+window.handleOverlayClick = handleOverlayClick;
 
-render();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
