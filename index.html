@@ -84,9 +84,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .job-link { display: inline-flex; align-items: center; font-size: 12px; color: #185FA5; text-decoration: none; padding: 6px 12px; border-radius: 20px; border: 0.5px solid #B5D4F4; background: #E6F1FB; white-space: nowrap; }
 textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 72px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
 
+/* Modal base */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
 @media (min-width: 600px) { .modal-overlay { align-items: center; } }
-.modal { background: white; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; }
+.modal { background: white; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
 @media (min-width: 600px) { .modal { border-radius: 14px; padding: 1.5rem; } }
 .modal-handle { width: 36px; height: 4px; background: #e0ddd6; border-radius: 2px; margin: 0 auto 1.25rem; }
 @media (min-width: 600px) { .modal-handle { display: none; } }
@@ -97,6 +98,24 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .modal-btns { display: flex; gap: 8px; margin-top: 1.25rem; }
 .btn-cancel { flex: 1; font-size: 15px; padding: 12px; border-radius: 10px; border: 0.5px solid #d0cdc6; background: transparent; color: #888; cursor: pointer; }
 .btn-save { flex: 2; font-size: 15px; padding: 12px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 600; }
+.btn-save:disabled { background: #aaa; cursor: not-allowed; }
+
+/* JD extractor */
+.jd-box { background: #f3f0eb; border: 1.5px dashed #d0cdc6; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; transition: border-color 0.2s; }
+.jd-box.dragover { border-color: #185FA5; background: #EBF4FC; }
+.jd-input-row { display: flex; gap: 8px; }
+.jd-url-input { flex: 1; font-size: 14px; padding: 10px 12px; border: 0.5px solid #d0cdc6; border-radius: 10px; background: white; color: #1a1a1a; font-family: inherit; outline: none; min-width: 0; }
+.jd-fetch-btn { font-size: 13px; padding: 10px 14px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+.jd-fetch-btn:disabled { background: #aaa; cursor: not-allowed; }
+.jd-or { text-align: center; font-size: 11px; color: #bbb; margin: 8px 0; }
+.jd-textarea { width: 100%; font-size: 12px; border: 0.5px solid #d0cdc6; border-radius: 10px; padding: 10px 12px; resize: vertical; min-height: 90px; font-family: inherit; color: #333; background: white; line-height: 1.5; outline: none; }
+.jd-status { font-size: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 8px; display: none; }
+.jd-status.loading { display: block; background: #f0ede8; color: #888; }
+.jd-status.error { display: block; background: #fef2f2; color: #A32D2D; }
+.jd-status.success { display: block; background: #EAF3DE; color: #3B6D11; }
+.divider { display: flex; align-items: center; gap: 8px; margin: 1rem 0 0.75rem; }
+.divider-line { flex: 1; height: 0.5px; background: #e0ddd6; }
+.divider-label { font-size: 11px; color: #bbb; }
 
 .empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
 .loading { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
@@ -137,6 +156,22 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
     <div class="modal">
       <div class="modal-handle"></div>
       <h3>Add application</h3>
+
+      <!-- JD Extractor -->
+      <div class="jd-box" id="jd-box">
+        <div style="font-size:12px;color:#888;margin-bottom:8px;">Paste a job posting URL and Claude will fill in the details</div>
+        <div class="jd-input-row">
+          <input class="jd-url-input" id="jd-url" type="url" placeholder="https://jobs.lever.co/..." />
+          <button class="jd-fetch-btn" id="jd-btn" onclick="extractFromUrl()">Extract</button>
+        </div>
+        <div class="jd-or">— or paste the job description text below —</div>
+        <textarea class="jd-textarea" id="jd-text" placeholder="Paste the full job description here..."></textarea>
+        <button class="jd-fetch-btn" id="jd-text-btn" onclick="extractFromText()" style="width:100%;margin-top:8px;">Extract from text</button>
+        <div class="jd-status" id="jd-status"></div>
+      </div>
+
+      <div class="divider"><div class="divider-line"></div><div class="divider-label">or fill in manually</div><div class="divider-line"></div></div>
+
       <div class="form-row"><label>Company</label><input id="f-company" placeholder="e.g. Stripe" autocomplete="organization" /></div>
       <div class="form-row"><label>Role</label><input id="f-role" placeholder="e.g. Head of Operations" /></div>
       <div class="form-row"><label>Location</label><input id="f-loc" placeholder="e.g. San Francisco, CA" autocomplete="off" /></div>
@@ -155,7 +190,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
       <div class="form-row"><label>Job posting URL</label><input id="f-url" placeholder="https://..." type="url" autocomplete="off" /></div>
       <div class="modal-btns">
         <button class="btn-cancel" onclick="hideModal()">Cancel</button>
-        <button class="btn-save" onclick="addJob()">Save</button>
+        <button class="btn-save" id="btn-save" onclick="addJob()">Save</button>
       </div>
     </div>
   </div>
@@ -181,6 +216,7 @@ const jobsCol = collection(db, 'jobs');
 const STAGES = ['Applied','Screen','Interview','Final round','Offer'];
 const ICONS = ['📋','📞','🎙️','🏆','🎉'];
 const PALETTE = ['#635BFF','#FF5A5F','#0D99FF','#FF6B35','#1D9E75','#BA7517','#8B5CF6','#E24B4A'];
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 
 let jobs = [];
 let currentFilter = 'all';
@@ -195,13 +231,113 @@ function showToast(msg, type = 'synced', duration = 2000) {
   el._t = setTimeout(() => el.classList.remove('show'), duration);
 }
 
+function setJdStatus(msg, type) {
+  const el = document.getElementById('jd-status');
+  el.textContent = msg;
+  el.className = `jd-status ${type}`;
+}
+
+function fillForm(data) {
+  if (data.company) document.getElementById('f-company').value = data.company;
+  if (data.role) document.getElementById('f-role').value = data.role;
+  if (data.location) document.getElementById('f-loc').value = data.location;
+  if (data.url) document.getElementById('f-url').value = data.url;
+  if (data.type) {
+    const sel = document.getElementById('f-type');
+    const match = [...sel.options].find(o => o.text.toLowerCase().includes(data.type.toLowerCase()));
+    if (match) sel.value = match.value;
+  }
+  setJdStatus('✓ Fields filled — review and save', 'success');
+}
+
+async function callClaude(content) {
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': '', // handled by proxy — leave blank, browser will use Anthropic's auth
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-ipc': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: `Extract job details from the following content and respond ONLY with a JSON object with these exact keys: company, role, location, type (one of: Full-time, Contract, Part-time), url. If you cannot find a value, use an empty string. No markdown, no explanation, just the JSON object.\n\nContent:\n${content.slice(0, 8000)}`
+      }]
+    })
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  const text = data.content?.[0]?.text || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+async function extractFromUrl() {
+  const url = document.getElementById('jd-url').value.trim();
+  if (!url) return;
+  const btn = document.getElementById('jd-btn');
+  btn.disabled = true;
+  btn.textContent = 'Fetching...';
+  setJdStatus('Fetching page...', 'loading');
+
+  try {
+    // Try CORS proxy to fetch the page content
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
+    const data = await res.json();
+    const html = data.contents || '';
+
+    // Strip HTML tags to get plain text
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const text = tmp.innerText || tmp.textContent || '';
+
+    if (text.length < 100) throw new Error('Could not read page content');
+
+    setJdStatus('Extracting details with Claude...', 'loading');
+    const extracted = await callClaude(text);
+    if (!extracted.url) extracted.url = url;
+    fillForm(extracted);
+  } catch(e) {
+    setJdStatus('Could not fetch this URL automatically. Paste the job description text below instead.', 'error');
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Extract';
+}
+
+async function extractFromText() {
+  const text = document.getElementById('jd-text').value.trim();
+  if (!text) return;
+  const btn = document.getElementById('jd-text-btn');
+  btn.disabled = true;
+  btn.textContent = 'Extracting...';
+  setJdStatus('Extracting details with Claude...', 'loading');
+
+  try {
+    const url = document.getElementById('jd-url').value.trim();
+    const extracted = await callClaude(text);
+    if (!extracted.url && url) extracted.url = url;
+    fillForm(extracted);
+  } catch(e) {
+    setJdStatus('Extraction failed. Please fill in the fields manually.', 'error');
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Extract from text';
+}
+
 const q = query(jobsCol, orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
   jobs = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
   render();
 }, err => {
   showToast('Connection error', 'error', 4000);
-  console.error(err);
 });
 
 async function saveField(firestoreId, fields) {
@@ -211,7 +347,6 @@ async function saveField(firestoreId, fields) {
     showToast('Synced ✓', 'synced');
   } catch(e) {
     showToast('Save failed', 'error', 4000);
-    console.error(e);
   }
 }
 
@@ -228,19 +363,24 @@ function handleOverlayClick(e) {
 
 function showModal() {
   document.getElementById('modal').style.display = 'block';
-  setTimeout(() => document.getElementById('f-company').focus(), 100);
+  setTimeout(() => document.getElementById('jd-url').focus(), 100);
 }
 
 function hideModal() {
   document.getElementById('modal').style.display = 'none';
-  ['f-company','f-role','f-loc','f-url'].forEach(id => document.getElementById(id).value = '');
+  ['f-company','f-role','f-loc','f-url','jd-url','jd-text'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-stage').value = '0';
+  document.getElementById('f-type').value = 'Full-time';
+  setJdStatus('', '');
 }
 
 async function addJob() {
   const company = document.getElementById('f-company').value.trim();
   const role = document.getElementById('f-role').value.trim();
-  if (!company || !role) return;
+  if (!company || !role) {
+    setJdStatus('Company and role are required.', 'error');
+    return;
+  }
   const job = {
     company, role,
     loc: document.getElementById('f-loc').value.trim(),
@@ -337,10 +477,7 @@ function render() {
   else if (currentFilter === 'archived') visible = jobs.filter(j => j.archived);
 
   const list = document.getElementById('jobs-list');
-  if (!visible.length) {
-    list.innerHTML = '<div class="empty">No applications here yet.</div>';
-    return;
-  }
+  if (!visible.length) { list.innerHTML = '<div class="empty">No applications here yet.</div>'; return; }
 
   list.innerHTML = visible.map(j => {
     const fid = j.firestoreId;
@@ -359,13 +496,9 @@ function render() {
       : `<span class="badge" style="background:#f0ede8;color:#555;">${STAGES[j.stage]}</span>`;
 
     const steps = STAGES.map((s, i) => {
-      let dotCls = 'pizza-dot';
-      let labelCls = 'pizza-step-label';
-      let icon = ICONS[i];
-      let beforeCls = 'pizza-line-before';
-      let afterCls = 'pizza-line-after';
+      let dotCls = 'pizza-dot', labelCls = 'pizza-step-label', icon = ICONS[i];
+      let beforeCls = 'pizza-line-before', afterCls = 'pizza-line-after';
       const clickable = !j.archived && !j.rejected;
-
       if (j.rejected || j.archived) {
         if (i < j.stage) { dotCls += ' done'; icon = '✓'; beforeCls += ' done'; afterCls += ' done'; labelCls += ' done-label'; }
         else if (i === j.stage) { dotCls += ' rejected-dot'; beforeCls += ' done'; }
@@ -376,7 +509,6 @@ function render() {
         labelCls += j.stage === 4 ? ' offer-label' : ' current-label';
         beforeCls += ' done';
       }
-
       return `<div class="pizza-step">
         <div class="${beforeCls}"></div><div class="${afterCls}"></div>
         <div class="${dotCls}" ${clickable ? `onclick="window._adv('${fid}',${j.stage},${i})"` : ''}>${icon}</div>
@@ -390,8 +522,7 @@ function render() {
       : `<button class="reject-btn ${j.rejected ? 'active' : ''}" onclick="window._rej('${fid}',${j.rejected})">${j.rejected ? 'Reactivate' : 'Mark rejected'}</button>
          ${pendingArchive === fid
            ? `<span class="confirm-inline">Archive? <button onclick="window._confArch('${fid}')">Yes</button><button onclick="window._canArch()">No</button></span>`
-           : `<button class="archive-btn" onclick="window._arch('${fid}')">Archive</button>`
-         }`;
+           : `<button class="archive-btn" onclick="window._arch('${fid}')">Archive</button>`}`;
 
     return `<div class="job-card">
       <div class="job-top" onclick="window._notes('${fid}')">
@@ -441,6 +572,8 @@ window.hideModal = hideModal;
 window.addJob    = addJob;
 window.setFilter = setFilter;
 window.handleOverlayClick = handleOverlayClick;
+window.extractFromUrl  = extractFromUrl;
+window.extractFromText = extractFromText;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
