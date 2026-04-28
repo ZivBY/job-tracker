@@ -19,6 +19,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .page-title { font-size: 22px; font-weight: 600; color: #1a1a1a; }
 .page-sub { font-size: 13px; color: #888; margin-top: 3px; }
 .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
 @media (min-width: 480px) { .stats-row { grid-template-columns: repeat(6, 1fr); } }
 .stat { background: white; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px; }
@@ -28,7 +29,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .toolbar::-webkit-scrollbar { display: none; }
 .filter-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid #d0cdc6; background: transparent; color: #666; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .filter-btn.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-.add-btn { margin-left: auto; font-size: 13px; padding: 7px 16px; border-radius: 8px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; flex-shrink: 0; }
+.add-btn { font-size: 13px; padding: 7px 16px; border-radius: 8px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; flex-shrink: 0; }
+.share-btn { font-size: 12px; padding: 7px 14px; border-radius: 8px; border: 0.5px solid #d0cdc6; background: white; color: #555; cursor: pointer; flex-shrink: 0; }
+.signout-btn { font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 0.5px solid #e0ddd6; background: transparent; color: #aaa; cursor: pointer; flex-shrink: 0; }
+.user-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.user-avatar-placeholder { width: 30px; height: 30px; border-radius: 50%; background: #e0ddd6; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #888; flex-shrink: 0; }
+
+/* Login screen */
+.login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
+.login-logo { width: 64px; height: 64px; border-radius: 16px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 1.5rem; }
+.login-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+.login-sub { font-size: 14px; color: #888; margin-bottom: 2rem; max-width: 280px; }
+.google-btn { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 12px; border: 0.5px solid #d0cdc6; background: white; font-size: 15px; font-weight: 500; cursor: pointer; color: #1a1a1a; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.google-icon { width: 20px; height: 20px; }
+
+/* Read-only banner */
+.readonly-banner { background: #FAEEDA; border-bottom: 0.5px solid #FAC775; padding: 10px 1rem; text-align: center; font-size: 12px; color: #854F0B; }
+
 .jobs-list { display: flex; flex-direction: column; gap: 10px; }
 .job-card { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
 .job-top { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; cursor: pointer; user-select: none; }
@@ -41,7 +58,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .timer-badge { font-size: 10px; color: #aaa; display: flex; align-items: center; gap: 3px; }
 .chevron { font-size: 11px; color: #aaa; transition: transform 0.2s; margin-top: 4px; flex-shrink: 0; }
 .chevron.open { transform: rotate(180deg); }
-
 .stage-area { padding: 10px 14px 14px; border-top: 0.5px solid #f0ede8; }
 .stage-area-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
 .pizza-track { display: flex; align-items: flex-start; position: relative; }
@@ -63,11 +79,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .pizza-step-label.done-label { color: #1D9E75; }
 .pizza-step-label.offer-label { color: #3B6D11; font-weight: 600; }
 .stage-duration { font-size: 8.5px; color: #bbb; text-align: center; margin-top: 2px; max-width: 48px; line-height: 1.2; }
-
 .timing-row { display: flex; gap: 8px; padding: 6px 14px 10px; flex-wrap: wrap; }
 .timing-chip { font-size: 11px; color: #888; background: #f5f3f0; border-radius: 20px; padding: 3px 10px; }
 .timing-chip span { color: #1a1a1a; font-weight: 500; }
-
 .job-notes { padding: 12px 14px; border-top: 0.5px solid #f0ede8; display: none; }
 .job-notes.open { display: block; }
 .notes-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
@@ -80,14 +94,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .action-btn.gray { color: #aaa; }
 .confirm-inline { font-size: 11px; color: #854F0B; display: flex; align-items: center; gap: 4px; }
 .confirm-inline button { font-size: 11px; padding: 3px 8px; border-radius: 20px; border: 0.5px solid #FAC775; background: transparent; color: #854F0B; cursor: pointer; }
-
 .field-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
 .url-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
 .url-input { flex: 1; font-size: 13px; padding: 8px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; min-width: 0; }
 .job-link { display: inline-flex; align-items: center; font-size: 12px; color: #185FA5; text-decoration: none; padding: 6px 12px; border-radius: 20px; border: 0.5px solid #B5D4F4; background: #E6F1FB; white-space: nowrap; }
 textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 72px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
-
-/* Attachments */
 .attachments-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .attachment-row { display: flex; gap: 6px; align-items: center; }
 .attachment-label-input { width: 100px; flex-shrink: 0; font-size: 12px; padding: 6px 8px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; }
@@ -96,8 +107,6 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .attachment-remove { font-size: 13px; color: #ccc; background: none; border: none; cursor: pointer; flex-shrink: 0; padding: 2px 4px; line-height: 1; }
 .attachment-remove:hover { color: #E24B4A; }
 .add-attachment-btn { font-size: 11px; color: #185FA5; background: none; border: none; cursor: pointer; padding: 2px 0; }
-
-/* Modal */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
 @media (min-width: 600px) { .modal-overlay { align-items: center; } }
 .modal { background: white; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
@@ -112,8 +121,6 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .btn-cancel { flex: 1; font-size: 15px; padding: 12px; border-radius: 10px; border: 0.5px solid #d0cdc6; background: transparent; color: #888; cursor: pointer; }
 .btn-save { flex: 2; font-size: 15px; padding: 12px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 600; }
 .btn-save:disabled { background: #aaa; cursor: not-allowed; }
-
-/* JD extractor */
 .jd-box { background: #f3f0eb; border: 1.5px dashed #d0cdc6; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
 .jd-input-row { display: flex; gap: 8px; }
 .jd-url-input { flex: 1; font-size: 14px; padding: 10px 12px; border: 0.5px solid #d0cdc6; border-radius: 10px; background: white; color: #1a1a1a; font-family: inherit; outline: none; min-width: 0; }
@@ -129,6 +136,11 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .divider-line { flex: 1; height: 0.5px; background: #e0ddd6; }
 .divider-label { font-size: 11px; color: #bbb; }
 
+/* Share modal */
+.share-url-box { background: #f5f3f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #555; word-break: break-all; margin: 10px 0; }
+.copy-btn { width: 100%; font-size: 14px; padding: 11px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; }
+.copy-btn.copied { background: #1D9E75; }
+
 .empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
 .loading { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
 .toast { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 12px; padding: 8px 18px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
@@ -141,28 +153,56 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 </style>
 </head>
 <body>
-<div class="page">
-  <div class="header">
-    <div>
-      <div class="page-title">Applications</div>
-      <div class="page-sub">Track every role in your pipeline</div>
+
+<!-- Login screen (shown when not authenticated) -->
+<div id="login-screen" style="display:none;">
+  <div class="login-screen">
+    <div class="login-logo">💼</div>
+    <div class="login-title">Job Tracker</div>
+    <div class="login-sub">Track your job search pipeline. Sign in to get started.</div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in with Google
+    </button>
+  </div>
+</div>
+
+<!-- Read-only view banner -->
+<div id="readonly-banner" style="display:none;" class="readonly-banner">
+  👀 You're viewing a shared tracker — read only
+</div>
+
+<!-- Main app -->
+<div id="app" style="display:none;">
+  <div class="page">
+    <div class="header">
+      <div>
+        <div class="page-title">Applications</div>
+        <div class="page-sub" id="page-sub">Track every role in your pipeline</div>
+      </div>
+      <div class="header-right">
+        <button class="share-btn" onclick="showShareModal()" id="share-btn" style="display:none;">Share</button>
+        <button class="add-btn" onclick="showModal()" id="add-btn">+ Add</button>
+        <div id="user-avatar-wrap"></div>
+        <button class="signout-btn" onclick="signOut()" id="signout-btn" style="display:none;">Sign out</button>
+      </div>
     </div>
-    <button class="add-btn" onclick="showModal()">+ Add</button>
+    <div class="stats-row" id="stats"></div>
+    <div class="toolbar">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+      <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
+      <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
+      <button class="filter-btn" onclick="setFilter('declined',this)">I Declined</button>
+      <button class="filter-btn" onclick="setFilter('archived',this)">Archive</button>
+    </div>
+    <div class="jobs-list" id="jobs-list"><div class="loading">Connecting...</div></div>
   </div>
-  <div class="stats-row" id="stats"></div>
-  <div class="toolbar">
-    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-    <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
-    <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
-    <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
-    <button class="filter-btn" onclick="setFilter('declined',this)">I Declined</button>
-    <button class="filter-btn" onclick="setFilter('archived',this)">Archive</button>
-  </div>
-  <div class="jobs-list" id="jobs-list"><div class="loading">Connecting to database...</div></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<!-- Add job modal -->
 <div id="modal" style="display:none;">
   <div class="modal-overlay" onclick="handleOverlayClick(event)">
     <div class="modal">
@@ -201,9 +241,24 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   </div>
 </div>
 
+<!-- Share modal -->
+<div id="share-modal" style="display:none;">
+  <div class="modal-overlay" onclick="handleShareOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Share your tracker</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">Anyone with this link can view your tracker in read-only mode. They cannot edit or add anything.</p>
+      <div class="share-url-box" id="share-url-display"></div>
+      <button class="copy-btn" id="copy-btn" onclick="copyShareUrl()">Copy link</button>
+      <button class="btn-cancel" style="width:100%;margin-top:8px;" onclick="hideShareModal()">Done</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDUNgIm11WNevESCPMbN440xnu-TGbdURE",
@@ -216,7 +271,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const jobsCol = collection(db, 'jobs');
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 const STAGES = ['Applied','Screen','Interview','Final round','Offer'];
 const ICONS = ['📋','📞','🎙️','🏆','🎉'];
@@ -227,13 +283,129 @@ let jobs = [];
 let currentFilter = 'all';
 let openNotes = new Set();
 let pendingArchive = null;
+let currentUser = null;
+let unsubscribe = null;
+let isReadOnly = false;
+let viewingUid = null;
+let _extractedPostDate = null;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Check for shared view ─────────────────────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+viewingUid = urlParams.get('view');
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+window.signInWithGoogle = async function() {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    showToast('Sign in failed', 'error');
+  }
+};
+
+window.signOut = async function() {
+  if (unsubscribe) unsubscribe();
+  await fbSignOut(auth);
+};
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (viewingUid) {
+    // Read-only shared view — show app regardless of auth state
+    isReadOnly = true;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('readonly-banner').style.display = 'block';
+    document.getElementById('add-btn').style.display = 'none';
+    document.getElementById('share-btn').style.display = 'none';
+    document.getElementById('signout-btn').style.display = 'none';
+    loadJobs(viewingUid);
+  } else if (user) {
+    isReadOnly = false;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('readonly-banner').style.display = 'none';
+    document.getElementById('add-btn').style.display = 'block';
+    document.getElementById('share-btn').style.display = 'block';
+    document.getElementById('signout-btn').style.display = 'block';
+    // Show avatar
+    const wrap = document.getElementById('user-avatar-wrap');
+    if (user.photoURL) {
+      wrap.innerHTML = '<img class="user-avatar" src="' + user.photoURL + '" />';
+    } else {
+      wrap.innerHTML = '<div class="user-avatar-placeholder">' + (user.displayName?.[0] || '?') + '</div>';
+    }
+    document.getElementById('page-sub').textContent = 'Welcome back, ' + (user.displayName?.split(' ')[0] || 'there');
+    loadJobs(user.uid);
+  } else {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('readonly-banner').style.display = 'none';
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    jobs = [];
+  }
+});
+
+function loadJobs(uid) {
+  if (unsubscribe) unsubscribe();
+  const jobsCol = collection(db, 'users', uid, 'jobs');
+  const q = query(jobsCol, orderBy('createdAt', 'desc'));
+  unsubscribe = onSnapshot(q, snapshot => {
+    jobs = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    render();
+  }, err => showToast('Connection error', 'error', 4000));
+}
+
+function getJobsCol() {
+  if (!currentUser) return null;
+  return collection(db, 'users', currentUser.uid, 'jobs');
+}
+
+async function saveField(firestoreId, fields) {
+  if (isReadOnly || !currentUser) return;
+  try {
+    showToast('Saving...', 'syncing', 60000);
+    const jobsCol = collection(db, 'users', currentUser.uid, 'jobs');
+    await updateDoc(doc(db, 'users', currentUser.uid, 'jobs', firestoreId), fields);
+    showToast('Synced ✓', 'synced');
+  } catch(e) {
+    showToast('Save failed', 'error', 4000);
+  }
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+
+window.showShareModal = function() {
+  if (!currentUser) return;
+  const shareUrl = window.location.origin + window.location.pathname + '?view=' + currentUser.uid;
+  document.getElementById('share-url-display').textContent = shareUrl;
+  document.getElementById('share-modal').style.display = 'block';
+};
+
+window.hideShareModal = function() {
+  document.getElementById('share-modal').style.display = 'none';
+};
+
+window.handleShareOverlayClick = function(e) {
+  if (e.target.classList.contains('modal-overlay')) hideShareModal();
+};
+
+window.copyShareUrl = function() {
+  const url = document.getElementById('share-url-display').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
+  });
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function showToast(msg, type = 'synced', duration = 2000) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = `toast ${type} show`;
+  el.className = 'toast ' + type + ' show';
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), duration);
 }
@@ -243,17 +415,15 @@ function formatDuration(ms) {
   const days = Math.floor(ms / 86400000);
   if (days === 0) return 'Today';
   if (days === 1) return '1d';
-  if (days < 7) return `${days}d`;
+  if (days < 7) return days + 'd';
   const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks}w`;
-  const months = Math.floor(days / 30);
-  return `${months}mo`;
+  if (weeks < 5) return weeks + 'w';
+  return Math.floor(days / 30) + 'mo';
 }
 
 function now() { return Date.now(); }
 
 function stageEnteredAt(j) {
-  // stageHistory is array of {stage, ts} sorted ascending
   const hist = j.stageHistory || [];
   const entry = [...hist].reverse().find(h => h.stage === j.stage);
   return entry ? entry.ts : (j.createdAt?.toMillis ? j.createdAt.toMillis() : now());
@@ -262,8 +432,7 @@ function stageEnteredAt(j) {
 function totalTime(j) {
   const start = j.createdAt?.toMillis ? j.createdAt.toMillis() : null;
   if (!start) return null;
-  const end = j.endedAt || (j.rejected || j.declined ? now() : now());
-  return end - start;
+  return (j.endedAt || now()) - start;
 }
 
 function stageDuration(j, stageIndex) {
@@ -271,29 +440,31 @@ function stageDuration(j, stageIndex) {
   const entries = hist.filter(h => h.stage === stageIndex).sort((a,b) => a.ts - b.ts);
   if (!entries.length) return null;
   const enteredAt = entries[0].ts;
-  // Find when they left this stage
   const nextEntry = hist.find(h => h.stage > stageIndex && h.ts > enteredAt);
   const exitedAt = nextEntry ? nextEntry.ts : (j.stage === stageIndex ? now() : null);
   if (!exitedAt) return null;
   return exitedAt - enteredAt;
 }
 
-// ── Firebase ─────────────────────────────────────────────────────────────────
-
-const q = query(jobsCol, orderBy('createdAt', 'desc'));
-onSnapshot(q, snapshot => {
-  jobs = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
-  render();
-}, err => showToast('Connection error', 'error', 4000));
-
-async function saveField(firestoreId, fields) {
+function formatPostDate(iso) {
+  if (!iso) return null;
   try {
-    showToast('Saving...', 'syncing', 60000);
-    await updateDoc(doc(db, 'jobs', firestoreId), fields);
-    showToast('Synced ✓', 'synced');
-  } catch(e) {
-    showToast('Save failed', 'error', 4000);
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return null; }
+}
+
+function postDateDisplay(j) {
+  if (j.postedDate) {
+    const formatted = formatPostDate(j.postedDate);
+    if (formatted) return { label: 'Posted', date: formatted, isExtracted: true, ts: new Date(j.postedDate).getTime() };
   }
+  if (j.createdAt?.toMillis) {
+    const d = new Date(j.createdAt.toMillis());
+    return { label: 'Added', date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), isExtracted: false, ts: j.createdAt.toMillis() };
+  }
+  return null;
 }
 
 // ── JD Extraction ─────────────────────────────────────────────────────────────
@@ -301,7 +472,7 @@ async function saveField(firestoreId, fields) {
 function setJdStatus(msg, type) {
   const el = document.getElementById('jd-status');
   el.textContent = msg;
-  el.className = `jd-status ${type}`;
+  el.className = 'jd-status ' + type;
 }
 
 function fillForm(data) {
@@ -314,52 +485,10 @@ function fillForm(data) {
     const match = [...sel.options].find(o => o.text.toLowerCase().includes(data.type.toLowerCase()));
     if (match) sel.value = match.value;
   }
-  // Store extracted post date (may be null if not found)
   _extractedPostDate = data.postedDate || null;
-  const dateMsg = _extractedPostDate
-    ? ` · Posted ${formatPostDate(_extractedPostDate)}`
-    : '';
-  setJdStatus(`✓ Fields filled — review and save${dateMsg}`, 'success');
+  const dateMsg = _extractedPostDate ? ' · Posted ' + formatPostDate(_extractedPostDate) : '';
+  setJdStatus('✓ Fields filled — review and save' + dateMsg, 'success');
 }
-
-function formatPostDate(isoOrNull) {
-  if (!isoOrNull) return null;
-  try {
-    const d = new Date(isoOrNull);
-    if (isNaN(d)) return null;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch { return null; }
-}
-
-function postDateDisplay(j) {
-  // Returns { label, date, isExtracted }
-  if (j.postedDate) {
-    const formatted = formatPostDate(j.postedDate);
-    if (formatted) return { label: 'Posted', date: formatted, isExtracted: true, ts: new Date(j.postedDate).getTime() };
-  }
-  // Fallback to createdAt
-  if (j.createdAt?.toMillis) {
-    const d = new Date(j.createdAt.toMillis());
-    return { label: 'Added', date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), isExtracted: false, ts: j.createdAt.toMillis() };
-  }
-  return null;
-}
-
-async function callClaude(content) {
-  const res = await fetch(PROXY, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: content })
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = await res.json();
-  const text = data.content?.[0]?.text || '';
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
-}
-
-// Store extracted post date so addJob can pick it up
-let _extractedPostDate = null;
 
 async function extractFromUrl() {
   const url = document.getElementById('jd-url').value.trim();
@@ -368,28 +497,21 @@ async function extractFromUrl() {
   btn.disabled = true; btn.textContent = 'Fetching...';
   setJdStatus('Fetching page...', 'loading');
   try {
-    // Send URL to worker — it fetches the page server-side then calls Claude
     const res = await fetch(PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
     });
-    if (!res.ok) throw new Error(`Worker error ${res.status}`);
+    if (!res.ok) throw new Error('Worker error ' + res.status);
     const workerData = await res.json();
-
-    // Check if worker returned a fetch error instead of Claude response
-    if (workerData.error) {
-      throw new Error(workerData.error);
-    }
-
+    if (workerData.error) throw new Error(workerData.error);
     const text = workerData.content?.[0]?.text || '';
     const clean = text.replace(/```json|```/g, '').trim();
     const extracted = JSON.parse(clean);
     if (!extracted.url) extracted.url = url;
     fillForm(extracted);
   } catch(e) {
-    setJdStatus('Could not fetch this URL automatically — paste the job description text below instead.', 'error');
-    // Auto-focus the text area to guide the user to the fallback
+    setJdStatus('Could not fetch this URL — paste the job description text below instead.', 'error');
     setTimeout(() => document.getElementById('jd-text').focus(), 100);
   }
   btn.disabled = false; btn.textContent = 'Extract';
@@ -403,7 +525,16 @@ async function extractFromText() {
   setJdStatus('Extracting with Claude...', 'loading');
   try {
     const url = document.getElementById('jd-url').value.trim();
-    const extracted = await callClaude(text);
+    const res = await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error('Worker error');
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(clean);
     if (!extracted.url && url) extracted.url = url;
     fillForm(extracted);
   } catch(e) {
@@ -414,23 +545,25 @@ async function extractFromText() {
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
-function handleOverlayClick(e) { if (e.target.classList.contains('modal-overlay')) hideModal(); }
+window.handleOverlayClick = function(e) { if (e.target.classList.contains('modal-overlay')) hideModal(); };
 
-function showModal() {
+window.showModal = function() {
+  if (isReadOnly) return;
   document.getElementById('modal').style.display = 'block';
   setTimeout(() => document.getElementById('jd-url').focus(), 100);
-}
+};
 
-function hideModal() {
+window.hideModal = function() {
   document.getElementById('modal').style.display = 'none';
   ['f-company','f-role','f-loc','f-url','jd-url','jd-text'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-stage').value = '0';
   document.getElementById('f-type').value = 'Full-time';
   _extractedPostDate = null;
   setJdStatus('', '');
-}
+};
 
-async function addJob() {
+window.addJob = async function() {
+  if (isReadOnly || !currentUser) return;
   const company = document.getElementById('f-company').value.trim();
   const role = document.getElementById('f-role').value.trim();
   if (!company || !role) { setJdStatus('Company and role are required.', 'error'); return; }
@@ -440,11 +573,8 @@ async function addJob() {
     loc: document.getElementById('f-loc').value.trim(),
     type: document.getElementById('f-type').value,
     stage: parseInt(document.getElementById('f-stage').value),
-    rejected: false,
-    declined: false,
-    archived: false,
-    notes: '',
-    url: document.getElementById('f-url').value.trim(),
+    rejected: false, declined: false, archived: false,
+    notes: '', url: document.getElementById('f-url').value.trim(),
     emoji: company[0].toUpperCase(),
     color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
     stageHistory: [{ stage: parseInt(document.getElementById('f-stage').value), ts }],
@@ -455,14 +585,15 @@ async function addJob() {
   hideModal();
   try {
     showToast('Saving...', 'syncing', 60000);
-    await addDoc(jobsCol, job);
+    await addDoc(collection(db, 'users', currentUser.uid, 'jobs'), job);
     showToast('Synced ✓', 'synced');
   } catch(e) { showToast('Save failed', 'error', 4000); }
-}
+};
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 async function advanceStage(firestoreId, currentStage, step) {
+  if (isReadOnly) return;
   const j = jobs.find(x => x.firestoreId === firestoreId);
   if (!j) return;
   const newStage = (step === currentStage && currentStage > 0) ? currentStage - 1 : step;
@@ -494,9 +625,7 @@ async function confirmArchive(firestoreId) {
 
 function cancelArchive() { pendingArchive = null; render(); }
 
-async function restoreJob(firestoreId) {
-  await saveField(firestoreId, { archived: false });
-}
+async function restoreJob(firestoreId) { await saveField(firestoreId, { archived: false }); }
 
 const noteTimers = {};
 function updateNote(firestoreId, val) {
@@ -510,8 +639,6 @@ function updateUrl(firestoreId, val) {
   urlTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { url: val.trim() }).then(() => render()), 800);
 }
 
-// ── Attachments ───────────────────────────────────────────────────────────────
-
 function getAttachments(firestoreId) {
   const j = jobs.find(x => x.firestoreId === firestoreId);
   return j ? (j.attachments || []) : [];
@@ -524,11 +651,11 @@ async function addAttachment(firestoreId) {
 
 const attTimers = {};
 function updateAttachment(firestoreId, idx, field, val) {
-  const key = `${firestoreId}-${idx}`;
+  const key = firestoreId + '-' + idx;
   clearTimeout(attTimers[key]);
   attTimers[key] = setTimeout(() => {
     const atts = [...getAttachments(firestoreId)];
-    if (atts[idx]) { atts[idx] = { ...atts[idx], [field]: val }; saveField(firestoreId, { attachments: atts }); }
+    if (atts[idx]) { atts[idx] = Object.assign({}, atts[idx], { [field]: val }); saveField(firestoreId, { attachments: atts }); }
   }, 800);
 }
 
@@ -546,27 +673,26 @@ function renderStats() {
   const intvs     = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 2).length;
   const offers    = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 4).length;
   const rejected  = jobs.filter(j => !j.archived && j.rejected).length;
-  document.getElementById('stats').innerHTML = `
-    <div class="stat"><div class="stat-label">Total</div><div class="stat-val">${total}</div></div>
-    <div class="stat"><div class="stat-label">Active</div><div class="stat-val">${active}</div></div>
-    <div class="stat"><div class="stat-label">Interviews</div><div class="stat-val">${intvs}</div></div>
-    <div class="stat"><div class="stat-label">Offers</div><div class="stat-val">${offers}</div></div>
-    <div class="stat"><div class="stat-label">Rejected</div><div class="stat-val">${rejected}</div></div>
-    <div class="stat" style="border-color:#e8e0d0;"><div class="stat-label" style="color:#BA7517;">Archived</div><div class="stat-val" style="color:#BA7517;">${archived}</div></div>
-  `;
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="stat-label">Total</div><div class="stat-val">' + total + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Active</div><div class="stat-val">' + active + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Interviews</div><div class="stat-val">' + intvs + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Offers</div><div class="stat-val">' + offers + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Rejected</div><div class="stat-val">' + rejected + '</div></div>' +
+    '<div class="stat" style="border-color:#e8e0d0;"><div class="stat-label" style="color:#BA7517;">Archived</div><div class="stat-val" style="color:#BA7517;">' + archived + '</div></div>';
 }
 
-function setFilter(f, btn) {
+window.setFilter = function(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   render();
-}
+};
 
 function render() {
   renderStats();
   let visible = jobs.filter(j => !j.archived);
-  if (currentFilter === 'active')   visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage < 4);
+  if (currentFilter === 'active')    visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage < 4);
   else if (currentFilter === 'offer')    visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 4);
   else if (currentFilter === 'rejected') visible = jobs.filter(j => !j.archived && j.rejected);
   else if (currentFilter === 'declined') visible = jobs.filter(j => !j.archived && j.declined);
@@ -579,34 +705,24 @@ function render() {
     const fid = j.firestoreId;
     const isEnded = j.rejected || j.declined || j.stage === 4 || j.archived;
 
-    const typeBadgeStyle = j.type === 'Contract'
-      ? 'background:#FAEEDA;color:#854F0B;'
-      : j.type === 'Part-time'
-      ? 'background:#EAF3DE;color:#3B6D11;'
+    const typeBadgeStyle = j.type === 'Contract' ? 'background:#FAEEDA;color:#854F0B;'
+      : j.type === 'Part-time' ? 'background:#EAF3DE;color:#3B6D11;'
       : 'background:#E6F1FB;color:#185FA5;';
 
-    const statusBadge = j.archived
-      ? `<span class="badge" style="background:#f5f0e8;color:#854F0B;">Archived</span>`
-      : j.rejected
-      ? `<span class="badge" style="background:#FCEBEB;color:#A32D2D;">They rejected</span>`
-      : j.declined
-      ? `<span class="badge" style="background:#FAEEDA;color:#854F0B;">I declined</span>`
-      : j.stage === 4
-      ? `<span class="badge" style="background:#EAF3DE;color:#3B6D11;">🎉 Offer</span>`
-      : `<span class="badge" style="background:#f0ede8;color:#555;">${STAGES[j.stage]}</span>`;
+    const statusBadge = j.archived ? '<span class="badge" style="background:#f5f0e8;color:#854F0B;">Archived</span>'
+      : j.rejected ? '<span class="badge" style="background:#FCEBEB;color:#A32D2D;">They rejected</span>'
+      : j.declined ? '<span class="badge" style="background:#FAEEDA;color:#854F0B;">I declined</span>'
+      : j.stage === 4 ? '<span class="badge" style="background:#EAF3DE;color:#3B6D11;">🎉 Offer</span>'
+      : '<span class="badge" style="background:#f0ede8;color:#555;">' + STAGES[j.stage] + '</span>';
 
-    // Stage timer on card
-    const currentStageSince = stageEnteredAt(j);
-    const stageAge = formatDuration(now() - currentStageSince);
-    const timerLabel = !isEnded
-      ? `<span class="timer-badge">⏱ ${stageAge} in ${STAGES[j.stage]}</span>`
-      : '';
+    const stageAge = formatDuration(now() - stageEnteredAt(j));
+    const timerLabel = !isEnded ? '<span class="timer-badge">⏱ ' + stageAge + ' in ' + STAGES[j.stage] + '</span>' : '';
 
-    // Pizza track
+    const clickable = !isReadOnly && !j.archived && !j.rejected && !j.declined;
+
     const steps = STAGES.map((s, i) => {
       let dotCls = 'pizza-dot', labelCls = 'pizza-step-label', icon = ICONS[i];
       let beforeCls = 'pizza-line-before', afterCls = 'pizza-line-after';
-      const clickable = !j.archived && !j.rejected && !j.declined;
       const dur = formatDuration(stageDuration(j, i));
 
       if (j.rejected || j.archived) {
@@ -623,98 +739,75 @@ function render() {
         beforeCls += ' done';
       }
 
-      const durLabel = dur !== '—' ? `<div class="stage-duration">${dur}</div>` : '';
-
-      return `<div class="pizza-step">
-        <div class="${beforeCls}"></div><div class="${afterCls}"></div>
-        <div class="${dotCls}" ${clickable ? `onclick="window._adv('${fid}',${j.stage},${i})"` : ''}>${icon}</div>
-        <div class="${labelCls}">${s}</div>
-        ${durLabel}
-      </div>`;
+      const durLabel = dur !== '—' ? '<div class="stage-duration">' + dur + '</div>' : '';
+      return '<div class="pizza-step"><div class="' + beforeCls + '"></div><div class="' + afterCls + '"></div><div class="' + dotCls + '"' + (clickable ? ' onclick="window._adv(\'' + fid + '\',' + j.stage + ',' + i + ')"' : '') + '>' + icon + '</div><div class="' + labelCls + '">' + s + '</div>' + durLabel + '</div>';
     }).join('');
 
-    // Timing row
-    const total = totalTime(j);
     const postInfo = postDateDisplay(j);
     const postChip = postInfo ? (() => {
       const age = formatDuration(now() - postInfo.ts);
-      const sourceStyle = postInfo.isExtracted
-        ? 'color:#185FA5;'
-        : 'color:#aaa;font-style:italic;';
+      const sourceStyle = postInfo.isExtracted ? 'color:#185FA5;' : 'color:#aaa;font-style:italic;';
       const label = postInfo.isExtracted ? 'Posted' : 'Added to tracker';
-      return `<span class="timing-chip" title="${postInfo.isExtracted ? 'Date extracted from job posting' : 'Posting date not found — showing date you added this job'}">${label}: <span style="${sourceStyle}">${postInfo.date}</span> · <span>${age} ago</span></span>`;
+      return '<span class="timing-chip" title="' + (postInfo.isExtracted ? 'Date from job posting' : 'Posting date not found — showing when you added this job') + '">' + label + ': <span style="' + sourceStyle + '">' + postInfo.date + '</span> · <span>' + age + ' ago</span></span>';
     })() : '';
-    const timingRow = (total || postChip) ? `<div class="timing-row">
-      ${postChip}
-      <span class="timing-chip">Total in process: <span>${formatDuration(total)}</span></span>
-      ${j.stage > 0 ? `<span class="timing-chip">Current stage: <span>${formatDuration(now() - stageEnteredAt(j))}</span></span>` : ''}
-    </div>` : '';
 
-    // Action buttons
+    const total = totalTime(j);
+    const timingRow = (total || postChip) ? '<div class="timing-row">' + postChip +
+      '<span class="timing-chip">Total in process: <span>' + formatDuration(total) + '</span></span>' +
+      (j.stage > 0 ? '<span class="timing-chip">Current stage: <span>' + formatDuration(now() - stageEnteredAt(j)) + '</span></span>' : '') +
+      '</div>' : '';
+
     const notesOpen = openNotes.has(fid);
+
     let actionButtons;
-    if (j.archived) {
-      actionButtons = `<button class="action-btn green" onclick="window._restore('${fid}')">Restore</button>`;
+    if (isReadOnly) {
+      actionButtons = '';
+    } else if (j.archived) {
+      actionButtons = '<button class="action-btn green" onclick="window._restore(\'' + fid + '\')">Restore</button>';
     } else {
-      actionButtons = `
-        <button class="action-btn red ${j.rejected ? 'active' : ''}" onclick="window._rej('${fid}',${!!j.rejected})">${j.rejected ? 'Reactivate' : 'They rejected'}</button>
-        <button class="action-btn amber ${j.declined ? 'active' : ''}" onclick="window._dec('${fid}',${!!j.declined})">${j.declined ? 'Reactivate' : 'I declined'}</button>
-        ${pendingArchive === fid
-          ? `<span class="confirm-inline">Archive? <button onclick="window._confArch('${fid}')">Yes</button><button onclick="window._canArch()">No</button></span>`
-          : `<button class="action-btn gray" onclick="window._arch('${fid}')">Archive</button>`
-        }`;
+      actionButtons =
+        '<button class="action-btn red ' + (j.rejected ? 'active' : '') + '" onclick="window._rej(\'' + fid + '\',' + !!j.rejected + ')">' + (j.rejected ? 'Reactivate' : 'They rejected') + '</button>' +
+        '<button class="action-btn amber ' + (j.declined ? 'active' : '') + '" onclick="window._dec(\'' + fid + '\',' + !!j.declined + ')">' + (j.declined ? 'Reactivate' : 'I declined') + '</button>' +
+        (pendingArchive === fid
+          ? '<span class="confirm-inline">Archive? <button onclick="window._confArch(\'' + fid + '\')">Yes</button><button onclick="window._canArch()">No</button></span>'
+          : '<button class="action-btn gray" onclick="window._arch(\'' + fid + '\')">Archive</button>');
     }
 
-    // Attachments
     const atts = j.attachments || [];
-    const attRows = atts.map((a, idx) => `
-      <div class="attachment-row">
-        <input class="attachment-label-input" value="${a.label || ''}" placeholder="Label" oninput="window._attLabel('${fid}',${idx},this.value)" ${j.archived ? 'readonly' : ''} />
-        <input class="attachment-url-input" value="${a.url || ''}" placeholder="https://drive.google.com/..." type="url" oninput="window._attUrl('${fid}',${idx},this.value)" ${j.archived ? 'readonly' : ''} />
-        ${a.url ? `<a href="${a.url}" target="_blank" class="attachment-open">↗</a>` : ''}
-        ${!j.archived ? `<button class="attachment-remove" onclick="window._attRemove('${fid}',${idx})">×</button>` : ''}
-      </div>`).join('');
+    const attRows = atts.map((a, idx) =>
+      '<div class="attachment-row">' +
+      '<input class="attachment-label-input" value="' + (a.label || '') + '" placeholder="Label" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._attLabel(\'' + fid + '\',' + idx + ',this.value)"') + ' />' +
+      '<input class="attachment-url-input" value="' + (a.url || '') + '" placeholder="https://drive.google.com/..." type="url" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._attUrl(\'' + fid + '\',' + idx + ',this.value)"') + ' />' +
+      (a.url ? '<a href="' + a.url + '" target="_blank" class="attachment-open">↗</a>' : '') +
+      (!isReadOnly && !j.archived ? '<button class="attachment-remove" onclick="window._attRemove(\'' + fid + '\',' + idx + ')">×</button>' : '') +
+      '</div>'
+    ).join('');
 
-    return `<div class="job-card">
-      <div class="job-top" onclick="window._notes('${fid}')">
-        <div class="company-logo" style="background:${j.color}18;color:${j.color};">${j.emoji}</div>
-        <div class="job-info">
-          <div class="job-title">${j.role}</div>
-          <div class="job-company">${j.company}${j.loc ? ' · ' + j.loc : ''}</div>
-          <div class="job-meta">
-            <span class="badge" style="${typeBadgeStyle}">${j.type}</span>
-            ${statusBadge}
-            ${timerLabel}
-          </div>
-        </div>
-        <span class="chevron ${notesOpen ? 'open' : ''}">▾</span>
-      </div>
-      <div class="stage-area">
-        <div class="stage-area-label">Pipeline${!j.archived && !j.rejected && !j.declined ? ' — tap a stage to advance' : ''}</div>
-        <div class="pizza-track">${steps}</div>
-      </div>
-      ${timingRow}
-      <div class="job-notes ${notesOpen ? 'open' : ''}">
-        <div class="notes-header">
-          <span class="notes-title">Details</span>
-          <div class="notes-actions">${actionButtons}</div>
-        </div>
-        <div class="field-label">Job posting URL</div>
-        <div class="url-row">
-          <input class="url-input" type="url" value="${j.url || ''}" oninput="window._url('${fid}',this.value)" placeholder="https://..." ${j.archived ? 'readonly' : ''} />
-          ${j.url ? `<a href="${j.url}" target="_blank" class="job-link">↗ Open</a>` : ''}
-        </div>
-        <div class="field-label" style="margin-bottom:6px;">Attachments</div>
-        <div class="attachments-list">${attRows}</div>
-        ${!j.archived ? `<button class="add-attachment-btn" onclick="window._attAdd('${fid}')">+ Add attachment</button>` : ''}
-        <div class="field-label" style="margin-top:10px;">Notes</div>
-        <textarea oninput="window._note('${fid}',this.value)" placeholder="Context, contacts, next steps, salary..." ${j.archived ? 'readonly' : ''}>${j.notes || ''}</textarea>
-      </div>
-    </div>`;
+    return '<div class="job-card">' +
+      '<div class="job-top" onclick="window._notes(\'' + fid + '\')">' +
+      '<div class="company-logo" style="background:' + j.color + '18;color:' + j.color + ';">' + j.emoji + '</div>' +
+      '<div class="job-info"><div class="job-title">' + j.role + '</div>' +
+      '<div class="job-company">' + j.company + (j.loc ? ' · ' + j.loc : '') + '</div>' +
+      '<div class="job-meta"><span class="badge" style="' + typeBadgeStyle + '">' + j.type + '</span>' + statusBadge + timerLabel + '</div></div>' +
+      '<span class="chevron ' + (notesOpen ? 'open' : '') + '">▾</span></div>' +
+      '<div class="stage-area"><div class="stage-area-label">Pipeline' + (!isReadOnly && !j.archived && !j.rejected && !j.declined ? ' — tap a stage to advance' : '') + '</div>' +
+      '<div class="pizza-track">' + steps + '</div></div>' +
+      timingRow +
+      '<div class="job-notes ' + (notesOpen ? 'open' : '') + '">' +
+      '<div class="notes-header"><span class="notes-title">Details</span><div class="notes-actions">' + actionButtons + '</div></div>' +
+      '<div class="field-label">Job posting URL</div>' +
+      '<div class="url-row"><input class="url-input" type="url" value="' + (j.url || '') + '" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._url(\'' + fid + '\',this.value)"') + ' placeholder="https://..." />' +
+      (j.url ? '<a href="' + j.url + '" target="_blank" class="job-link">↗ Open</a>' : '') + '</div>' +
+      '<div class="field-label" style="margin-bottom:6px;">Attachments</div>' +
+      '<div class="attachments-list">' + attRows + '</div>' +
+      (!isReadOnly && !j.archived ? '<button class="add-attachment-btn" onclick="window._attAdd(\'' + fid + '\')">+ Add attachment</button>' : '') +
+      '<div class="field-label" style="margin-top:10px;">Notes</div>' +
+      '<textarea ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._note(\'' + fid + '\',this.value)"') + ' placeholder="Context, contacts, next steps, salary...">' + (j.notes || '') + '</textarea>' +
+      '</div></div>';
   }).join('');
 }
 
-// Expose to global scope
+// Expose globals
 window._adv       = advanceStage;
 window._rej       = toggleRejected;
 window._dec       = toggleDeclined;
@@ -729,13 +822,8 @@ window._attAdd    = addAttachment;
 window._attLabel  = (fid, idx, val) => updateAttachment(fid, idx, 'label', val);
 window._attUrl    = (fid, idx, val) => updateAttachment(fid, idx, 'url', val);
 window._attRemove = removeAttachment;
-window.showModal  = showModal;
-window.hideModal  = hideModal;
-window.addJob     = addJob;
-window.setFilter  = setFilter;
-window.handleOverlayClick  = handleOverlayClick;
-window.extractFromUrl      = extractFromUrl;
-window.extractFromText     = extractFromText;
+window.extractFromUrl  = extractFromUrl;
+window.extractFromText = extractFromText;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
