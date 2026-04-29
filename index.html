@@ -298,6 +298,7 @@ let unsubscribe = null;
 let isReadOnly = false;
 let viewingUid = null;
 let _extractedPostDate = null;
+let _extractedSalary = null;
 
 // ── Check for shared view ─────────────────────────────────────────────────────
 const urlParams = new URLSearchParams(window.location.search);
@@ -522,8 +523,10 @@ function fillForm(data) {
     if (match) sel.value = match.value;
   }
   _extractedPostDate = data.postedDate || null;
+  _extractedSalary = data.salary || null;
   const dateMsg = _extractedPostDate ? ' · Posted ' + formatPostDate(_extractedPostDate) : '';
-  setJdStatus('✓ Fields filled — review and save' + dateMsg, 'success');
+  const salaryMsg = _extractedSalary ? ' · ' + _extractedSalary : '';
+  setJdStatus('✓ Fields filled — review and save' + dateMsg + salaryMsg, 'success');
 }
 
 async function extractFromUrl() {
@@ -595,6 +598,7 @@ window.hideModal = function() {
   document.getElementById('f-stage').value = '0';
   document.getElementById('f-type').value = 'Full-time';
   _extractedPostDate = null;
+  _extractedSalary = null;
   setJdStatus('', '');
 };
 
@@ -616,6 +620,7 @@ window.addJob = async function() {
     stageHistory: [{ stage: parseInt(document.getElementById('f-stage').value), ts }],
     attachments: [],
     postedDate: _extractedPostDate || null,
+    salary: _extractedSalary || '',
     createdAt: serverTimestamp()
   };
   hideModal();
@@ -669,8 +674,11 @@ function updateNote(firestoreId, val) {
   noteTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { notes: val }), 1000);
 }
 
-const urlTimers = {};
-function updateUrl(firestoreId, val) {
+const salaryTimers = {};
+function updateSalary(firestoreId, val) {
+  clearTimeout(salaryTimers[firestoreId]);
+  salaryTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { salary: val }), 1000);
+}
   clearTimeout(urlTimers[firestoreId]);
   urlTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { url: val.trim() }).then(() => render()), 800);
 }
@@ -837,7 +845,9 @@ function render() {
       '<div class="field-label" style="margin-bottom:6px;">Attachments</div>' +
       '<div class="attachments-list">' + attRows + '</div>' +
       (!isReadOnly && !j.archived ? '<button class="add-attachment-btn" onclick="window._attAdd(\'' + fid + '\')">+ Add attachment</button>' : '') +
-      '<div class="field-label" style="margin-top:10px;">Notes</div>' +
+      '<div class="field-label" style="margin-top:10px;">Salary / Compensation</div>' +
+      '<input class="url-input" style="margin-bottom:10px;" type="text" value="' + (j.salary || '') + '" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._salary(\'' + fid + '\',this.value)"') + ' placeholder="e.g. $130k–$160k base + equity" />' +
+      '<div class="field-label">Notes</div>' +
       '<textarea ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._note(\'' + fid + '\',this.value)"') + ' placeholder="Context, contacts, next steps, salary...">' + (j.notes || '') + '</textarea>' +
       '</div></div>';
   }).join('');
@@ -854,6 +864,7 @@ window._canArch   = cancelArchive;
 window._restore   = restoreJob;
 window._note      = updateNote;
 window._url       = updateUrl;
+window._salary    = updateSalary;
 window._attAdd    = addAttachment;
 window._attLabel  = (fid, idx, val) => updateAttachment(fid, idx, 'label', val);
 window._attUrl    = (fid, idx, val) => updateAttachment(fid, idx, 'url', val);
