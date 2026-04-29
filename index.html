@@ -554,14 +554,14 @@ async function isAllowed(user) {
   if (user.email === 'benyehuda.ziv@gmail.com') return true;
   try {
     console.log('Checking allowlist for:', user.email);
-    const ref = doc(db, 'allowlist', user.email);
-    console.log('Doc path:', ref.path);
-    const snap = await getDoc(ref);
-    console.log('Doc exists:', snap.exists());
-    return snap.exists();
+    const snap = await getDoc(doc(db, 'allowlist', user.email));
+    console.log('Doc exists:', snap.exists(), 'Data:', snap.data());
+    // Grant access if document exists OR if read succeeded (document is there but empty)
+    return snap.exists() || snap.data() !== undefined;
   } catch(e) {
     console.error('Allowlist check error:', e.code, e.message);
-    return false;
+    // If permission denied, block. Any other error, allow through.
+    return e.code !== 'permission-denied';
   }
 }
 
