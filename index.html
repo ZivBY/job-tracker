@@ -672,14 +672,24 @@ async function advanceStage(fid, curStage, step) {
   if (!j) return;
   const newStage = (step === curStage && curStage > 0) ? curStage - 1 : step;
   const hist = [...(j.stageHistory || []), { stage: newStage, ts: now() }];
-  // When advancing to Interview for first time, seed one round
   const interviewRounds = newStage === 3 && (j.interviewRounds || []).length === 0
     ? [{ date: '', type: '', notes: '', with: '' }]
     : (j.interviewRounds || []);
-  await saveField(fid, { stage: newStage, stageHistory: hist, interviewRounds });
-  // Switch stage tab to new stage and open notes panel so rounds are visible
+
+  // Optimistically update local state so render sees new stage immediately
+  j.stage = newStage;
+  j.stageHistory = hist;
+  j.interviewRounds = interviewRounds;
+
+  // Switch tab and open details panel for Interview
   activeStageTab[fid] = newStage;
   if (newStage === 3) openNotes.add(fid);
+
+  // Re-render immediately with optimistic data
+  render();
+
+  // Then persist to Firestore (snapshot will re-render again when it arrives)
+  await saveField(fid, { stage: newStage, stageHistory: hist, interviewRounds });
 }
 
 async function toggleRejected(fid, cur) {
