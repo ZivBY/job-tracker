@@ -677,8 +677,9 @@ async function advanceStage(fid, curStage, step) {
     ? [{ date: '', type: '', notes: '', with: '' }]
     : (j.interviewRounds || []);
   await saveField(fid, { stage: newStage, stageHistory: hist, interviewRounds });
-  // Switch stage tab to new stage
+  // Switch stage tab to new stage and open notes panel so rounds are visible
   activeStageTab[fid] = newStage;
+  if (newStage === 3) openNotes.add(fid);
 }
 
 async function toggleRejected(fid, cur) {
@@ -1005,14 +1006,14 @@ function render() {
     ).join('');
 
     return '<div class="job-card">' +
-      '<div class="job-top" onclick="W._notes(\'' + fid + '\')">' +
+      '<div class="job-top">' +
       '<div class="company-logo" style="background:' + j.color + '18;color:' + j.color + ';">' + j.emoji + '</div>' +
       '<div class="job-info">' +
         '<div class="job-title">' + j.role + '</div>' +
         '<div class="job-company">' + j.company + (j.loc ? ' · ' + j.loc : '') + '</div>' +
         '<div class="job-meta"><span class="badge" style="' + typeBadge + '">' + j.type + '</span>' + statusBadge + sourcedTag + referralTag + schedBadge + timerLabel + '</div>' +
       '</div>' +
-      '<span class="chevron ' + (notesOpen ? 'open' : '') + '">▾</span></div>' +
+      '</div>' +
 
       '<div class="stage-area">' +
         '<div class="stage-area-label">Pipeline' + (!isReadOnly && !j.archived && !j.rejected && !j.declined ? ' — tap a stage to advance' : '') + '</div>' +
@@ -1020,8 +1021,14 @@ function render() {
       '</div>' +
       timingRow +
 
-      // Per-stage notes panel (always visible, tabs switch content)
+      // Per-stage notes panel
       renderStagePanel(j) +
+
+      '<div style="padding: 8px 14px; border-top: 0.5px solid #f0ede8;">' +
+        '<button onclick="W._notes(\'' + fid + '\')" style="width:100%;font-size:12px;padding:8px;border-radius:8px;border:0.5px solid #d0cdc6;background:' + (notesOpen ? '#1a1a1a' : 'transparent') + ';color:' + (notesOpen ? 'white' : '#666') + ';cursor:pointer;font-family:inherit;">' +
+        (notesOpen ? '▴ Hide details' : '▾ Details') +
+        '</button>' +
+      '</div>' +
 
       '<div class="job-notes ' + (notesOpen ? 'open' : '') + '">' +
         '<div class="notes-header"><span class="notes-title">Details</span><div class="notes-actions">' + actionBtns + '</div></div>' +
