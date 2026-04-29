@@ -263,7 +263,6 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
       <div class="toolbar">
         <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
         <button class="filter-btn" onclick="setFilter('interested',this)">Interested</button>
-        <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
         <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
         <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
         <button class="filter-btn" onclick="setFilter('declined',this)">I Declined</button>
@@ -276,7 +275,6 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
     <div id="page-overview" style="display:none;">
       <div style="display:flex;gap:6px;margin-bottom:1rem;overflow-x:auto;padding-bottom:2px;">
         <button class="filter-btn active" id="ov-all" onclick="setOvFilter('all',this)">All</button>
-        <button class="filter-btn" id="ov-active" onclick="setOvFilter('active',this)">Active</button>
         <button class="filter-btn" id="ov-interviews" onclick="setOvFilter('interviews',this)">Interviews</button>
         <button class="filter-btn" id="ov-offers" onclick="setOvFilter('offers',this)">Offers</button>
       </div>
@@ -1011,9 +1009,9 @@ function renderStats() {
   document.getElementById('stats').innerHTML =
     stat('Total', tot, '') +
     stat('Interested', intr, 'color:#7C3AED;') +
-    stat('Active', act, '') +
     stat('Interviews', intv, '') +
     stat('Offers', off, '') +
+    stat('Rejected', jobs.filter(j => !j.archived && j.rejected).length, '') +
     stat('Archived', arc, 'color:#BA7517;', 'border-color:#e8e0d0;');
 }
 
