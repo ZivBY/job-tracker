@@ -679,6 +679,9 @@ function updateSalary(firestoreId, val) {
   clearTimeout(salaryTimers[firestoreId]);
   salaryTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { salary: val }), 1000);
 }
+
+const urlTimers = {};
+function updateUrl(firestoreId, val) {
   clearTimeout(urlTimers[firestoreId]);
   urlTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { url: val.trim() }).then(() => render()), 800);
 }
