@@ -553,9 +553,16 @@ window.signOut = async function() {
 async function isAllowed(user) {
   if (user.email === 'benyehuda.ziv@gmail.com') return true;
   try {
-    const snap = await getDoc(doc(db, 'allowlist', user.email));
+    console.log('Checking allowlist for:', user.email);
+    const ref = doc(db, 'allowlist', user.email);
+    console.log('Doc path:', ref.path);
+    const snap = await getDoc(ref);
+    console.log('Doc exists:', snap.exists());
     return snap.exists();
-  } catch(e) { return e.code !== 'permission-denied'; }
+  } catch(e) {
+    console.error('Allowlist check error:', e.code, e.message);
+    return false;
+  }
 }
 
 onAuthStateChanged(auth, async user => {
