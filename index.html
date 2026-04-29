@@ -464,7 +464,7 @@ function renderOverview() {
         dotCls += ' done'; icon = '✓'; lb += ' done'; la += ' done'; labelCls += ' done';
       } else if (i === j.stage) {
         if (i === 3 && rounds.length > 0) {
-          const doneRounds = rounds.filter(r => r.notes && r.notes.trim()).length;
+          const doneRounds = rounds.filter(r => r.completed).length;
           icon = doneRounds + '/' + rounds.length;
         }
         dotCls += i === 5 ? ' offer-dot' : ' current';
@@ -981,6 +981,21 @@ function updateRound(fid, idx, field, val) {
   }
 }
 
+async function toggleRoundComplete(fid, idx) {
+  const rounds = [...getRounds(fid)];
+  if (!rounds[idx]) return;
+  const wasComplete = !!rounds[idx].completed;
+  rounds[idx] = Object.assign({}, rounds[idx], {
+    completed: !wasComplete,
+    completedAt: !wasComplete ? new Date().toISOString() : null
+  });
+  // Optimistic update
+  const j = jobs.find(x => x.firestoreId === fid);
+  if (j) j.interviewRounds = rounds;
+  render();
+  await saveField(fid, { interviewRounds: rounds });
+}
+
 // Attachments & contacts
 function getAtts(fid)  { const j = jobs.find(x => x.firestoreId === fid); return j ? (j.attachments || []) : []; }
 function getConts(fid) { const j = jobs.find(x => x.firestoreId === fid); return j ? (j.contacts   || []) : []; }
@@ -1083,9 +1098,28 @@ function renderStagePanel(j) {
       const typeOptions = INTERVIEW_TYPES.map(t =>
         '<option value="' + t + '"' + (r.type === t ? ' selected' : '') + '>' + (t || 'Select type...') + '</option>'
       ).join('');
-      content += '<div class="round-item">' +
-        '<div class="round-num-badge">' + (i + 1) + '</div>' +
+      const isComplete = !!r.completed;
+      const completedStr = r.completedAt ? fmtDateTime(r.completedAt) : null;
+      const badgeBg = isComplete ? '#1D9E75' : '#185FA5';
+      const roundBorderStyle = isComplete ? 'border-left:3px solid #1D9E75;padding-left:10px;' : '';
+
+      content += '<div class="round-item" style="' + roundBorderStyle + '">' +
+        '<div class="round-num-badge" style="background:' + badgeBg + ';">' + (isComplete ? '✓' : (i + 1)) + '</div>' +
         '<div class="round-fields">' +
+
+        // Completion checkbox row
+        (!ro ? '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:' + (isComplete ? '#1D9E75' : '#888') + ';cursor:pointer;margin-bottom:6px;">' +
+          '<input type="checkbox" ' + (isComplete ? 'checked' : '') + ' onchange="W._roundComplete(\'' + fid + '\',' + i + ')" style="width:15px;height:15px;accent-color:#1D9E75;cursor:pointer;" />' +
+          (isComplete
+            ? '<span style="font-weight:500;">Completed' + (completedStr ? ' · <span style=\'color:#888;font-weight:400;\'>' + completedStr + '</span>' : '') + '</span>'
+            : 'Mark as completed') +
+          '</label>' : '') +
+
+        // Scheduled date (show strikethrough note if dates differ)
+        (isComplete && r.date && completedStr && fmtDateTime(r.date) !== completedStr
+          ? '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">Scheduled: ' + fmtDateTime(r.date) + ' · Completed: ' + completedStr + '</div>'
+          : '') +
+
         '<select class="stage-select" ' + (ro ? 'disabled' : 'onchange="W._round(\'' + fid + '\',' + i + ',\'type\',this.value)"') + '>' + typeOptions + '</select>' +
         '<input class="stage-input" type="datetime-local" value="' + (r.date || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'date\',this.value)"') + ' placeholder="Scheduled date & time" />' +
         '<input class="stage-input" type="text" value="' + (r.with || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'with\',this.value)"') + ' placeholder="Interviewer name / title" />' +
@@ -1293,10 +1327,11 @@ const W = {
   _url:       updateUrl,
   _sf:        updateStageField,
   _sn:        updateStageNote,
-  _addRound:  addRound,
-  _rmRound:   removeRound,
-  _setRounds: setRoundsCount,
-  _round:     updateRound,
+  _addRound:     addRound,
+  _rmRound:      removeRound,
+  _setRounds:    setRoundsCount,
+  _round:        updateRound,
+  _roundComplete: toggleRoundComplete,
   _attAdd:    addAtt,
   _attRm:     removeAtt,
   _attLbl:    (fid, i, v) => updateAtt(fid, i, 'label', v),
