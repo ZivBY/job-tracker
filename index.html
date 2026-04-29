@@ -464,7 +464,7 @@ function renderOverview() {
         dotCls += ' done'; icon = '✓'; lb += ' done'; la += ' done'; labelCls += ' done';
       } else if (i === j.stage) {
         if (i === 3 && rounds.length > 0) {
-          const doneRounds = rounds.filter(r => r.completed).length;
+          const doneRounds = rounds.filter(r => r.status === 'completed').length;
           icon = doneRounds + '/' + rounds.length;
         }
         dotCls += i === 5 ? ' offer-dot' : ' current';
@@ -995,19 +995,41 @@ function updateRound(fid, idx, field, val) {
   }
 }
 
-async function toggleRoundComplete(fid, idx) {
+async function setRoundStatus(fid, idx, status) {
+  // status: 'completed' | 'rejected' | 'withdrew' | '' (clear)
   const rounds = [...getRounds(fid)];
   if (!rounds[idx]) return;
-  const wasComplete = !!rounds[idx].completed;
-  rounds[idx] = Object.assign({}, rounds[idx], {
-    completed: !wasComplete,
-    completedAt: !wasComplete ? new Date().toISOString() : null
+  const current = rounds[idx].status || '';
+  const newStatus = current === status ? '' : status; // toggle off if same
+  const ts = newStatus ? new Date().toISOString() : null;
+  rounds[idx] = Object.assign({}, rounds[idx], { status: newStatus, statusAt: ts,
+    // keep completed flag in sync for backwards compat
+    completed: newStatus === 'completed', completedAt: newStatus === 'completed' ? ts : null
   });
-  // Optimistic update
+
+  // Optimistic local update
   const j = jobs.find(x => x.firestoreId === fid);
-  if (j) j.interviewRounds = rounds;
+  if (!j) return;
+  j.interviewRounds = rounds;
+
+  // Auto-update job level status
+  const jobUpdates = { interviewRounds: rounds };
+  if (newStatus === 'rejected') {
+    j.rejected = true; j.declined = false; j.endedAt = now();
+    jobUpdates.rejected = true; jobUpdates.declined = false; jobUpdates.endedAt = now();
+  } else if (newStatus === 'withdrew') {
+    j.declined = true; j.rejected = false; j.endedAt = now();
+    jobUpdates.declined = true; jobUpdates.rejected = false; jobUpdates.endedAt = now();
+  } else if (newStatus === '' || newStatus === 'completed') {
+    // If we're clearing a terminal status, reactivate the job
+    if (current === 'rejected' || current === 'withdrew') {
+      j.rejected = false; j.declined = false; j.endedAt = null;
+      jobUpdates.rejected = false; jobUpdates.declined = false; jobUpdates.endedAt = null;
+    }
+  }
+
   render();
-  await saveField(fid, { interviewRounds: rounds });
+  await saveField(fid, jobUpdates);
 }
 
 // Attachments & contacts
@@ -1112,28 +1134,43 @@ function renderStagePanel(j) {
       const typeOptions = INTERVIEW_TYPES.map(t =>
         '<option value="' + t + '"' + (r.type === t ? ' selected' : '') + '>' + (t || 'Select type...') + '</option>'
       ).join('');
-      const isComplete = !!r.completed;
-      const completedStr = r.completedAt ? fmtDateTime(r.completedAt) : null;
-      const badgeBg = isComplete ? '#1D9E75' : '#185FA5';
-      const roundBorderStyle = isComplete ? 'border-left:3px solid #1D9E75;padding-left:10px;' : '';
+      const rs = r.status || '';
+      const statusAt = r.statusAt ? fmtDateTime(r.statusAt) : null;
 
-      content += '<div class="round-item" style="' + roundBorderStyle + '">' +
-        '<div class="round-num-badge" style="background:' + badgeBg + ';">' + (isComplete ? '✓' : (i + 1)) + '</div>' +
+      // Visual state per status
+      const borderColor = rs === 'completed' ? '#1D9E75' : rs === 'rejected' ? '#E24B4A' : rs === 'withdrew' ? '#854F0B' : 'transparent';
+      const badgeBg     = rs === 'completed' ? '#1D9E75' : rs === 'rejected' ? '#E24B4A' : rs === 'withdrew' ? '#854F0B' : '#185FA5';
+      const badgeIcon   = rs === 'completed' ? '✓' : rs === 'rejected' ? '✕' : rs === 'withdrew' ? '↩' : (i + 1);
+      const roundBorder = rs ? 'border-left:3px solid ' + borderColor + ';padding-left:10px;' : '';
+
+      // Pill button styles
+      function pill(label, val, bg, color, activeBg, activeColor) {
+        const active = rs === val;
+        return '<button onclick="W._roundStatus(\'' + fid + '\',' + i + ',\'' + val + '\')" style="' +
+          'font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid ' + (active ? activeBg : '#d0cdc6') + ';' +
+          'background:' + (active ? activeBg : 'transparent') + ';color:' + (active ? activeColor : '#888') + ';' +
+          'cursor:pointer;font-family:inherit;white-space:nowrap;">' + label + '</button>';
+      }
+
+      const statusRow = !ro ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">' +
+        '<span style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-right:2px;">Round outcome:</span>' +
+        pill('✓ Completed', 'completed', '', '', '#1D9E75', 'white') +
+        pill('✕ Rejected after this', 'rejected', '', '', '#E24B4A', 'white') +
+        pill('↩ I withdrew', 'withdrew', '', '', '#854F0B', 'white') +
+        '</div>' +
+        (rs && statusAt ? '<div style="font-size:10px;color:#aaa;margin-bottom:6px;">' +
+          (rs === 'completed' ? 'Completed' : rs === 'rejected' ? 'Rejected' : 'Withdrew') + ': ' + statusAt +
+          (rs !== 'completed' && r.date && fmtDateTime(r.date) !== statusAt ? ' · Scheduled: ' + fmtDateTime(r.date) : '') +
+          '</div>' : '') : '';
+
+      // Dim subsequent rounds if a terminal status was set on an earlier round
+      const prevTerminal = rounds.slice(0, i).some(prev => prev.status === 'rejected' || prev.status === 'withdrew');
+      const dimStyle = prevTerminal ? 'opacity:0.4;pointer-events:none;' : '';
+
+      content += '<div class="round-item" style="' + roundBorder + dimStyle + '">' +
+        '<div class="round-num-badge" style="background:' + badgeBg + ';">' + badgeIcon + '</div>' +
         '<div class="round-fields">' +
-
-        // Completion checkbox row
-        (!ro ? '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:' + (isComplete ? '#1D9E75' : '#888') + ';cursor:pointer;margin-bottom:6px;">' +
-          '<input type="checkbox" ' + (isComplete ? 'checked' : '') + ' onchange="W._roundComplete(\'' + fid + '\',' + i + ')" style="width:15px;height:15px;accent-color:#1D9E75;cursor:pointer;" />' +
-          (isComplete
-            ? '<span style="font-weight:500;">Completed' + (completedStr ? ' · <span style=\'color:#888;font-weight:400;\'>' + completedStr + '</span>' : '') + '</span>'
-            : 'Mark as completed') +
-          '</label>' : '') +
-
-        // Scheduled date (show strikethrough note if dates differ)
-        (isComplete && r.date && completedStr && fmtDateTime(r.date) !== completedStr
-          ? '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">Scheduled: ' + fmtDateTime(r.date) + ' · Completed: ' + completedStr + '</div>'
-          : '') +
-
+        statusRow +
         '<select class="stage-select" ' + (ro ? 'disabled' : 'onchange="W._round(\'' + fid + '\',' + i + ',\'type\',this.value)"') + '>' + typeOptions + '</select>' +
         '<input class="stage-input" type="datetime-local" value="' + (r.date || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'date\',this.value)"') + ' placeholder="Scheduled date & time" />' +
         '<input class="stage-input" type="text" value="' + (r.with || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'with\',this.value)"') + ' placeholder="Interviewer name / title" />' +
@@ -1345,7 +1382,7 @@ const W = {
   _rmRound:      removeRound,
   _setRounds:    setRoundsCount,
   _round:        updateRound,
-  _roundComplete: toggleRoundComplete,
+  _roundStatus:  setRoundStatus,
   _attAdd:    addAtt,
   _attRm:     removeAtt,
   _attLbl:    (fid, i, v) => updateAtt(fid, i, 'label', v),
