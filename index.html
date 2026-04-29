@@ -762,6 +762,8 @@ function updateRecruiter(firestoreId, val) {
   clearTimeout(recruiterTimers[firestoreId]);
   recruiterTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { recruiterName: val }), 1000);
 }
+
+function getAttachments(firestoreId) {
   const j = jobs.find(x => x.firestoreId === firestoreId);
   return j ? (j.attachments || []) : [];
 }
