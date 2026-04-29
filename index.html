@@ -136,7 +136,18 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .divider-line { flex: 1; height: 0.5px; background: #e0ddd6; }
 .divider-label { font-size: 11px; color: #bbb; }
 
-/* Share modal */
+/* Batch 1 additions */
+.check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; }
+.check-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1a1a1a; flex-shrink: 0; cursor: pointer; }
+.check-row label { font-size: 13px; color: #444; cursor: pointer; user-select: none; }
+.contact-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.contact-name-input { flex: 1; font-size: 12px; padding: 6px 8px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; min-width: 0; }
+.contact-title-input { flex: 1; font-size: 12px; padding: 6px 8px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; min-width: 0; }
+.contact-remove { font-size: 13px; color: #ccc; background: none; border: none; cursor: pointer; flex-shrink: 0; padding: 2px 4px; line-height: 1; }
+.contact-remove:hover { color: #E24B4A; }
+.add-contact-btn { font-size: 11px; color: #185FA5; background: none; border: none; cursor: pointer; padding: 2px 0; }
+.sourced-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; background: #F3E8FF; color: #7C3AED; }
+.referral-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; background: #FFF3E0; color: #E65100; }
 .share-url-box { background: #f5f3f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #555; word-break: break-all; margin: 10px 0; }
 .copy-btn { width: 100%; font-size: 14px; padding: 11px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; }
 .copy-btn.copied { background: #1D9E75; }
@@ -200,6 +211,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
     <div class="stats-row" id="stats"></div>
     <div class="toolbar">
       <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('interested',this)">Interested</button>
       <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
       <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
       <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
@@ -238,11 +250,24 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
       </div>
       <div class="form-row"><label>Current stage</label>
         <select id="f-stage">
+          <option value="-1">Interested (not yet applied)</option>
           <option value="0">Applied</option><option value="1">Screen</option>
           <option value="2">Interview</option><option value="3">Final round</option><option value="4">Offer</option>
         </select>
       </div>
       <div class="form-row"><label>Job posting URL</label><input id="f-url" placeholder="https://..." type="url" autocomplete="off" /></div>
+      <div class="form-row"><label>Recruiter name</label><input id="f-recruiter" placeholder="e.g. Jane Smith" autocomplete="off" /></div>
+      <div class="check-row">
+        <input type="checkbox" id="f-sourced" onchange="toggleSourcedField()" />
+        <label for="f-sourced">Recruiter proactively reached out to me</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="f-referral" onchange="toggleReferralField()" />
+        <label for="f-referral">Applied through a referral</label>
+      </div>
+      <div class="form-row" id="f-referral-row" style="display:none;">
+        <label>Referred by</label><input id="f-referral-name" placeholder="e.g. John Doe" autocomplete="off" />
+      </div>
       <div class="modal-btns">
         <button class="btn-cancel" onclick="hideModal()">Cancel</button>
         <button class="btn-save" id="btn-save" onclick="addJob()">Save</button>
@@ -285,9 +310,19 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 const STAGES = ['Applied','Screen','Interview','Final round','Offer'];
-const ICONS = ['📋','📞','🎙️','🏆','🎉'];
+const STAGES_WITH_INTERESTED = ['Interested', ...STAGES];
+const ICONS = ['⭐','📋','📞','🎙️','🏆','🎉'];
 const PALETTE = ['#635BFF','#FF5A5F','#0D99FF','#FF6B35','#1D9E75','#BA7517','#8B5CF6','#E24B4A'];
 const PROXY = 'https://jd-proxy.benyehuda-ziv.workers.dev';
+
+window.toggleReferralField = function() {
+  const checked = document.getElementById('f-referral').checked;
+  document.getElementById('f-referral-row').style.display = checked ? 'block' : 'none';
+};
+
+window.toggleSourcedField = function() {
+  // No extra field needed — just a flag
+};
 
 let jobs = [];
 let currentFilter = 'all';
@@ -594,9 +629,12 @@ window.showModal = function() {
 
 window.hideModal = function() {
   document.getElementById('modal').style.display = 'none';
-  ['f-company','f-role','f-loc','f-url','jd-url','jd-text'].forEach(id => document.getElementById(id).value = '');
+  ['f-company','f-role','f-loc','f-url','jd-url','jd-text','f-recruiter','f-referral-name'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-stage').value = '0';
   document.getElementById('f-type').value = 'Full-time';
+  document.getElementById('f-referral').checked = false;
+  document.getElementById('f-sourced').checked = false;
+  document.getElementById('f-referral-row').style.display = 'none';
   _extractedPostDate = null;
   _extractedSalary = null;
   setJdStatus('', '');
@@ -608,17 +646,25 @@ window.addJob = async function() {
   const role = document.getElementById('f-role').value.trim();
   if (!company || !role) { setJdStatus('Company and role are required.', 'error'); return; }
   const ts = now();
+  const stageVal = parseInt(document.getElementById('f-stage').value);
+  const isInterested = stageVal === -1;
   const job = {
     company, role,
     loc: document.getElementById('f-loc').value.trim(),
     type: document.getElementById('f-type').value,
-    stage: parseInt(document.getElementById('f-stage').value),
+    stage: isInterested ? -1 : stageVal,
+    interested: isInterested,
     rejected: false, declined: false, archived: false,
     notes: '', url: document.getElementById('f-url').value.trim(),
+    recruiterName: document.getElementById('f-recruiter').value.trim(),
+    sourcedByRecruiter: document.getElementById('f-sourced').checked,
+    referral: document.getElementById('f-referral').checked,
+    referralName: document.getElementById('f-referral').checked ? document.getElementById('f-referral-name').value.trim() : '',
     emoji: company[0].toUpperCase(),
     color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-    stageHistory: [{ stage: parseInt(document.getElementById('f-stage').value), ts }],
+    stageHistory: [{ stage: isInterested ? -1 : stageVal, ts }],
     attachments: [],
+    contacts: [],
     postedDate: _extractedPostDate || null,
     salary: _extractedSalary || '',
     createdAt: serverTimestamp()
@@ -686,7 +732,36 @@ function updateUrl(firestoreId, val) {
   urlTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { url: val.trim() }).then(() => render()), 800);
 }
 
-function getAttachments(firestoreId) {
+function getContacts(firestoreId) {
+  const j = jobs.find(x => x.firestoreId === firestoreId);
+  return j ? (j.contacts || []) : [];
+}
+
+async function addContact(firestoreId) {
+  const contacts = [...getContacts(firestoreId), { name: '', title: '' }];
+  await saveField(firestoreId, { contacts });
+}
+
+const contactTimers = {};
+function updateContact(firestoreId, idx, field, val) {
+  const key = firestoreId + '-c-' + idx;
+  clearTimeout(contactTimers[key]);
+  contactTimers[key] = setTimeout(() => {
+    const contacts = [...getContacts(firestoreId)];
+    if (contacts[idx]) { contacts[idx] = Object.assign({}, contacts[idx], { [field]: val }); saveField(firestoreId, { contacts }); }
+  }, 800);
+}
+
+async function removeContact(firestoreId, idx) {
+  const contacts = getContacts(firestoreId).filter((_, i) => i !== idx);
+  await saveField(firestoreId, { contacts });
+}
+
+const recruiterTimers = {};
+function updateRecruiter(firestoreId, val) {
+  clearTimeout(recruiterTimers[firestoreId]);
+  recruiterTimers[firestoreId] = setTimeout(() => saveField(firestoreId, { recruiterName: val }), 1000);
+}
   const j = jobs.find(x => x.firestoreId === firestoreId);
   return j ? (j.attachments || []) : [];
 }
@@ -715,17 +790,18 @@ async function removeAttachment(firestoreId, idx) {
 
 function renderStats() {
   const archived  = jobs.filter(j => j.archived).length;
-  const total     = jobs.filter(j => !j.archived).length;
-  const active    = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage < 4).length;
+  const interested = jobs.filter(j => !j.archived && j.stage === -1).length;
+  const total     = jobs.filter(j => !j.archived && j.stage !== -1).length;
+  const active    = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 0 && j.stage < 4).length;
   const intvs     = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 2).length;
   const offers    = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 4).length;
   const rejected  = jobs.filter(j => !j.archived && j.rejected).length;
   document.getElementById('stats').innerHTML =
     '<div class="stat"><div class="stat-label">Total</div><div class="stat-val">' + total + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Interested</div><div class="stat-val" style="color:#7C3AED;">' + interested + '</div></div>' +
     '<div class="stat"><div class="stat-label">Active</div><div class="stat-val">' + active + '</div></div>' +
     '<div class="stat"><div class="stat-label">Interviews</div><div class="stat-val">' + intvs + '</div></div>' +
     '<div class="stat"><div class="stat-label">Offers</div><div class="stat-val">' + offers + '</div></div>' +
-    '<div class="stat"><div class="stat-label">Rejected</div><div class="stat-val">' + rejected + '</div></div>' +
     '<div class="stat" style="border-color:#e8e0d0;"><div class="stat-label" style="color:#BA7517;">Archived</div><div class="stat-val" style="color:#BA7517;">' + archived + '</div></div>';
 }
 
@@ -738,8 +814,9 @@ window.setFilter = function(f, btn) {
 
 function render() {
   renderStats();
-  let visible = jobs.filter(j => !j.archived);
-  if (currentFilter === 'active')    visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage < 4);
+  let visible = jobs.filter(j => !j.archived && j.stage !== -1);
+  if (currentFilter === 'interested') visible = jobs.filter(j => !j.archived && j.stage === -1);
+  else if (currentFilter === 'active')    visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 0 && j.stage < 4);
   else if (currentFilter === 'offer')    visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 4);
   else if (currentFilter === 'rejected') visible = jobs.filter(j => !j.archived && j.rejected);
   else if (currentFilter === 'declined') visible = jobs.filter(j => !j.archived && j.declined);
@@ -760,15 +837,19 @@ function render() {
       : j.rejected ? '<span class="badge" style="background:#FCEBEB;color:#A32D2D;">They rejected</span>'
       : j.declined ? '<span class="badge" style="background:#FAEEDA;color:#854F0B;">I declined</span>'
       : j.stage === 4 ? '<span class="badge" style="background:#EAF3DE;color:#3B6D11;">🎉 Offer</span>'
+      : j.stage === -1 ? '<span class="badge" style="background:#F3E8FF;color:#7C3AED;">⭐ Interested</span>'
       : '<span class="badge" style="background:#f0ede8;color:#555;">' + STAGES[j.stage] + '</span>';
 
-    const stageAge = formatDuration(now() - stageEnteredAt(j));
-    const timerLabel = !isEnded ? '<span class="timer-badge">⏱ ' + stageAge + ' in ' + STAGES[j.stage] + '</span>' : '';
+    const sourcedBadge = j.sourcedByRecruiter ? '<span class="sourced-badge">Recruiter sourced</span>' : '';
+    const referralBadge = j.referral ? '<span class="referral-badge">🤝 ' + (j.referralName ? 'Ref: ' + j.referralName : 'Referral') + '</span>' : '';
 
-    const clickable = !isReadOnly && !j.archived && !j.rejected && !j.declined;
+    const stageAge = formatDuration(now() - stageEnteredAt(j));
+    const timerLabel = (!isEnded && j.stage >= 0) ? '<span class="timer-badge">⏱ ' + stageAge + ' in ' + STAGES[j.stage] + '</span>' : '';
+
+    const clickable = !isReadOnly && !j.archived && !j.rejected && !j.declined && j.stage >= 0;
 
     const steps = STAGES.map((s, i) => {
-      let dotCls = 'pizza-dot', labelCls = 'pizza-step-label', icon = ICONS[i];
+      let dotCls = 'pizza-dot', labelCls = 'pizza-step-label', icon = ICONS[i + 1];
       let beforeCls = 'pizza-line-before', afterCls = 'pizza-line-after';
       const dur = formatDuration(stageDuration(j, i));
 
@@ -789,6 +870,11 @@ function render() {
       const durLabel = dur !== '—' ? '<div class="stage-duration">' + dur + '</div>' : '';
       return '<div class="pizza-step"><div class="' + beforeCls + '"></div><div class="' + afterCls + '"></div><div class="' + dotCls + '"' + (clickable ? ' onclick="window._adv(\'' + fid + '\',' + j.stage + ',' + i + ')"' : '') + '>' + icon + '</div><div class="' + labelCls + '">' + s + '</div>' + durLabel + '</div>';
     }).join('');
+
+    // For Interested jobs, show a simple banner instead of pizza track
+    const stageAreaContent = j.stage === -1
+      ? '<div class="stage-area"><div class="stage-area-label">Status</div><div style="font-size:12px;color:#7C3AED;background:#F3E8FF;padding:8px 12px;border-radius:8px;display:inline-block;">⭐ Saved for later — archive when done, or tap a pipeline stage when you apply</div></div>'
+      : '<div class="stage-area"><div class="stage-area-label">Pipeline' + (!isReadOnly && !j.archived && !j.rejected && !j.declined && j.stage >= 0 ? ' — tap a stage to advance' : '') + '</div><div class="pizza-track">' + steps + '</div></div>';
 
     const postInfo = postDateDisplay(j);
     const postChip = postInfo ? (() => {
@@ -830,18 +916,32 @@ function render() {
       '</div>'
     ).join('');
 
+    const contacts = j.contacts || [];
+    const contactRows = contacts.map((c, idx) =>
+      '<div class="contact-row">' +
+      '<input class="contact-name-input" value="' + (c.name || '') + '" placeholder="Name" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._contactName(\'' + fid + '\',' + idx + ',this.value)"') + ' />' +
+      '<input class="contact-title-input" value="' + (c.title || '') + '" placeholder="Title / role" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._contactTitle(\'' + fid + '\',' + idx + ',this.value)"') + ' />' +
+      (!isReadOnly && !j.archived ? '<button class="contact-remove" onclick="window._contactRemove(\'' + fid + '\',' + idx + ')">×</button>' : '') +
+      '</div>'
+    ).join('');
+
     return '<div class="job-card">' +
       '<div class="job-top" onclick="window._notes(\'' + fid + '\')">' +
       '<div class="company-logo" style="background:' + j.color + '18;color:' + j.color + ';">' + j.emoji + '</div>' +
       '<div class="job-info"><div class="job-title">' + j.role + '</div>' +
       '<div class="job-company">' + j.company + (j.loc ? ' · ' + j.loc : '') + '</div>' +
-      '<div class="job-meta"><span class="badge" style="' + typeBadgeStyle + '">' + j.type + '</span>' + statusBadge + timerLabel + '</div></div>' +
+      '<div class="job-meta"><span class="badge" style="' + typeBadgeStyle + '">' + j.type + '</span>' + statusBadge + sourcedBadge + referralBadge + timerLabel + '</div></div>' +
       '<span class="chevron ' + (notesOpen ? 'open' : '') + '">▾</span></div>' +
-      '<div class="stage-area"><div class="stage-area-label">Pipeline' + (!isReadOnly && !j.archived && !j.rejected && !j.declined ? ' — tap a stage to advance' : '') + '</div>' +
-      '<div class="pizza-track">' + steps + '</div></div>' +
+      stageAreaContent +
       timingRow +
       '<div class="job-notes ' + (notesOpen ? 'open' : '') + '">' +
       '<div class="notes-header"><span class="notes-title">Details</span><div class="notes-actions">' + actionButtons + '</div></div>' +
+      '<div class="field-label">Recruiter</div>' +
+      '<input class="url-input" style="margin-bottom:10px;" type="text" value="' + (j.recruiterName || '') + '" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._recruiter(\'' + fid + '\',this.value)"') + ' placeholder="Recruiter name..." />' +
+      '<div class="field-label" style="margin-bottom:6px;">Contacts met</div>' +
+      '<div class="attachments-list">' + contactRows + '</div>' +
+      (!isReadOnly && !j.archived ? '<button class="add-contact-btn" onclick="window._contactAdd(\'' + fid + '\')">+ Add contact</button>' : '') +
+      '<div style="margin-top:10px;"></div>' +
       '<div class="field-label">Job posting URL</div>' +
       '<div class="url-row"><input class="url-input" type="url" value="' + (j.url || '') + '" ' + (isReadOnly || j.archived ? 'readonly' : 'oninput="window._url(\'' + fid + '\',this.value)"') + ' placeholder="https://..." />' +
       (j.url ? '<a href="' + j.url + '" target="_blank" class="job-link">↗ Open</a>' : '') + '</div>' +
@@ -867,6 +967,11 @@ window._canArch   = cancelArchive;
 window._restore   = restoreJob;
 window._note      = updateNote;
 window._url       = updateUrl;
+window._recruiter   = updateRecruiter;
+window._contactAdd  = addContact;
+window._contactName = (fid, idx, val) => updateContact(fid, idx, 'name', val);
+window._contactTitle= (fid, idx, val) => updateContact(fid, idx, 'title', val);
+window._contactRemove = removeContact;
 window._salary    = updateSalary;
 window._attAdd    = addAttachment;
 window._attLabel  = (fid, idx, val) => updateAttachment(fid, idx, 'label', val);
