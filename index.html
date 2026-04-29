@@ -337,7 +337,7 @@ const STAGE_DEFS = {
   0: { label: 'Interested',   fields: [{ key:'whyInterested', label:'Why I\'m interested', type:'textarea' }] },
   1: { label: 'Applied',      fields: [{ key:'appliedDate', label:'Date applied', type:'date' }, { key:'resumeVersion', label:'Resume version used', type:'text' }] },
   2: { label: 'Screen',       fields: [{ key:'screenDate', label:'Scheduled date & time', type:'datetime-local' }, { key:'screenWith', label:'Conducted by', type:'text' }, { key:'screenFormat', label:'Format', type:'text', placeholder:'e.g. Video call / Phone' }, { key:'screenPrep', label:'Key topics to prep', type:'textarea' }] },
-  3: { label: 'Interview',    fields: [{ key:'interviewRoundsTotal', label:'Expected rounds', type:'number' }] },
+  3: { label: 'Interview',    fields: [] },
   4: { label: 'Final round',  fields: [{ key:'finalDate', label:'Scheduled date & time', type:'datetime-local' }, { key:'finalWith', label:'Panel / interviewers', type:'text' }, { key:'finalFormat', label:'Format', type:'text', placeholder:'e.g. Panel / Presentation' }, { key:'negotiationNotes', label:'Negotiation notes', type:'textarea' }] },
   5: { label: 'Offer',        fields: [{ key:'offerDate', label:'Offer received date', type:'date' }, { key:'offerDeadline', label:'Decision deadline', type:'date' }, { key:'offerDetails', label:'Offer details', type:'textarea' }] }
 };
@@ -766,6 +766,25 @@ async function removeRound(fid, idx) {
   await saveField(fid, { interviewRounds: rounds });
 }
 
+async function setRoundsCount(fid, count) {
+  count = Math.max(1, Math.min(10, parseInt(count) || 1));
+  const current = getRounds(fid);
+  let rounds;
+  if (count > current.length) {
+    // Add empty rounds to reach target
+    rounds = [...current];
+    while (rounds.length < count) rounds.push({ date: '', type: '', notes: '', with: '' });
+  } else {
+    // Trim from the end
+    rounds = current.slice(0, count);
+  }
+  // Optimistic local update
+  const j = jobs.find(x => x.firestoreId === fid);
+  if (j) j.interviewRounds = rounds;
+  render();
+  await saveField(fid, { interviewRounds: rounds });
+}
+
 function updateRound(fid, idx, field, val) {
   const rounds = [...getRounds(fid)];
   if (rounds[idx]) {
@@ -864,15 +883,13 @@ function renderStagePanel(j) {
   // Interview rounds section (only on interview tab)
   if (activeTab === 3) {
     content += '<div class="interview-rounds">';
-    content += '<div class="rounds-header"><span class="rounds-label">Interview rounds</span>';
-    if (!ro) {
-      content += '<div class="rounds-counter">' +
-        '<button class="round-btn" onclick="W._rmRound(\'' + fid + '\',' + (rounds.length - 1) + ')" ' + (rounds.length <= 1 ? 'disabled' : '') + '>−</button>' +
-        '<span class="rounds-num">' + rounds.length + '</span>' +
-        '<button class="round-btn" onclick="W._addRound(\'' + fid + '\')">+</button>' +
-        '</div>';
-    }
-    content += '</div>';
+    content += '<div class="rounds-header">' +
+      '<span class="rounds-label">How many interview rounds do you expect?</span>' +
+      (!ro ? '<input type="number" min="1" max="10" value="' + rounds.length + '" ' +
+        'onchange="W._setRounds(\'' + fid + '\',this.value)" ' +
+        'style="width:56px;font-size:14px;font-weight:600;padding:4px 8px;border:0.5px solid #d0cdc6;border-radius:8px;background:#faf9f7;text-align:center;font-family:inherit;outline:none;" />'
+        : '<span class="rounds-num">' + rounds.length + '</span>') +
+      '</div>';
 
     rounds.forEach((r, i) => {
       const typeOptions = INTERVIEW_TYPES.map(t =>
@@ -1089,6 +1106,7 @@ const W = {
   _sn:        updateStageNote,
   _addRound:  addRound,
   _rmRound:   removeRound,
+  _setRounds: setRoundsCount,
   _round:     updateRound,
   _attAdd:    addAtt,
   _attRm:     removeAtt,
