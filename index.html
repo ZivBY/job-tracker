@@ -169,6 +169,39 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .copy-btn.copied { background: #1D9E75; }
 .empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
 .loading-msg { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
+
+/* Overview page */
+.ov-card { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.ov-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ov-logo { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.ov-job-title { font-size: 13px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ov-company { font-size: 11px; color: #888; margin-top: 1px; }
+.ov-track { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.ov-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+.ov-line-b { position: absolute; top: 12px; left: 0; width: 50%; height: 1.5px; background: #e8e5e0; }
+.ov-line-a { position: absolute; top: 12px; left: 50%; width: 50%; height: 1.5px; background: #e8e5e0; }
+.ov-step:first-child .ov-line-b { display: none; }
+.ov-step:last-child .ov-line-a { display: none; }
+.ov-line-b.done { background: #1D9E75; }
+.ov-line-a.done { background: #1D9E75; }
+.ov-dot { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #e0ddd6; background: white; display: flex; align-items: center; justify-content: center; font-size: 10px; position: relative; z-index: 1; }
+.ov-dot.done { background: #1D9E75; border-color: #1D9E75; color: white; font-size: 9px; }
+.ov-dot.current { background: #185FA5; border-color: #185FA5; color: white; }
+.ov-dot.offer-dot { background: #3B6D11; border-color: #3B6D11; color: white; }
+.ov-dot.rejected-dot { background: #E24B4A; border-color: #E24B4A; color: white; font-size: 9px; }
+.ov-dot.declined-dot { background: #854F0B; border-color: #854F0B; color: white; font-size: 9px; }
+.ov-step-label { font-size: 7.5px; color: #aaa; margin-top: 4px; text-align: center; max-width: 44px; line-height: 1.2; }
+.ov-step-label.current { color: #185FA5; font-weight: 600; }
+.ov-step-label.done { color: #1D9E75; }
+.ov-step-label.offer { color: #3B6D11; font-weight: 600; }
+.ov-divider { height: 0.5px; background: #f0ede8; margin: 4px 0 8px; }
+.ov-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.ov-chip { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: #f5f3f0; color: #888; }
+.ov-chip.scheduled { background: #E6F1FB; color: #185FA5; }
+.ov-chip.offer-chip { background: #EAF3DE; color: #3B6D11; }
+.ov-chip.deadline { background: #FAEEDA; color: #854F0B; }
+@keyframes pulse-ov { 0%,100%{box-shadow:0 0 0 0 rgba(24,95,165,0.25)} 50%{box-shadow:0 0 0 4px rgba(24,95,165,0)} }
+.ov-dot.current { animation: pulse-ov 2s infinite; }
 .toast { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 12px; padding: 8px 18px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
 .toast.synced { background: #1D9E75; color: white; }
 .toast.syncing { background: #444; color: white; }
@@ -207,7 +240,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   <div class="page">
     <div class="header">
       <div>
-        <div class="page-title">Applications</div>
+        <div class="page-title" id="page-title">Applications</div>
         <div class="page-sub" id="page-sub">Track every role in your pipeline</div>
       </div>
       <div class="header-right">
@@ -217,17 +250,38 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
         <button class="signout-btn" onclick="signOut()" id="signout-btn" style="display:none;">Sign out</button>
       </div>
     </div>
-    <div class="stats-row" id="stats"></div>
-    <div class="toolbar">
-      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
-      <button class="filter-btn" onclick="setFilter('interested',this)">Interested</button>
-      <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
-      <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
-      <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
-      <button class="filter-btn" onclick="setFilter('declined',this)">I Declined</button>
-      <button class="filter-btn" onclick="setFilter('archived',this)">Archive</button>
+
+    <!-- Page nav -->
+    <div style="display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:0.5px solid var(--color-border-tertiary,#e0ddd6);padding-bottom:0;">
+      <button id="nav-tracker" onclick="setPage('tracker')" style="font-size:13px;padding:8px 16px;border:none;background:transparent;cursor:pointer;color:#185FA5;border-bottom:2px solid #185FA5;margin-bottom:-0.5px;font-family:inherit;font-weight:500;">Tracker</button>
+      <button id="nav-overview" onclick="setPage('overview')" style="font-size:13px;padding:8px 16px;border:none;background:transparent;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-0.5px;font-family:inherit;">Overview</button>
     </div>
-    <div class="jobs-list" id="jobs-list"><div class="loading-msg">Connecting...</div></div>
+
+    <!-- Tracker page -->
+    <div id="page-tracker">
+      <div class="stats-row" id="stats"></div>
+      <div class="toolbar">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('interested',this)">Interested</button>
+        <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+        <button class="filter-btn" onclick="setFilter('offer',this)">Offers</button>
+        <button class="filter-btn" onclick="setFilter('rejected',this)">Rejected</button>
+        <button class="filter-btn" onclick="setFilter('declined',this)">I Declined</button>
+        <button class="filter-btn" onclick="setFilter('archived',this)">Archive</button>
+      </div>
+      <div class="jobs-list" id="jobs-list"><div class="loading-msg">Connecting...</div></div>
+    </div>
+
+    <!-- Overview page -->
+    <div id="page-overview" style="display:none;">
+      <div style="display:flex;gap:6px;margin-bottom:1rem;overflow-x:auto;padding-bottom:2px;">
+        <button class="filter-btn active" id="ov-all" onclick="setOvFilter('all',this)">All</button>
+        <button class="filter-btn" id="ov-active" onclick="setOvFilter('active',this)">Active</button>
+        <button class="filter-btn" id="ov-interviews" onclick="setOvFilter('interviews',this)">Interviews</button>
+        <button class="filter-btn" id="ov-offers" onclick="setOvFilter('offers',this)">Offers</button>
+      </div>
+      <div id="overview-list"></div>
+    </div>
   </div>
 </div>
 
@@ -349,6 +403,142 @@ let _extractedPostDate = null, _extractedSalary = null;
 
 const urlParams = new URLSearchParams(window.location.search);
 const viewingUid = urlParams.get('view');
+
+// ── Page navigation ───────────────────────────────────────────────────────────
+
+let currentPage = 'tracker';
+let ovFilter = 'all';
+
+window.setPage = function(page) {
+  currentPage = page;
+  document.getElementById('page-tracker').style.display = page === 'tracker' ? 'block' : 'none';
+  document.getElementById('page-overview').style.display = page === 'overview' ? 'block' : 'none';
+  const navTracker = document.getElementById('nav-tracker');
+  const navOverview = document.getElementById('nav-overview');
+  navTracker.style.color = page === 'tracker' ? '#185FA5' : '#888';
+  navTracker.style.borderBottom = page === 'tracker' ? '2px solid #185FA5' : '2px solid transparent';
+  navOverview.style.color = page === 'overview' ? '#185FA5' : '#888';
+  navOverview.style.borderBottom = page === 'overview' ? '2px solid #185FA5' : '2px solid transparent';
+  if (page === 'overview') renderOverview();
+};
+
+window.setOvFilter = function(f, btn) {
+  ovFilter = f;
+  document.querySelectorAll('#page-overview .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOverview();
+};
+
+function renderOverview() {
+  let visible = jobs.filter(j => !j.archived);
+  if      (ovFilter === 'active')     visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 1 && j.stage < 5);
+  else if (ovFilter === 'interviews') visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 3);
+  else if (ovFilter === 'offers')     visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 5);
+
+  const list = document.getElementById('overview-list');
+  if (!list) return;
+  if (!visible.length) { list.innerHTML = '<div class="empty">No applications here yet.</div>'; return; }
+
+  list.innerHTML = visible.map(j => {
+    const stageName = STAGES[j.stage] || '';
+    const rounds = j.interviewRounds || [];
+    const sd = j.stageData || {};
+
+    // Status badge
+    const statusBadge = j.rejected ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#FCEBEB;color:#A32D2D;font-weight:500;">Rejected</span>'
+      : j.declined ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#FAEEDA;color:#854F0B;font-weight:500;">Declined</span>'
+      : j.stage === 5 ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-weight:500;">Offer</span>'
+      : j.stage === 0 ? '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#F3E8FF;color:#7C3AED;font-weight:500;">Interested</span>'
+      : '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:#f0ede8;color:#555;font-weight:500;">' + stageName + '</span>';
+
+    // Pizza track
+    const steps = STAGES.map((s, i) => {
+      let dotCls = 'ov-dot', labelCls = 'ov-step-label', icon = ICONS[i];
+      let lb = 'ov-line-b', la = 'ov-line-a';
+
+      if (j.rejected || j.archived) {
+        if (i < j.stage) { dotCls += ' done'; icon = '✓'; lb += ' done'; la += ' done'; labelCls += ' done'; }
+        else if (i === j.stage) { dotCls += ' rejected-dot'; lb += ' done'; icon = '✕'; }
+      } else if (j.declined) {
+        if (i < j.stage) { dotCls += ' done'; icon = '✓'; lb += ' done'; la += ' done'; labelCls += ' done'; }
+        else if (i === j.stage) { dotCls += ' declined-dot'; lb += ' done'; icon = '✕'; }
+      } else if (i < j.stage) {
+        dotCls += ' done'; icon = '✓'; lb += ' done'; la += ' done'; labelCls += ' done';
+      } else if (i === j.stage) {
+        if (i === 3 && rounds.length > 0) {
+          const doneRounds = rounds.filter(r => r.notes && r.notes.trim()).length;
+          icon = doneRounds + '/' + rounds.length;
+        }
+        dotCls += i === 5 ? ' offer-dot' : ' current';
+        labelCls += i === 5 ? ' offer' : ' current';
+        lb += ' done';
+      }
+
+      return '<div class="ov-step">' +
+        '<div class="' + lb + '"></div><div class="' + la + '"></div>' +
+        '<div class="' + dotCls + '">' + icon + '</div>' +
+        '<div class="' + labelCls + '">' + s + '</div>' +
+        '</div>';
+    }).join('');
+
+    // Date chips
+    const chips = [];
+
+    // Applied date
+    if (j.stageData && j.stageData[1] && j.stageData[1].appliedDate) {
+      chips.push('<span class="ov-chip">Applied ' + fmtDate(j.stageData[1].appliedDate) + '</span>');
+    } else if (j.createdAt && j.createdAt.toMillis) {
+      const d = new Date(j.createdAt.toMillis());
+      chips.push('<span class="ov-chip">Added ' + d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + '</span>');
+    }
+
+    // Screen scheduled
+    if (sd[2] && sd[2].screenDate) {
+      chips.push('<span class="ov-chip scheduled">📅 Screen: ' + fmtDateTime(sd[2].screenDate) + '</span>');
+    }
+
+    // Interview rounds with dates
+    rounds.forEach((r, i) => {
+      if (r.date) {
+        chips.push('<span class="ov-chip scheduled">📅 Round ' + (i+1) + ': ' + fmtDateTime(r.date) + '</span>');
+      }
+    });
+
+    // Final round scheduled
+    if (sd[4] && sd[4].finalDate) {
+      chips.push('<span class="ov-chip scheduled">📅 Final: ' + fmtDateTime(sd[4].finalDate) + '</span>');
+    }
+
+    // Offer dates
+    if (sd[5] && sd[5].offerDate) {
+      chips.push('<span class="ov-chip offer-chip">Offer: ' + fmtDate(sd[5].offerDate) + '</span>');
+    }
+    if (sd[5] && sd[5].offerDeadline) {
+      chips.push('<span class="ov-chip deadline">Deadline: ' + fmtDate(sd[5].offerDeadline) + '</span>');
+    }
+
+    // Time in current stage + total
+    if (!j.rejected && !j.declined && j.stage > 0) {
+      chips.push('<span class="ov-chip">⏱ ' + fmtDur(now() - stageEnteredAt(j)) + ' in ' + stageName + '</span>');
+    }
+    const tot = totalTime(j);
+    if (tot) chips.push('<span class="ov-chip">Total: ' + fmtDur(tot) + '</span>');
+
+    return '<div class="ov-card">' +
+      '<div class="ov-card-header">' +
+        '<div class="ov-logo" style="background:' + j.color + '18;color:' + j.color + ';">' + j.emoji + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="ov-job-title">' + j.role + '</div>' +
+          '<div class="ov-company">' + j.company + (j.loc ? ' · ' + j.loc : '') + '</div>' +
+        '</div>' +
+        statusBadge +
+      '</div>' +
+      '<div class="ov-track">' + steps + '</div>' +
+      '<div class="ov-divider"></div>' +
+      '<div class="ov-chips">' + chips.join('') + '</div>' +
+    '</div>';
+  }).join('');
+}
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -919,6 +1109,7 @@ function renderStagePanel(j) {
 
 function render() {
   renderStats();
+  if (currentPage === 'overview') { renderOverview(); return; }
   let visible = jobs.filter(j => !j.archived);
   if      (currentFilter === 'interested') visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 0);
   else if (currentFilter === 'active')     visible = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 1 && j.stage < 5);
