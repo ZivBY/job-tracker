@@ -648,9 +648,23 @@ function fmtDur(ms) {
   if (!ms || ms < 0) return '—';
   const d = Math.floor(ms / 86400000);
   if (d === 0) return 'Today';
+  if (d === 1) return '1d';
   if (d < 7) return d + 'd';
   if (d < 35) return Math.floor(d / 7) + 'w';
   return Math.floor(d / 30) + 'mo';
+}
+
+function fmtAgo(ts) {
+  // Use calendar-day difference so "yesterday" shows as "1d ago" not "Today ago"
+  const msPerDay = 86400000;
+  const nowDate = new Date(); nowDate.setHours(0,0,0,0);
+  const thenDate = new Date(ts); thenDate.setHours(0,0,0,0);
+  const calDays = Math.round((nowDate - thenDate) / msPerDay);
+  if (calDays === 0) return 'Today';
+  if (calDays === 1) return 'Yesterday';
+  if (calDays < 7) return calDays + 'd ago';
+  if (calDays < 35) return Math.floor(calDays / 7) + 'w ago';
+  return Math.floor(calDays / 30) + 'mo ago';
 }
 
 function now() { return Date.now(); }
@@ -1210,7 +1224,7 @@ function render() {
     const postChip = postInfo ? (() => {
       const style = postInfo.extracted ? 'color:#185FA5;' : 'color:#aaa;font-style:italic;';
       const lbl = postInfo.extracted ? 'Posted' : 'Added to tracker';
-      return '<span class="timing-chip">' + lbl + ': <span style="' + style + '">' + postInfo.date + '</span> · <span>' + fmtDur(now() - postInfo.ts) + ' ago</span></span>';
+      return '<span class="timing-chip">' + lbl + ': <span style="' + style + '">' + postInfo.date + '</span> · <span>' + fmtAgo(postInfo.ts) + '</span></span>';
     })() : '';
     const tot2 = totalTime(j);
     const timingRow = (tot2 || postChip) ? '<div class="timing-row">' + postChip +
