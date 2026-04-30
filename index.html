@@ -837,7 +837,7 @@ window.scanGmail = async function() {
           '<span style="font-size:11px;color:#aaa;">→</span>' +
           '<span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;">' + stageName + '</span>' +
           (jobId ?
-            '<button onclick="W._applyGmailSuggestion(\'' + jobId + '\',' + s.suggestedStage + ',' + i + ')" style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:#1a1a1a;color:white;cursor:pointer;">Apply update</button>' :
+            '<button onclick="W._applyGmail(\'' + jobId + '\',' + s.suggestedStage + ',' + i + ')" style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:#1a1a1a;color:white;cursor:pointer;">Apply update</button>' :
             '<span style="margin-left:auto;font-size:11px;color:#aaa;">No matching job found</span>') +
         '</div>' +
       '</div>';
@@ -853,18 +853,15 @@ window.scanGmail = async function() {
   btn.disabled = false; btn.textContent = 'Scan last 14 days';
 };
 
-W._applyGmailSuggestion = async function(fid, newStage, idx) {
+async function applyGmailSuggestion(fid, newStage, idx) {
   const j = jobs.find(x => x.firestoreId === fid);
   if (!j) return;
   const hist = [...(j.stageHistory || []), { stage: newStage, ts: now() }];
   j.stage = newStage; j.stageHistory = hist;
   render();
   await saveField(fid, { stage: newStage, stageHistory: hist });
-  // Remove the suggestion card
-  const suggestionCards = document.getElementById('gmail-suggestions').children;
-  if (suggestionCards[idx + 1]) suggestionCards[idx + 1].style.opacity = '0.4';
   showToast('Stage updated ✓', 'synced');
-};
+}
 
 // Check if returning from Gmail OAuth
 if (new URLSearchParams(window.location.search).get('gmail') === 'connected') {
@@ -1705,6 +1702,7 @@ const W = {
   _setRounds:    setRoundsCount,
   _round:        updateRound,
   _roundStatus:  setRoundStatus,
+  _applyGmail:   applyGmailSuggestion,
   _attAdd:    addAtt,
   _attRm:     removeAtt,
   _attLbl:    (fid, i, v) => updateAtt(fid, i, 'label', v),
