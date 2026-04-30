@@ -202,7 +202,30 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 .ov-chip.deadline { background: #FAEEDA; color: #854F0B; }
 @keyframes pulse-ov { 0%,100%{box-shadow:0 0 0 0 rgba(24,95,165,0.25)} 50%{box-shadow:0 0 0 4px rgba(24,95,165,0)} }
 .ov-dot.current { animation: pulse-ov 2s infinite; }
-.toast { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); font-size: 12px; padding: 8px 18px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
+/* Admin panel */
+.admin-btn { font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 0.5px solid #e0ddd6; background: transparent; color: #aaa; cursor: pointer; flex-shrink: 0; }
+.admin-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 300; display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 600px) { .admin-overlay { align-items: center; } }
+.admin-panel { background: white; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+@media (min-width: 600px) { .admin-panel { border-radius: 14px; padding: 1.5rem; } }
+.admin-handle { width: 36px; height: 4px; background: #e0ddd6; border-radius: 2px; margin: 0 auto 1.25rem; }
+@media (min-width: 600px) { .admin-handle { display: none; } }
+.admin-panel h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.admin-panel p { font-size: 12px; color: #888; margin-bottom: 1rem; }
+.admin-input-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.admin-input { flex: 1; font-size: 14px; padding: 10px 12px; border: 0.5px solid #d0cdc6; border-radius: 10px; background: #faf9f7; color: #1a1a1a; font-family: inherit; outline: none; }
+.admin-add-btn { font-size: 13px; padding: 10px 16px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+.admin-add-btn:disabled { background: #aaa; cursor: not-allowed; }
+.admin-status { font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+.admin-status.success { display: block; background: #EAF3DE; color: #3B6D11; }
+.admin-status.error { display: block; background: #fef2f2; color: #A32D2D; }
+.admin-status.loading { display: block; background: #f0ede8; color: #888; }
+.admin-users-list { display: flex; flex-direction: column; gap: 8px; }
+.admin-user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8f7f4; border-radius: 8px; border: 0.5px solid #e0ddd6; }
+.admin-user-info { display: flex; flex-direction: column; gap: 2px; }
+.admin-user-email { font-size: 13px; color: #1a1a1a; font-weight: 500; }
+.admin-user-uid { font-size: 10px; color: #aaa; font-family: monospace; }
+.admin-remove-btn { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #F09595; background: transparent; color: #A32D2D; cursor: pointer; white-space: nowrap; }
 .toast.synced { background: #1D9E75; color: white; }
 .toast.syncing { background: #444; color: white; }
 .toast.error { background: #E24B4A; color: white; }
@@ -245,6 +268,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
       </div>
       <div class="header-right">
         <button class="share-btn" onclick="showShareModal()" id="share-btn" style="display:none;">Share</button>
+        <button class="admin-btn" onclick="showAdminPanel()" id="admin-btn" style="display:none;">⚙ Users</button>
         <button class="add-btn" onclick="showModal()" id="add-btn">+ Add</button>
         <div id="user-avatar-wrap"></div>
         <button class="signout-btn" onclick="signOut()" id="signout-btn" style="display:none;">Sign out</button>
@@ -339,7 +363,23 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   </div>
 </div>
 
-<div id="share-modal" style="display:none;">
+<div id="admin-modal" style="display:none;">
+  <div class="admin-overlay" onclick="if(event.target.classList.contains('admin-overlay'))hideAdminPanel()">
+    <div class="admin-panel">
+      <div class="admin-handle"></div>
+      <h3>Manage access</h3>
+      <p>Add a user's email below. They must have signed in at least once so Firebase has their account.</p>
+      <div class="admin-input-row">
+        <input class="admin-input" id="admin-email-input" type="email" placeholder="friend@gmail.com" />
+        <button class="admin-add-btn" id="admin-add-btn" onclick="adminAddUser()">Add user</button>
+      </div>
+      <div class="admin-status" id="admin-status"></div>
+      <div class="field-label" style="margin-bottom:8px;">Approved users</div>
+      <div class="admin-users-list" id="admin-users-list"><div style="font-size:13px;color:#aaa;">Loading...</div></div>
+      <button class="btn-cancel" style="width:100%;margin-top:1rem;" onclick="hideAdminPanel()">Done</button>
+    </div>
+  </div>
+</div>
   <div class="modal-overlay" onclick="if(event.target.classList.contains('modal-overlay'))hideShareModal()">
     <div class="modal">
       <div class="modal-handle"></div>
@@ -354,7 +394,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -551,7 +591,7 @@ window.signOut = async function() {
 };
 
 async function isAllowed(user) {
-  if (user.email === 'benyehuda.ziv@gmail.com') return true;
+  if (user.email === ADMIN_EMAIL) return true;
   try {
     const snap = await getDoc(doc(db, 'allowlist', user.uid));
     return snap.exists();
@@ -581,11 +621,18 @@ onAuthStateChanged(auth, async user => {
       document.getElementById('add-btn').style.display = 'block';
       document.getElementById('share-btn').style.display = 'block';
       document.getElementById('signout-btn').style.display = 'block';
+      // Show admin button only for admin
+      if (user.email === ADMIN_EMAIL) {
+        document.getElementById('admin-btn').style.display = 'block';
+      }
       const wrap = document.getElementById('user-avatar-wrap');
       wrap.innerHTML = user.photoURL
         ? '<img class="user-avatar" src="' + user.photoURL + '" />'
         : '<div class="user-avatar-placeholder">' + (user.displayName ? user.displayName[0] : '?') + '</div>';
       document.getElementById('page-sub').textContent = 'Welcome back, ' + (user.displayName ? user.displayName.split(' ')[0] : 'there');
+      // Store email→UID mapping so admin can look up users by email
+      const safeEmail = user.email.replace(/\./g, '_');
+      setDoc(doc(db, 'emailToUid', safeEmail), { uid: user.uid, email: user.email }).catch(() => {});
       loadJobs(user.uid);
     } else {
       show('login-screen'); hide('app'); hide('denied-screen');
@@ -635,6 +682,104 @@ window.copyShareUrl = function() {
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
   });
+};
+
+// ── Admin panel ───────────────────────────────────────────────────────────────
+
+const ADMIN_EMAIL = 'benyehuda.ziv@gmail.com';
+
+window.showAdminPanel = async function() {
+  show('admin-modal');
+  await loadAdminUsers();
+};
+
+window.hideAdminPanel = function() {
+  hide('admin-modal');
+  document.getElementById('admin-email-input').value = '';
+  setAdminStatus('', '');
+};
+
+function setAdminStatus(msg, type) {
+  const el = document.getElementById('admin-status');
+  el.textContent = msg;
+  el.className = 'admin-status' + (type ? ' ' + type : '');
+}
+
+async function loadAdminUsers() {
+  const list = document.getElementById('admin-users-list');
+  list.innerHTML = '<div style="font-size:13px;color:#aaa;">Loading...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'allowlist'));
+    if (snap.empty) {
+      list.innerHTML = '<div style="font-size:13px;color:#aaa;">No approved users yet.</div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      return '<div class="admin-user-row">' +
+        '<div class="admin-user-info">' +
+          '<div class="admin-user-email">' + (data.email || 'Unknown') + '</div>' +
+          '<div class="admin-user-uid">' + d.id + '</div>' +
+        '</div>' +
+        '<button class="admin-remove-btn" onclick="adminRemoveUser(\'' + d.id + '\')">Remove</button>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="font-size:13px;color:#A32D2D;">Could not load users: ' + e.message + '</div>';
+  }
+}
+
+window.adminAddUser = async function() {
+  const email = document.getElementById('admin-email-input').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) { setAdminStatus('Enter a valid email address.', 'error'); return; }
+
+  const btn = document.getElementById('admin-add-btn');
+  btn.disabled = true;
+  setAdminStatus('Looking up user...', 'loading');
+
+  try {
+    // Find the user's UID by looking through authenticated users via Auth
+    // We do this by checking if they have a users/ document in Firestore
+    // (created when they first sign in)
+    // Since we can't query Auth directly from client, we store email in the allowlist doc
+    // and use Auth UID as the doc ID — we need them to have signed in first
+
+    // Check if user exists in our users collection
+    const usersSnap = await getDocs(collection(db, 'users'));
+    let foundUid = null;
+
+    // Search through auth records — we stored uid as doc id in users/
+    // We need to find their uid — check if any user doc matches via a query
+    // Since we can't query auth, we'll store a mapping in a separate emails collection
+    const emailsSnap = await getDocs(collection(db, 'emailToUid'));
+    emailsSnap.docs.forEach(d => {
+      if (d.id === email.replace(/\./g, '_')) foundUid = d.data().uid;
+    });
+
+    if (!foundUid) {
+      setAdminStatus('User not found. Make sure they\'ve signed in at least once first, then try again.', 'error');
+      btn.disabled = false;
+      return;
+    }
+
+    // Create allowlist document with UID as ID (no spaces, no special chars)
+    await setDoc(doc(db, 'allowlist', foundUid), { email, approved: true });
+    setAdminStatus('✓ ' + email + ' has been approved!', 'success');
+    document.getElementById('admin-email-input').value = '';
+    await loadAdminUsers();
+  } catch(e) {
+    setAdminStatus('Error: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+};
+
+window.adminRemoveUser = async function(uid) {
+  try {
+    await deleteDoc(doc(db, 'allowlist', uid));
+    await loadAdminUsers();
+  } catch(e) {
+    setAdminStatus('Could not remove user: ' + e.message, 'error');
+  }
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
