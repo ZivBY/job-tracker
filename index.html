@@ -615,6 +615,11 @@ onAuthStateChanged(auth, async user => {
       document.getElementById('signout-btn').style.display = 'none';
       loadJobs(viewingUid);
     } else if (user) {
+      // Always write email→UID mapping regardless of access level
+      // This allows admin to look up any user who has attempted sign-in
+      const safeEmail = user.email.replace(/\./g, '_');
+      setDoc(doc(db, 'emailToUid', safeEmail), { uid: user.uid, email: user.email }).catch(() => {});
+
       const allowed = await isAllowed(user);
       if (!allowed) { hide('app'); hide('login-screen'); show('denied-screen'); return; }
       isReadOnly = false;
@@ -632,9 +637,6 @@ onAuthStateChanged(auth, async user => {
         ? '<img class="user-avatar" src="' + user.photoURL + '" />'
         : '<div class="user-avatar-placeholder">' + (user.displayName ? user.displayName[0] : '?') + '</div>';
       document.getElementById('page-sub').textContent = 'Welcome back, ' + (user.displayName ? user.displayName.split(' ')[0] : 'there');
-      // Store email→UID mapping so admin can look up users by email
-      const safeEmail = user.email.replace(/\./g, '_');
-      setDoc(doc(db, 'emailToUid', safeEmail), { uid: user.uid, email: user.email }).catch(() => {});
       loadJobs(user.uid);
     } else {
       show('login-screen'); hide('app'); hide('denied-screen');
