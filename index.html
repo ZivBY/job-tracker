@@ -355,7 +355,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDUNgIm11WNevESCPMbN440xnu-TGbdURE",
@@ -541,7 +541,7 @@ function renderOverview() {
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 window.signInWithGoogle = async function() {
-  try { await signInWithRedirect(auth, provider); }
+  try { await signInWithPopup(auth, provider); }
   catch(e) { console.error('Sign in error:', e); showToast('Sign in failed', 'error'); }
 };
 
@@ -566,16 +566,8 @@ async function isAllowed(user) {
   }
 }
 
-// Handle redirect result on page load
-getRedirectResult(auth).then(result => {
-  if (result && result.user) {
-    console.log('Redirect sign-in successful:', result.user.email);
-  }
-}).catch(e => {
-  console.error('Redirect result error:', e);
-});
-
 onAuthStateChanged(auth, async user => {
+  console.log('Auth state changed. User:', user ? user.email : 'null');
   try {
     currentUser = user;
     if (viewingUid) {
