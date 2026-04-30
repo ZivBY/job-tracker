@@ -720,13 +720,36 @@ let gmailConnected = false;
 window.showGmailPanel = async function() {
   show('gmail-modal');
   await checkGmailStatus();
+  await loadGmailHistory();
 };
 
 window.hideGmailPanel = function() {
   hide('gmail-modal');
-  document.getElementById('gmail-suggestions').innerHTML = '';
   setGmailStatus('', '');
 };
+
+async function loadGmailHistory() {
+  if (!currentUser) return;
+  try {
+    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.suggestions && data.suggestions.length > 0) {
+        renderGmailSuggestions(data.suggestions, data.scannedAt);
+      }
+    }
+  } catch(e) { /* no history yet */ }
+}
+
+async function saveGmailHistory(suggestions) {
+  if (!currentUser) return;
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'), {
+      suggestions,
+      scannedAt: new Date().toISOString()
+    });
+  } catch(e) { console.error('Could not save Gmail history', e); }
+}
 
 function setGmailStatus(msg, type) {
   const el = document.getElementById('gmail-status');
@@ -781,15 +804,53 @@ window.disconnectGmail = async function() {
   document.getElementById('gmail-suggestions').innerHTML = '';
 };
 
+function renderGmailSuggestions(suggestions, scannedAt) {
+  const container = document.getElementById('gmail-suggestions');
+  if (!suggestions || suggestions.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:#888;text-align:center;padding:1rem;">No relevant recruiter emails found.</div>';
+    return;
+  }
+
+  const header = scannedAt
+    ? '<div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last scanned: ' + fmtDateTime(scannedAt) + ' · ' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>'
+    : '<div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>';
+
+  const cards = suggestions.map((s, i) => {
+    const matchedJob = jobs.find(j =>
+      j.company.toLowerCase().includes(s.company.toLowerCase()) ||
+      s.company.toLowerCase().includes(j.company.toLowerCase())
+    );
+    const jobId = matchedJob ? matchedJob.firestoreId : null;
+    const stageName = STAGES[s.suggestedStage] || '';
+    const applied = s.applied || false;
+
+    return '<div id="gmail-card-' + i + '" style="background:' + (applied ? '#f0fdf4' : '#f8f7f4') + ';border:0.5px solid ' + (applied ? '#86efac' : '#e0ddd6') + ';border-radius:10px;padding:12px;margin-bottom:8px;">' +
+      '<div style="font-size:11px;color:#888;margin-bottom:3px;">' + s.emailFrom + '</div>' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">' + s.emailSubject + '</div>' +
+      '<div style="font-size:12px;color:#555;margin-bottom:8px;">' + s.reason + '</div>' +
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+        '<span style="font-size:11px;background:#f0ede8;color:#555;padding:2px 8px;border-radius:20px;">' + s.company + '</span>' +
+        '<span style="font-size:11px;color:#aaa;">→</span>' +
+        '<span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;">' + stageName + '</span>' +
+        (applied
+          ? '<span style="margin-left:auto;font-size:11px;color:#1D9E75;font-weight:500;">✓ Applied</span>'
+          : jobId
+            ? '<button onclick="W._applyGmail(\'' + jobId + '\',' + s.suggestedStage + ',' + i + ')" style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:#1a1a1a;color:white;cursor:pointer;">Apply update</button>'
+            : '<span style="margin-left:auto;font-size:11px;color:#aaa;">No matching job found</span>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = header + cards;
+}
+
 window.scanGmail = async function() {
   if (!currentUser) return;
   const btn = document.getElementById('gmail-scan-btn');
   btn.disabled = true; btn.textContent = 'Scanning...';
   setGmailStatus('Scanning your inbox...', 'loading');
-  document.getElementById('gmail-suggestions').innerHTML = '';
 
   try {
-    // Build list of tracked companies with their stages
     const companies = jobs
       .filter(j => !j.archived && !j.rejected && !j.declined)
       .map(j => ({ company: j.company, stage: STAGES[j.stage] || '', firestoreId: j.firestoreId, currentStage: j.stage }));
@@ -809,43 +870,10 @@ window.scanGmail = async function() {
       return;
     }
 
-    const suggestions = data.suggestions || [];
     setGmailStatus('', '');
-
-    if (suggestions.length === 0) {
-      document.getElementById('gmail-suggestions').innerHTML =
-        '<div style="font-size:13px;color:#888;text-align:center;padding:1rem;">No relevant recruiter emails found in the last 14 days.</div>';
-      return;
-    }
-
-    // Match suggestions to actual jobs
-    const suggestionHtml = suggestions.map((s, i) => {
-      const matchedJob = jobs.find(j =>
-        j.company.toLowerCase().includes(s.company.toLowerCase()) ||
-        s.company.toLowerCase().includes(j.company.toLowerCase())
-      );
-      const jobId = matchedJob ? matchedJob.firestoreId : null;
-      const stageName = STAGES[s.suggestedStage] || '';
-      const currentStageName = STAGES[s.currentStage] || '';
-
-      return '<div style="background:#f8f7f4;border:0.5px solid #e0ddd6;border-radius:10px;padding:12px;margin-bottom:8px;">' +
-        '<div style="font-size:12px;color:#888;margin-bottom:4px;">' + s.emailFrom + '</div>' +
-        '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">' + s.emailSubject + '</div>' +
-        '<div style="font-size:12px;color:#555;margin-bottom:8px;">' + s.reason + '</div>' +
-        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
-          '<span style="font-size:11px;background:#f0ede8;color:#555;padding:2px 8px;border-radius:20px;">' + s.company + '</span>' +
-          '<span style="font-size:11px;color:#aaa;">→</span>' +
-          '<span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;">' + stageName + '</span>' +
-          (jobId ?
-            '<button onclick="W._applyGmail(\'' + jobId + '\',' + s.suggestedStage + ',' + i + ')" style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:#1a1a1a;color:white;cursor:pointer;">Apply update</button>' :
-            '<span style="margin-left:auto;font-size:11px;color:#aaa;">No matching job found</span>') +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    document.getElementById('gmail-suggestions').innerHTML =
-      '<div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>' +
-      suggestionHtml;
+    const suggestions = (data.suggestions || []).map(s => ({ ...s, applied: false }));
+    await saveGmailHistory(suggestions);
+    renderGmailSuggestions(suggestions, new Date().toISOString());
 
   } catch(e) {
     setGmailStatus('Scan failed: ' + e.message, 'error');
@@ -860,6 +888,21 @@ async function applyGmailSuggestion(fid, newStage, idx) {
   j.stage = newStage; j.stageHistory = hist;
   render();
   await saveField(fid, { stage: newStage, stageHistory: hist });
+
+  // Mark suggestion as applied in Firestore history
+  if (currentUser) {
+    try {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'));
+      if (snap.exists()) {
+        const data = snap.data();
+        const suggestions = [...(data.suggestions || [])];
+        if (suggestions[idx]) suggestions[idx] = { ...suggestions[idx], applied: true };
+        await setDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'), { ...data, suggestions });
+        // Re-render with updated applied state
+        renderGmailSuggestions(suggestions, data.scannedAt);
+      }
+    } catch(e) { /* non-critical */ }
+  }
   showToast('Stage updated ✓', 'synced');
 }
 
