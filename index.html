@@ -740,36 +740,22 @@ window.adminAddUser = async function() {
   setAdminStatus('Looking up user...', 'loading');
 
   try {
-    // Find the user's UID by looking through authenticated users via Auth
-    // We do this by checking if they have a users/ document in Firestore
-    // (created when they first sign in)
-    // Since we can't query Auth directly from client, we store email in the allowlist doc
-    // and use Auth UID as the doc ID — we need them to have signed in first
+    const safeEmail = email.replace(/\./g, '_');
+    const emailSnap = await getDoc(doc(db, 'emailToUid', safeEmail));
 
-    // Check if user exists in our users collection
-    const usersSnap = await getDocs(collection(db, 'users'));
-    let foundUid = null;
-
-    // Search through auth records — we stored uid as doc id in users/
-    // We need to find their uid — check if any user doc matches via a query
-    // Since we can't query auth, we'll store a mapping in a separate emails collection
-    const emailsSnap = await getDocs(collection(db, 'emailToUid'));
-    emailsSnap.docs.forEach(d => {
-      if (d.id === email.replace(/\./g, '_')) foundUid = d.data().uid;
-    });
-
-    if (!foundUid) {
-      setAdminStatus('User not found. Make sure they\'ve signed in at least once first, then try again.', 'error');
+    if (!emailSnap.exists()) {
+      setAdminStatus('User not found. They need to visit the app and attempt to sign in first — even hitting "Access restricted" is enough. Then try again.', 'error');
       btn.disabled = false;
       return;
     }
 
-    // Create allowlist document with UID as ID (no spaces, no special chars)
-    await setDoc(doc(db, 'allowlist', foundUid), { email, approved: true });
+    const uid = emailSnap.data().uid;
+    await setDoc(doc(db, 'allowlist', uid), { email, approved: true });
     setAdminStatus('✓ ' + email + ' has been approved!', 'success');
     document.getElementById('admin-email-input').value = '';
     await loadAdminUsers();
   } catch(e) {
+    console.error('adminAddUser error:', e);
     setAdminStatus('Error: ' + e.message, 'error');
   }
   btn.disabled = false;
