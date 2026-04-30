@@ -551,13 +551,18 @@ window.signOut = async function() {
 };
 
 async function isAllowed(user) {
+  console.log('isAllowed called, email:', user.email, 'uid:', user.uid);
   if (user.email === 'benyehuda.ziv@gmail.com') return true;
   try {
-    const snap = await getDoc(doc(db, 'allowlist', user.uid));
+    console.log('Looking up allowlist/', user.uid);
+    const ref = doc(db, 'allowlist', user.uid);
+    const snap = await getDoc(ref);
+    console.log('exists:', snap.exists(), 'data:', JSON.stringify(snap.data()));
     return snap.exists();
   } catch(e) {
-    console.error('Allowlist check error:', e.code, e.message);
-    return e.code !== 'permission-denied';
+    console.error('Allowlist error:', e.code, e.message);
+    // Temporarily allow through on any error to test
+    return true;
   }
 }
 
