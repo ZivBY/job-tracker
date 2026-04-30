@@ -269,6 +269,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
       <div class="header-right">
         <button class="share-btn" onclick="showShareModal()" id="share-btn" style="display:none;">Share</button>
         <button class="admin-btn" onclick="showAdminPanel()" id="admin-btn" style="display:none;">⚙ Users</button>
+        <button class="admin-btn" onclick="showGmailPanel()" id="gmail-btn" style="display:none;">📧 Sync inbox</button>
         <button class="add-btn" onclick="showModal()" id="add-btn">+ Add</button>
         <div id="user-avatar-wrap"></div>
         <button class="signout-btn" onclick="signOut()" id="signout-btn" style="display:none;">Sign out</button>
@@ -381,7 +382,28 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   </div>
 </div>
 
-<div id="share-modal" style="display:none;">
+<div id="gmail-modal" style="display:none;">
+  <div class="admin-overlay" onclick="if(event.target.classList.contains('admin-overlay'))hideGmailPanel()">
+    <div class="admin-panel">
+      <div class="admin-handle"></div>
+      <h3>📧 Sync inbox</h3>
+      <p>Connect Gmail to scan for recruiter emails and get suggested stage updates.</p>
+      <div id="gmail-connect-section">
+        <button class="admin-add-btn" style="width:100%;margin-bottom:8px;" onclick="connectGmail()">Connect Gmail</button>
+      </div>
+      <div id="gmail-connected-section" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <span style="font-size:12px;color:#1D9E75;font-weight:500;">✓ Gmail connected</span>
+          <button onclick="disconnectGmail()" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0ddd6;background:transparent;color:#aaa;cursor:pointer;">Disconnect</button>
+        </div>
+        <button class="admin-add-btn" style="width:100%;margin-bottom:12px;" id="gmail-scan-btn" onclick="scanGmail()">Scan last 14 days</button>
+        <div class="admin-status" id="gmail-status"></div>
+        <div id="gmail-suggestions"></div>
+      </div>
+      <button class="btn-cancel" style="width:100%;margin-top:1rem;" onclick="hideGmailPanel()">Done</button>
+    </div>
+  </div>
+</div>
   <div class="modal-overlay" onclick="if(event.target.classList.contains('modal-overlay'))hideShareModal()">
     <div class="modal">
       <div class="modal-handle"></div>
@@ -632,6 +654,7 @@ onAuthStateChanged(auth, async user => {
       if (user.email === ADMIN_EMAIL) {
         document.getElementById('admin-btn').style.display = 'block';
       }
+      document.getElementById('gmail-btn').style.display = 'block';
       const wrap = document.getElementById('user-avatar-wrap');
       wrap.innerHTML = user.photoURL
         ? '<img class="user-avatar" src="' + user.photoURL + '" />'
@@ -687,6 +710,165 @@ window.copyShareUrl = function() {
     setTimeout(() => { btn.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
   });
 };
+
+// ── Gmail sync ────────────────────────────────────────────────────────────────
+
+let gmailConnected = false;
+
+window.showGmailPanel = async function() {
+  show('gmail-modal');
+  await checkGmailStatus();
+};
+
+window.hideGmailPanel = function() {
+  hide('gmail-modal');
+  document.getElementById('gmail-suggestions').innerHTML = '';
+  setGmailStatus('', '');
+};
+
+function setGmailStatus(msg, type) {
+  const el = document.getElementById('gmail-status');
+  el.textContent = msg;
+  el.className = 'admin-status' + (type ? ' ' + type : '');
+}
+
+async function checkGmailStatus() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(PROXY + '/gmail/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: currentUser.uid })
+    });
+    const data = await res.json();
+    gmailConnected = data.connected;
+    document.getElementById('gmail-connect-section').style.display = gmailConnected ? 'none' : 'block';
+    document.getElementById('gmail-connected-section').style.display = gmailConnected ? 'block' : 'none';
+  } catch(e) {
+    setGmailStatus('Could not check Gmail status', 'error');
+  }
+}
+
+window.connectGmail = async function() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(PROXY + '/gmail/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: currentUser.uid })
+    });
+    const data = await res.json();
+    if (data.authUrl) {
+      window.location.href = data.authUrl;
+    }
+  } catch(e) {
+    setGmailStatus('Could not start Gmail connection', 'error');
+  }
+};
+
+window.disconnectGmail = async function() {
+  if (!currentUser) return;
+  await fetch(PROXY + '/gmail/disconnect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid: currentUser.uid })
+  });
+  gmailConnected = false;
+  document.getElementById('gmail-connect-section').style.display = 'block';
+  document.getElementById('gmail-connected-section').style.display = 'none';
+  document.getElementById('gmail-suggestions').innerHTML = '';
+};
+
+window.scanGmail = async function() {
+  if (!currentUser) return;
+  const btn = document.getElementById('gmail-scan-btn');
+  btn.disabled = true; btn.textContent = 'Scanning...';
+  setGmailStatus('Scanning your inbox...', 'loading');
+  document.getElementById('gmail-suggestions').innerHTML = '';
+
+  try {
+    // Build list of tracked companies with their stages
+    const companies = jobs
+      .filter(j => !j.archived && !j.rejected && !j.declined)
+      .map(j => ({ company: j.company, stage: STAGES[j.stage] || '', firestoreId: j.firestoreId, currentStage: j.stage }));
+
+    const res = await fetch(PROXY + '/gmail/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: currentUser.uid, companies })
+    });
+    const data = await res.json();
+
+    if (data.error === 'not_connected') {
+      setGmailStatus('Gmail not connected. Please reconnect.', 'error');
+      gmailConnected = false;
+      document.getElementById('gmail-connect-section').style.display = 'block';
+      document.getElementById('gmail-connected-section').style.display = 'none';
+      return;
+    }
+
+    const suggestions = data.suggestions || [];
+    setGmailStatus('', '');
+
+    if (suggestions.length === 0) {
+      document.getElementById('gmail-suggestions').innerHTML =
+        '<div style="font-size:13px;color:#888;text-align:center;padding:1rem;">No relevant recruiter emails found in the last 14 days.</div>';
+      return;
+    }
+
+    // Match suggestions to actual jobs
+    const suggestionHtml = suggestions.map((s, i) => {
+      const matchedJob = jobs.find(j =>
+        j.company.toLowerCase().includes(s.company.toLowerCase()) ||
+        s.company.toLowerCase().includes(j.company.toLowerCase())
+      );
+      const jobId = matchedJob ? matchedJob.firestoreId : null;
+      const stageName = STAGES[s.suggestedStage] || '';
+      const currentStageName = STAGES[s.currentStage] || '';
+
+      return '<div style="background:#f8f7f4;border:0.5px solid #e0ddd6;border-radius:10px;padding:12px;margin-bottom:8px;">' +
+        '<div style="font-size:12px;color:#888;margin-bottom:4px;">' + s.emailFrom + '</div>' +
+        '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">' + s.emailSubject + '</div>' +
+        '<div style="font-size:12px;color:#555;margin-bottom:8px;">' + s.reason + '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+          '<span style="font-size:11px;background:#f0ede8;color:#555;padding:2px 8px;border-radius:20px;">' + s.company + '</span>' +
+          '<span style="font-size:11px;color:#aaa;">→</span>' +
+          '<span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;">' + stageName + '</span>' +
+          (jobId ?
+            '<button onclick="W._applyGmailSuggestion(\'' + jobId + '\',' + s.suggestedStage + ',' + i + ')" style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:#1a1a1a;color:white;cursor:pointer;">Apply update</button>' :
+            '<span style="margin-left:auto;font-size:11px;color:#aaa;">No matching job found</span>') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('gmail-suggestions').innerHTML =
+      '<div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>' +
+      suggestionHtml;
+
+  } catch(e) {
+    setGmailStatus('Scan failed: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Scan last 14 days';
+};
+
+W._applyGmailSuggestion = async function(fid, newStage, idx) {
+  const j = jobs.find(x => x.firestoreId === fid);
+  if (!j) return;
+  const hist = [...(j.stageHistory || []), { stage: newStage, ts: now() }];
+  j.stage = newStage; j.stageHistory = hist;
+  render();
+  await saveField(fid, { stage: newStage, stageHistory: hist });
+  // Remove the suggestion card
+  const suggestionCards = document.getElementById('gmail-suggestions').children;
+  if (suggestionCards[idx + 1]) suggestionCards[idx + 1].style.opacity = '0.4';
+  showToast('Stage updated ✓', 'synced');
+};
+
+// Check if returning from Gmail OAuth
+if (new URLSearchParams(window.location.search).get('gmail') === 'connected') {
+  window.history.replaceState({}, '', window.location.pathname);
+  setTimeout(() => showToast('Gmail connected ✓', 'synced'), 1000);
+}
 
 // ── Admin panel ───────────────────────────────────────────────────────────────
 
