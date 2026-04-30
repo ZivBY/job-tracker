@@ -553,15 +553,8 @@ window.signOut = async function() {
 async function isAllowed(user) {
   if (user.email === 'benyehuda.ziv@gmail.com') return true;
   try {
-    // Firestore document IDs can't reliably contain periods — sanitize the email
-    const safeEmail = user.email.replace(/\./g, '_');
-    console.log('Checking allowlist for:', user.email, '→ key:', safeEmail);
-    // Try sanitized key first, then raw email as fallback
-    const snap1 = await getDoc(doc(db, 'allowlist', safeEmail));
-    if (snap1.exists()) return true;
-    const snap2 = await getDoc(doc(db, 'allowlist', user.email));
-    console.log('Raw key exists:', snap2.exists());
-    return snap2.exists();
+    const snap = await getDoc(doc(db, 'allowlist', user.uid));
+    return snap.exists();
   } catch(e) {
     console.error('Allowlist check error:', e.code, e.message);
     return e.code !== 'permission-denied';
