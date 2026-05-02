@@ -89,7 +89,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .full-calendar-event.deadline { background: #FFE0DB; color: #A32D2D; }
 .calendar-list-title { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
 .calendar-event-list { display: flex; flex-direction: column; gap: 7px; max-height: 520px; overflow-y: auto; padding-right: 2px; }
+.calendar-list-section { display: flex; flex-direction: column; gap: 7px; }
+.calendar-list-section + .calendar-list-section { margin-top: 14px; padding-top: 12px; border-top: 0.5px solid #f0ede8; }
+.calendar-list-heading { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+.calendar-list-heading strong { color: #1a1a1a; font-weight: 700; }
 .calendar-list-item { border: 0.5px solid #e0ddd6; background: #f8f7f4; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
+.calendar-list-item.primary { border-color: #185FA5; background: #F4F9FE; }
 .calendar-list-item:hover { background: #f0ede8; }
 .calendar-list-date { font-size: 11px; color: #888; margin-bottom: 3px; }
 .calendar-list-main { font-size: 13px; font-weight: 600; color: #1a1a1a; }
@@ -776,17 +781,29 @@ function getProfileDoc(uid) {
   return doc(db, 'users', uid, 'settings', 'profile');
 }
 
+function getProfileFallbackDoc(uid) {
+  return doc(db, 'users', uid, 'jobs', '__profile');
+}
+
 async function loadTrackerName(user) {
   const fallbackName = getNameFromEmail(user && user.email) || (user && user.displayName ? user.displayName.trim() : '') || 'My';
   const localName = localStorage.getItem(trackerNameStorageKey(user.uid));
+  let cloudName = '';
   try {
     const snap = await getDoc(getProfileDoc(user.uid));
-    const savedName = snap.exists() && snap.data().trackerName ? snap.data().trackerName : '';
-    setTrackerOwnerName(savedName || localName || fallbackName);
+    cloudName = snap.exists() && snap.data().trackerName ? snap.data().trackerName : '';
   } catch(e) {
     console.error('Profile load error:', e);
-    setTrackerOwnerName(localName || fallbackName);
   }
+  if (!cloudName) {
+    try {
+      const fallbackSnap = await getDoc(getProfileFallbackDoc(user.uid));
+      cloudName = fallbackSnap.exists() && fallbackSnap.data().trackerName ? fallbackSnap.data().trackerName : '';
+    } catch(e) {
+      console.error('Profile fallback load error:', e);
+    }
+  }
+  setTrackerOwnerName(cloudName || localName || fallbackName);
 }
 
 window.saveTrackerName = async function() {
@@ -805,7 +822,18 @@ window.saveTrackerName = async function() {
     showToast('Synced ✓', 'synced');
   } catch(e) {
     console.error('Profile save error:', e);
-    showToast('Saved on this device', 'synced', 3000);
+    try {
+      await setDoc(getProfileFallbackDoc(currentUser.uid), {
+        _type: 'profile',
+        trackerName: nextName,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      }, { merge: true });
+      showToast('Synced ✓', 'synced');
+    } catch(fallbackError) {
+      console.error('Profile fallback save error:', fallbackError);
+      showToast('Saved on this device', 'synced', 3000);
+    }
   }
 };
 
@@ -893,7 +921,9 @@ function loadJobs(uid) {
   if (unsubscribe) unsubscribe();
   const q = query(collection(db, 'users', uid, 'jobs'), orderBy('createdAt', 'desc'));
   unsubscribe = onSnapshot(q, snap => {
-    jobs = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    jobs = snap.docs
+      .map(d => ({ firestoreId: d.id, ...d.data() }))
+      .filter(j => j.firestoreId !== '__profile' && j._type !== 'profile');
     render();
   }, () => showToast('Connection error', 'error', 4000));
 }
@@ -1178,14 +1208,46 @@ function renderFullCalendar() {
     list.innerHTML = '<div class="calendar-empty">No scheduled events yet.</div>';
     return;
   }
-  list.innerHTML = events.map(e => {
+  list.innerHTML = renderCalendarEventSections(events);
+}
+
+function renderCalendarEventSections(events) {
+  const selected = startOfDay(calendarSelectedDay);
+  const monthStart = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getTime();
+  const monthEnd = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1).getTime();
+  const selectedEvents = events.filter(e => isSameDay(e.date, selected));
+  const monthEvents = events.filter(e => !isSameDay(e.date, selected) && e.ts >= monthStart && e.ts < monthEnd);
+  const otherEvents = events.filter(e => !isSameDay(e.date, selected) && (e.ts < monthStart || e.ts >= monthEnd));
+  const selectedLabel = selected.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const monthLabel = calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const sections = [
+    renderCalendarEventSection('<strong>' + escapeHtml(selectedLabel) + '</strong>', selectedEvents, true, 'No events on this day.'),
+    renderCalendarEventSection(escapeHtml(monthLabel), monthEvents, false, 'No other events this month.'),
+    renderCalendarEventSection('Other events', otherEvents, false, '')
+  ].filter(Boolean);
+
+  return sections.join('');
+}
+
+function renderCalendarEventSection(label, sectionEvents, primary, emptyText) {
+  if (!sectionEvents.length && !emptyText) return '';
+  const body = sectionEvents.length
+    ? sectionEvents.map(e => renderCalendarListItem(e, primary)).join('')
+    : '<div class="calendar-empty" style="padding:4px 0 0;text-align:left;">' + escapeHtml(emptyText) + '</div>';
+  return '<div class="calendar-list-section">' +
+    '<div class="calendar-list-heading">' + label + '</div>' +
+    body +
+    '</div>';
+}
+
+function renderCalendarListItem(e, primary) {
     const dateLabel = e.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    return '<div class="calendar-list-item" onclick="W._calendarGoto(\'' + e.job.firestoreId + '\')">' +
+    return '<div class="calendar-list-item' + (primary ? ' primary' : '') + '" onclick="W._calendarGoto(\'' + e.job.firestoreId + '\')">' +
       '<div class="calendar-list-date">' + escapeHtml(dateLabel + ' at ' + fmtTime(e.date)) + '</div>' +
       '<div class="calendar-list-main">' + escapeHtml(e.job.company + ' - ' + e.label) + '</div>' +
       '<div class="calendar-list-sub">' + escapeHtml(e.job.role || '') + '</div>' +
       '</div>';
-  }).join('');
 }
 
 function getAttentionItems(jobs) {
