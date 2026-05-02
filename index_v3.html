@@ -248,6 +248,9 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1
 .stage-input, .stage-select { font-size: 13px; padding: 7px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; width: 100%; }
 .stage-textarea { width: 100%; font-size: 12px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 60px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
 .stage-field { margin-bottom: 10px; }
+.date-ok-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.date-ok-btn { font-size: 11px; padding: 7px 12px; border-radius: 8px; border: 0.5px solid #B5D4F4; background: #E6F1FB; color: #185FA5; cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap; }
+.date-ok-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .interview-rounds { background: #f0ede8; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
 .rounds-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
@@ -1810,12 +1813,23 @@ function renderJobDetail(j) {
   const def = STAGE_DEFS[activeTab];
   const stageFieldData = sd[activeTab] || {};
   let content = '';
+  function dateOkInput(id, type, value, disabledAttr, okCall) {
+    return '<div class="date-ok-row">' +
+      '<input class="stage-input" id="' + id + '" type="' + type + '" value="' + escapeHtml(value || '') + '" ' + disabledAttr + ' />' +
+      (ro ? '' : '<button class="date-ok-btn" onclick="' + okCall + '">OK</button>') +
+    '</div>';
+  }
   if (def) {
     def.fields.forEach(f => {
       const val = stageFieldData[f.key] || '';
       if (f.type === 'textarea') {
         content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
           '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',this.value)"') + ' placeholder="' + (f.placeholder || '') + '">' + escapeHtml(val) + '</textarea></div>';
+      } else if (f.type === 'date' || f.type === 'datetime-local') {
+        const inputId = 'stage-date-' + fid + '-' + activeTab + '-' + f.key;
+        content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
+          dateOkInput(inputId, f.type, val, ro ? 'readonly' : '', 'W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',document.getElementById(\'' + inputId + '\').value)') +
+          '</div>';
       } else {
         content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
           '<input class="stage-input" type="' + f.type + '" value="' + escapeHtml(val) + '" ' + (ro ? 'readonly' : 'oninput="W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',this.value)"') + ' placeholder="' + (f.placeholder || '') + '" /></div>';
@@ -1850,11 +1864,12 @@ function renderJobDetail(j) {
         (rs && statusAt ? '<div style="font-size:10px;color:var(--text-subtle);margin-bottom:6px;">' + (rs === 'completed' ? 'Completed' : rs === 'rejected' ? 'Rejected' : 'Withdrew') + ': ' + statusAt + '</div>' : '') : '';
       const prevTerminal = rounds.slice(0, i).some(prev => prev.status === 'rejected' || prev.status === 'withdrew');
       const dimStyle = prevTerminal ? 'opacity:0.4;pointer-events:none;' : '';
+      const roundDateId = 'round-date-' + fid + '-' + i;
       content += '<div class="round-item" style="' + roundBorder + dimStyle + '">' +
         '<div class="round-num-badge" style="background:' + badgeBg + ';">' + badgeIcon + '</div>' +
         '<div class="round-fields">' + statusRow +
         '<select class="stage-select" ' + (ro ? 'disabled' : 'onchange="W._round(\'' + fid + '\',' + i + ',\'type\',this.value)"') + '>' + typeOptions + '</select>' +
-        '<input class="stage-input" type="datetime-local" value="' + (r.date || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'date\',this.value)"') + ' />' +
+        dateOkInput(roundDateId, 'datetime-local', r.date || '', ro ? 'readonly' : '', 'W._round(\'' + fid + '\',' + i + ',\'date\',document.getElementById(\'' + roundDateId + '\').value)') +
         '<input class="stage-input" type="text" value="' + escapeHtml(r.with || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'with\',this.value)"') + ' placeholder="Interviewer name / title" />' +
         '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'notes\',this.value)"') + ' placeholder="Notes, questions asked, key takeaways...">' + escapeHtml(r.notes || '') + '</textarea>' +
         '</div></div>';
