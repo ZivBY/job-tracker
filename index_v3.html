@@ -65,6 +65,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .cal-event.screen { background: #F0EBFA; color: #6B41C9; border-left: 2px solid #6B41C9; }
 .cal-event.final { background: #FAEEDA; color: #854F0B; border-left: 2px solid #854F0B; }
 .cal-event.deadline { background: #FFE0DB; color: #A32D2D; border-left: 2px solid #E24B4A; }
+.calendar-modal { max-width: 980px; }
+.calendar-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.calendar-modal-title { font-size: 18px; font-weight: 600; }
+.calendar-nav { display: flex; gap: 6px; align-items: center; }
+.calendar-nav button, .calendar-close-btn { width: 32px; height: 32px; border-radius: 8px; border: 0.5px solid #d0cdc6; background: white; color: #555; cursor: pointer; font-size: 16px; }
+.calendar-close-btn { font-size: 20px; line-height: 1; }
+.calendar-modal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; }
+@media (max-width: 760px) { .calendar-modal-layout { grid-template-columns: 1fr; } }
+.full-calendar-weekdays, .full-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.full-calendar-weekday { font-size: 10px; font-weight: 600; color: #aaa; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
+.full-calendar-grid { margin-top: 6px; }
+.full-calendar-day { min-height: 92px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #f8f7f4; padding: 6px; cursor: pointer; overflow: hidden; }
+.full-calendar-day:hover { background: #f0ede8; }
+.full-calendar-day.muted { opacity: 0.45; }
+.full-calendar-day.today { border-color: #185FA5; border-width: 1.5px; background: white; }
+.full-calendar-day.selected { box-shadow: 0 0 0 2px #185FA5 inset; }
+.full-calendar-day-num { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.full-calendar-event { font-size: 10px; padding: 3px 5px; border-radius: 5px; margin-bottom: 3px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.full-calendar-event.interview { background: #E6F1FB; color: #185FA5; }
+.full-calendar-event.screen { background: #F0EBFA; color: #6B41C9; }
+.full-calendar-event.final { background: #FAEEDA; color: #854F0B; }
+.full-calendar-event.deadline { background: #FFE0DB; color: #A32D2D; }
+.calendar-list-title { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+.calendar-event-list { display: flex; flex-direction: column; gap: 7px; max-height: 520px; overflow-y: auto; padding-right: 2px; }
+.calendar-list-item { border: 0.5px solid #e0ddd6; background: #f8f7f4; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
+.calendar-list-item:hover { background: #f0ede8; }
+.calendar-list-date { font-size: 11px; color: #888; margin-bottom: 3px; }
+.calendar-list-main { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.calendar-list-sub { font-size: 12px; color: #555; margin-top: 2px; }
+.calendar-empty { font-size: 13px; color: #888; padding: 14px 0; text-align: center; }
 
 /* ── Today: attention inbox ──────────────────────────────────────────── */
 .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin-bottom: 10px; padding: 0 4px; display: flex; align-items: center; gap: 8px; }
@@ -455,6 +485,42 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
   <div class="search-results-list" id="search-results-list"></div>
 </div>
 
+<!-- Calendar modal -->
+<div id="calendar-modal" style="display:none;">
+  <div class="modal-overlay" onclick="if(event.target.classList.contains('modal-overlay'))hideCalendarModal()">
+    <div class="modal calendar-modal">
+      <div class="modal-handle"></div>
+      <div class="calendar-modal-head">
+        <div class="calendar-modal-title" id="calendar-modal-title">Calendar</div>
+        <div class="calendar-nav">
+          <button onclick="changeCalendarMonth(-1)" title="Previous month" aria-label="Previous month">‹</button>
+          <button onclick="openCalendarModal()" title="Current month" aria-label="Current month">•</button>
+          <button onclick="changeCalendarMonth(1)" title="Next month" aria-label="Next month">›</button>
+          <button class="calendar-close-btn" onclick="hideCalendarModal()" title="Close" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div class="calendar-modal-layout">
+        <div>
+          <div class="full-calendar-weekdays">
+            <div class="full-calendar-weekday">Sun</div>
+            <div class="full-calendar-weekday">Mon</div>
+            <div class="full-calendar-weekday">Tue</div>
+            <div class="full-calendar-weekday">Wed</div>
+            <div class="full-calendar-weekday">Thu</div>
+            <div class="full-calendar-weekday">Fri</div>
+            <div class="full-calendar-weekday">Sat</div>
+          </div>
+          <div class="full-calendar-grid" id="full-calendar-grid"></div>
+        </div>
+        <div>
+          <div class="calendar-list-title">All events</div>
+          <div class="calendar-event-list" id="calendar-event-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Add modal -->
 <div id="modal" style="display:none;">
   <div class="modal-overlay" onclick="handleOverlayClick(event)">
@@ -617,6 +683,8 @@ let currentPage = 'today';
 let ovFilter = 'all';
 let searchQuery = '';
 let trackerOwnerName = 'My';
+let calendarMonth = new Date();
+let calendarSelectedDay = new Date();
 
 const urlParams = new URLSearchParams(window.location.search);
 const viewingUid = urlParams.get('view');
@@ -985,6 +1053,11 @@ function gotoJob(fid) {
   document.getElementById('search-results').classList.remove('open');
 }
 
+function calendarGotoJob(fid) {
+  hideCalendarModal();
+  gotoJob(fid);
+}
+
 // ── Event derivation for Today page ──────────────────────────────────────────
 
 function getJobEvents(jobs) {
@@ -1010,6 +1083,93 @@ function getJobEvents(jobs) {
     }
   });
   return events.sort((a, b) => a.ts - b.ts);
+}
+
+function startOfDay(d) {
+  const day = new Date(d);
+  day.setHours(0,0,0,0);
+  return day;
+}
+
+function isSameDay(a, b) {
+  return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+
+function renderEventPill(e, className) {
+  const cls = e.kind === 'interview' ? 'interview' : e.kind === 'screen' ? 'screen' : e.kind === 'final' ? 'final' : 'deadline';
+  return '<div class="' + className + ' ' + cls + '" onclick="event.stopPropagation();W._calendarGoto(\'' + e.job.firestoreId + '\')" title="' + escapeHtml(e.job.company + ' - ' + e.label) + '">' +
+    escapeHtml(fmtTime(e.date) + ' ' + e.job.company) +
+    '</div>';
+}
+
+window.openCalendarModal = function(dateIso) {
+  const d = dateIso ? new Date(dateIso) : new Date();
+  calendarSelectedDay = isNaN(d) ? new Date() : d;
+  calendarMonth = new Date(calendarSelectedDay.getFullYear(), calendarSelectedDay.getMonth(), 1);
+  show('calendar-modal');
+  renderFullCalendar();
+};
+
+window.hideCalendarModal = function() { hide('calendar-modal'); };
+
+window.changeCalendarMonth = function(delta) {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + delta, 1);
+  renderFullCalendar();
+};
+
+window.selectCalendarDay = function(dateIso) {
+  const d = new Date(dateIso);
+  if (isNaN(d)) return;
+  calendarSelectedDay = d;
+  renderFullCalendar();
+};
+
+function renderFullCalendar() {
+  const filtered = jobs.filter(j => matchesSearch(j, searchQuery));
+  const events = getJobEvents(filtered);
+  const title = calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  document.getElementById('calendar-modal-title').textContent = title;
+
+  const first = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+  const gridStart = startOfDay(first);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const today = startOfDay(new Date());
+  const selected = startOfDay(calendarSelectedDay);
+  const cells = [];
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    const dayStart = d.getTime();
+    const dayEnd = dayStart + 86400000;
+    const dayEvents = events.filter(e => e.ts >= dayStart && e.ts < dayEnd);
+    const classes = ['full-calendar-day'];
+    if (d.getMonth() !== calendarMonth.getMonth()) classes.push('muted');
+    if (d.getTime() === today.getTime()) classes.push('today');
+    if (d.getTime() === selected.getTime()) classes.push('selected');
+    const eventHtml = dayEvents.slice(0, 3).map(e => renderEventPill(e, 'full-calendar-event')).join('');
+    const more = dayEvents.length > 3 ? '<div class="full-calendar-event" style="background:#f0ede8;color:#888;">+' + (dayEvents.length - 3) + ' more</div>' : '';
+    cells.push('<div class="' + classes.join(' ') + '" onclick="selectCalendarDay(\'' + d.toISOString() + '\')">' +
+      '<div class="full-calendar-day-num">' + d.getDate() + '</div>' +
+      eventHtml + more +
+      '</div>');
+  }
+
+  document.getElementById('full-calendar-grid').innerHTML = cells.join('');
+
+  const list = document.getElementById('calendar-event-list');
+  if (!events.length) {
+    list.innerHTML = '<div class="calendar-empty">No scheduled events yet.</div>';
+    return;
+  }
+  list.innerHTML = events.map(e => {
+    const dateLabel = e.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    return '<div class="calendar-list-item" onclick="W._calendarGoto(\'' + e.job.firestoreId + '\')">' +
+      '<div class="calendar-list-date">' + escapeHtml(dateLabel + ' at ' + fmtTime(e.date)) + '</div>' +
+      '<div class="calendar-list-main">' + escapeHtml(e.job.company + ' - ' + e.label) + '</div>' +
+      '<div class="calendar-list-sub">' + escapeHtml(e.job.role || '') + '</div>' +
+      '</div>';
+  }).join('');
 }
 
 function getAttentionItems(jobs) {
@@ -1107,12 +1267,12 @@ function renderToday() {
     const evHtml = dayEvents.slice(0, 3).map(e => {
       const cls = e.kind === 'interview' ? 'interview' : e.kind === 'screen' ? 'screen' : e.kind === 'final' ? 'final' : 'deadline';
       const time = e.kind === 'deadline' ? '⏰' : fmtTime(e.date);
-      return '<div class="cal-event ' + cls + '" onclick="event.stopPropagation();W._gotoJob(\'' + e.job.firestoreId + '\')" title="' + escapeHtml(e.job.company + ' — ' + e.label) + '">' + time + ' ' + escapeHtml(e.job.company) + '</div>';
+      return '<div class="cal-event ' + cls + '" onclick="event.stopPropagation();W._gotoJob(\'' + e.job.firestoreId + '\')" title="' + escapeHtml(e.job.company + ' - ' + e.label) + '">' + time + ' ' + escapeHtml(e.job.company) + '</div>';
     }).join('');
     const more = dayEvents.length > 3 ? '<div class="cal-event" style="background:#f0ede8;color:#888;border-left-color:#888;">+' + (dayEvents.length - 3) + ' more</div>' : '';
     const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = d.getDate();
-    return '<div class="cal-day' + (idx === 0 ? ' today' : '') + '">' +
+    return '<div class="cal-day' + (idx === 0 ? ' today' : '') + '" onclick="openCalendarModal(\'' + d.toISOString() + '\')" title="Open full calendar">' +
       '<div class="cal-day-name">' + (idx === 0 ? 'Today' : dayName) + '</div>' +
       '<div class="cal-day-num">' + dayNum + '</div>' +
       evHtml + more +
@@ -1999,6 +2159,7 @@ const W = {
   _contName:  (fid, i, v) => updateCont(fid, i, 'name', v),
   _contTitle: (fid, i, v) => updateCont(fid, i, 'title', v),
   _gotoJob:   gotoJob,
+  _calendarGoto: calendarGotoJob,
 };
 window.W = W;
 
