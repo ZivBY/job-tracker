@@ -525,11 +525,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 
       <!-- Overview page -->
       <div id="page-overview" style="display:none;">
-        <div class="swim-filters" style="margin-bottom:14px;">
-          <button class="swim-filter active" id="ov-all" onclick="setOvFilter('all',this)">All</button>
-          <button class="swim-filter" id="ov-interviews" onclick="setOvFilter('interviews',this)">Interviews</button>
-          <button class="swim-filter" id="ov-offers" onclick="setOvFilter('offers',this)">Offers</button>
-        </div>
+        <div class="swim-filters" id="overview-filters" style="margin-bottom:14px;"></div>
         <div id="overview-summary" class="overview-summary"></div>
         <div id="overview-list"></div>
       </div>
@@ -814,7 +810,7 @@ window.setPage = function(page) {
 window.setOvFilter = function(f, btn) {
   ovFilter = f;
   document.querySelectorAll('#page-overview .swim-filter').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   renderOverview();
 };
 
@@ -1929,13 +1925,40 @@ function renderJobDetail(j) {
   '</div>';
 }
 
-// ── Overview render (preserved logic) ────────────────────────────────────────
+// ── Overview render ──────────────────────────────────────────────────────────
+
+function getOverviewFilters(allVisible) {
+  const filters = [{ key: 'all', label: 'All', count: allVisible.length }];
+  STAGES.forEach((stage, idx) => {
+    const count = allVisible.filter(j => !j.rejected && !j.declined && j.stage === idx).length;
+    if (count) filters.push({ key: 'stage-' + idx, label: stage, count });
+  });
+  const rejectedCount = allVisible.filter(j => j.rejected).length;
+  const declinedCount = allVisible.filter(j => j.declined).length;
+  if (rejectedCount) filters.push({ key: 'rejected', label: 'Rejected', count: rejectedCount });
+  if (declinedCount) filters.push({ key: 'declined', label: 'I declined', count: declinedCount });
+  return filters;
+}
+
+function renderOverviewFilters(allVisible) {
+  const filters = getOverviewFilters(allVisible);
+  if (!filters.some(f => f.key === ovFilter)) ovFilter = 'all';
+  document.getElementById('overview-filters').innerHTML = filters.map(f =>
+    '<button class="swim-filter' + (f.key === ovFilter ? ' active' : '') + '" onclick="setOvFilter(\'' + f.key + '\',this)">' +
+      escapeHtml(f.label) + ' <span class="tab-count">' + f.count + '</span>' +
+    '</button>'
+  ).join('');
+}
 
 function renderOverview() {
   const allVisible = jobs.filter(j => !j.archived && matchesSearch(j, searchQuery));
+  renderOverviewFilters(allVisible);
   let visible = allVisible.slice();
-  if (ovFilter === 'interviews') visible = visible.filter(j => !j.rejected && !j.declined && j.stage === 3);
-  else if (ovFilter === 'offers') visible = visible.filter(j => !j.rejected && !j.declined && j.stage === 5);
+  if (ovFilter.startsWith('stage-')) {
+    const stageIdx = parseInt(ovFilter.replace('stage-', ''), 10);
+    visible = visible.filter(j => !j.rejected && !j.declined && j.stage === stageIdx);
+  } else if (ovFilter === 'rejected') visible = visible.filter(j => j.rejected);
+  else if (ovFilter === 'declined') visible = visible.filter(j => j.declined);
 
   const active = allVisible.filter(j => !j.rejected && !j.declined);
   const interviewing = active.filter(j => j.stage >= 2 && j.stage < 5).length;
