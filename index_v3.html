@@ -65,18 +65,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .cal-event.screen { background: #F0EBFA; color: #6B41C9; border-left: 2px solid #6B41C9; }
 .cal-event.final { background: #FAEEDA; color: #854F0B; border-left: 2px solid #854F0B; }
 .cal-event.deadline { background: #FFE0DB; color: #A32D2D; border-left: 2px solid #E24B4A; }
-.calendar-modal { max-width: 980px; }
+.modal.calendar-modal { max-width: min(1040px, calc(100vw - 32px)); }
 .calendar-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .calendar-modal-title { font-size: 18px; font-weight: 600; }
 .calendar-nav { display: flex; gap: 6px; align-items: center; }
 .calendar-nav button, .calendar-close-btn { width: 32px; height: 32px; border-radius: 8px; border: 0.5px solid #d0cdc6; background: white; color: #555; cursor: pointer; font-size: 16px; }
 .calendar-close-btn { font-size: 20px; line-height: 1; }
-.calendar-modal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; }
-@media (max-width: 760px) { .calendar-modal-layout { grid-template-columns: 1fr; } }
+.calendar-modal-layout { display: grid; grid-template-columns: minmax(560px, 1fr) 280px; gap: 18px; }
+@media (max-width: 860px) { .calendar-modal-layout { grid-template-columns: 1fr; } }
 .full-calendar-weekdays, .full-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 .full-calendar-weekday { font-size: 10px; font-weight: 600; color: #aaa; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
 .full-calendar-grid { margin-top: 6px; }
-.full-calendar-day { min-height: 92px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #f8f7f4; padding: 6px; cursor: pointer; overflow: hidden; }
+.full-calendar-day { min-height: 92px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #f8f7f4; padding: 6px; cursor: pointer; overflow: hidden; min-width: 0; }
 .full-calendar-day:hover { background: #f0ede8; }
 .full-calendar-day.muted { opacity: 0.45; }
 .full-calendar-day.today { border-color: #185FA5; border-width: 1.5px; background: white; }
@@ -95,6 +95,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .calendar-list-main { font-size: 13px; font-weight: 600; color: #1a1a1a; }
 .calendar-list-sub { font-size: 12px; color: #555; margin-top: 2px; }
 .calendar-empty { font-size: 13px; color: #888; padding: 14px 0; text-align: center; }
+@media (max-width: 560px) {
+  .modal.calendar-modal { max-width: 100%; }
+  .full-calendar-weekdays, .full-calendar-grid { gap: 4px; }
+  .full-calendar-day { min-height: 58px; padding: 5px 4px; }
+  .full-calendar-event { font-size: 9px; padding: 2px 3px; }
+}
 
 /* ── Today: attention inbox ──────────────────────────────────────────── */
 .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin-bottom: 10px; padding: 0 4px; display: flex; align-items: center; gap: 8px; }
@@ -762,15 +768,24 @@ function setTrackerEditingEnabled(enabled) {
   if (input) input.disabled = !enabled;
 }
 
+function trackerNameStorageKey(uid) {
+  return 'job-tracker:v3:trackerName:' + uid;
+}
+
+function getProfileDoc(uid) {
+  return doc(db, 'users', uid, 'settings', 'profile');
+}
+
 async function loadTrackerName(user) {
   const fallbackName = getNameFromEmail(user && user.email) || (user && user.displayName ? user.displayName.trim() : '') || 'My';
+  const localName = localStorage.getItem(trackerNameStorageKey(user.uid));
   try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
+    const snap = await getDoc(getProfileDoc(user.uid));
     const savedName = snap.exists() && snap.data().trackerName ? snap.data().trackerName : '';
-    setTrackerOwnerName(savedName || fallbackName);
+    setTrackerOwnerName(savedName || localName || fallbackName);
   } catch(e) {
     console.error('Profile load error:', e);
-    setTrackerOwnerName(fallbackName);
+    setTrackerOwnerName(localName || fallbackName);
   }
 }
 
@@ -783,13 +798,14 @@ window.saveTrackerName = async function() {
     return;
   }
   setTrackerOwnerName(nextName);
+  localStorage.setItem(trackerNameStorageKey(currentUser.uid), nextName);
   try {
     showToast('Saving...', 'syncing', 60000);
-    await setDoc(doc(db, 'users', currentUser.uid), { trackerName: nextName, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(getProfileDoc(currentUser.uid), { trackerName: nextName, updatedAt: serverTimestamp() }, { merge: true });
     showToast('Synced ✓', 'synced');
   } catch(e) {
     console.error('Profile save error:', e);
-    showToast('Name saved on screen only', 'error', 4000);
+    showToast('Saved on this device', 'synced', 3000);
   }
 };
 
