@@ -248,9 +248,20 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1
 .stage-input, .stage-select { font-size: 13px; padding: 7px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; width: 100%; }
 .stage-textarea { width: 100%; font-size: 12px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 60px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
 .stage-field { margin-bottom: 10px; }
-.date-ok-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
-.date-ok-btn { font-size: 11px; padding: 7px 12px; border-radius: 8px; border: 0.5px solid #B5D4F4; background: #E6F1FB; color: #185FA5; cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap; }
-.date-ok-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.date-picker-trigger { text-align: left; cursor: pointer; }
+.date-picker-trigger.empty { color: var(--text-muted); }
+.date-picker-modal { max-width: 360px; }
+.date-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.date-picker-title { font-size: 15px; font-weight: 650; }
+.date-picker-nav { width: 32px; height: 32px; border-radius: 8px; border: 0.5px solid #d0cdc6; background: white; color: #555; cursor: pointer; font-size: 16px; }
+.date-picker-weekdays, .date-picker-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.date-picker-weekday { font-size: 10px; color: var(--text-subtle); font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.04em; padding-bottom: 4px; }
+.date-picker-day { border: 0.5px solid #e0ddd6; background: #faf9f7; border-radius: 8px; min-height: 36px; cursor: pointer; font: inherit; font-size: 13px; color: #1a1a1a; }
+.date-picker-day:hover { background: #f0ede8; }
+.date-picker-day.muted { color: var(--text-disabled); background: #f8f7f4; }
+.date-picker-day.selected { background: #185FA5; border-color: #185FA5; color: white; font-weight: 700; }
+.date-picker-time { margin-top: 12px; }
+.date-picker-time input { width: 100%; padding: 9px 10px; font-size: 14px; border: 0.5px solid #d0cdc6; border-radius: 8px; background: #faf9f7; color: #1a1a1a; font-family: inherit; outline: none; }
 
 .interview-rounds { background: #f0ede8; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
 .rounds-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
@@ -693,6 +704,32 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
   </div>
 </div>
 
+<!-- Date picker modal -->
+<div id="date-picker-modal" style="display:none;">
+  <div class="modal-overlay" onclick="if(event.target.classList.contains('modal-overlay'))cancelDatePicker()">
+    <div class="modal date-picker-modal">
+      <div class="modal-handle"></div>
+      <div class="date-picker-head">
+        <button class="date-picker-nav" onclick="moveDatePickerMonth(-1)">‹</button>
+        <div class="date-picker-title" id="date-picker-title">Select date</div>
+        <button class="date-picker-nav" onclick="moveDatePickerMonth(1)">›</button>
+      </div>
+      <div class="date-picker-weekdays">
+        <div class="date-picker-weekday">Sun</div><div class="date-picker-weekday">Mon</div><div class="date-picker-weekday">Tue</div><div class="date-picker-weekday">Wed</div><div class="date-picker-weekday">Thu</div><div class="date-picker-weekday">Fri</div><div class="date-picker-weekday">Sat</div>
+      </div>
+      <div class="date-picker-grid" id="date-picker-grid"></div>
+      <div class="date-picker-time" id="date-picker-time-wrap" style="display:none;">
+        <div class="field-label">Time</div>
+        <input id="date-picker-time" type="time" />
+      </div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="clearDatePickerValue()">Clear</button>
+        <button class="btn-save" onclick="confirmDatePicker()">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Clear data modal -->
 <div id="clear-data-modal" style="display:none;">
   <div class="modal-overlay" onclick="if(event.target.classList.contains('modal-overlay'))hideClearDataModal()">
@@ -780,6 +817,7 @@ let searchQuery = '';
 let trackerOwnerName = 'My';
 let calendarMonth = new Date();
 let calendarSelectedDay = new Date();
+let datePickerState = null;
 
 const urlParams = new URLSearchParams(window.location.search);
 const viewingUid = urlParams.get('view');
@@ -1813,11 +1851,9 @@ function renderJobDetail(j) {
   const def = STAGE_DEFS[activeTab];
   const stageFieldData = sd[activeTab] || {};
   let content = '';
-  function dateOkInput(id, type, value, disabledAttr, okCall) {
-    return '<div class="date-ok-row">' +
-      '<input class="stage-input" id="' + id + '" type="' + type + '" value="' + escapeHtml(value || '') + '" ' + disabledAttr + ' />' +
-      (ro ? '' : '<button class="date-ok-btn" onclick="' + okCall + '">OK</button>') +
-    '</div>';
+  function datePickerTrigger(type, value, openCall) {
+    if (ro) return '<input class="stage-input" type="text" value="' + escapeHtml(pickerDisplayValue(value, type)) + '" readonly />';
+    return '<button class="stage-input date-picker-trigger' + (value ? '' : ' empty') + '" type="button" onclick="' + openCall + '">' + escapeHtml(pickerDisplayValue(value, type)) + '</button>';
   }
   if (def) {
     def.fields.forEach(f => {
@@ -1826,9 +1862,8 @@ function renderJobDetail(j) {
         content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
           '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',this.value)"') + ' placeholder="' + (f.placeholder || '') + '">' + escapeHtml(val) + '</textarea></div>';
       } else if (f.type === 'date' || f.type === 'datetime-local') {
-        const inputId = 'stage-date-' + fid + '-' + activeTab + '-' + f.key;
         content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
-          dateOkInput(inputId, f.type, val, ro ? 'readonly' : '', 'W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',document.getElementById(\'' + inputId + '\').value)') +
+          datePickerTrigger(f.type, val, 'openStageDatePicker(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',\'' + f.type + '\',\'' + escapeHtml(val) + '\')') +
           '</div>';
       } else {
         content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
@@ -1864,12 +1899,11 @@ function renderJobDetail(j) {
         (rs && statusAt ? '<div style="font-size:10px;color:var(--text-subtle);margin-bottom:6px;">' + (rs === 'completed' ? 'Completed' : rs === 'rejected' ? 'Rejected' : 'Withdrew') + ': ' + statusAt + '</div>' : '') : '';
       const prevTerminal = rounds.slice(0, i).some(prev => prev.status === 'rejected' || prev.status === 'withdrew');
       const dimStyle = prevTerminal ? 'opacity:0.4;pointer-events:none;' : '';
-      const roundDateId = 'round-date-' + fid + '-' + i;
       content += '<div class="round-item" style="' + roundBorder + dimStyle + '">' +
         '<div class="round-num-badge" style="background:' + badgeBg + ';">' + badgeIcon + '</div>' +
         '<div class="round-fields">' + statusRow +
         '<select class="stage-select" ' + (ro ? 'disabled' : 'onchange="W._round(\'' + fid + '\',' + i + ',\'type\',this.value)"') + '>' + typeOptions + '</select>' +
-        dateOkInput(roundDateId, 'datetime-local', r.date || '', ro ? 'readonly' : '', 'W._round(\'' + fid + '\',' + i + ',\'date\',document.getElementById(\'' + roundDateId + '\').value)') +
+        datePickerTrigger('datetime-local', r.date || '', 'openRoundDatePicker(\'' + fid + '\',' + i + ',\'datetime-local\',\'' + escapeHtml(r.date || '') + '\')') +
         '<input class="stage-input" type="text" value="' + escapeHtml(r.with || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'with\',this.value)"') + ' placeholder="Interviewer name / title" />' +
         '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'notes\',this.value)"') + ' placeholder="Notes, questions asked, key takeaways...">' + escapeHtml(r.notes || '') + '</textarea>' +
         '</div></div>';
@@ -2562,6 +2596,88 @@ function archiveJob(fid) { pendingArchive = fid; render(); }
 async function confirmArchive(fid) { pendingArchive = null; expanded.delete(fid); await saveField(fid, { archived: true }); }
 function cancelArchive() { pendingArchive = null; render(); }
 async function restoreJob(fid) { await saveField(fid, { archived: false }); }
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function parsePickerDate(value) {
+  if (!value) return new Date();
+  const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!m) return new Date();
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] || 9), Number(m[5] || 0));
+}
+function pickerValueFor(date, type, timeValue) {
+  const base = date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+  return type === 'datetime-local' ? base + 'T' + (timeValue || '09:00') : base;
+}
+function pickerDisplayValue(value, type) {
+  if (!value) return 'Select date' + (type === 'datetime-local' ? ' & time' : '');
+  return type === 'datetime-local' ? fmtDateTime(value) : fmtDate(value);
+}
+function openDatePicker(state) {
+  const selected = parsePickerDate(state.value);
+  datePickerState = Object.assign({}, state, {
+    selected,
+    month: new Date(selected.getFullYear(), selected.getMonth(), 1),
+    time: state.type === 'datetime-local' ? pad2(selected.getHours()) + ':' + pad2(selected.getMinutes()) : ''
+  });
+  renderDatePicker();
+  show('date-picker-modal');
+}
+function renderDatePicker() {
+  if (!datePickerState) return;
+  const month = datePickerState.month;
+  document.getElementById('date-picker-title').textContent = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const timeWrap = document.getElementById('date-picker-time-wrap');
+  timeWrap.style.display = datePickerState.type === 'datetime-local' ? 'block' : 'none';
+  document.getElementById('date-picker-time').value = datePickerState.time || '09:00';
+
+  const start = new Date(month.getFullYear(), month.getMonth(), 1);
+  start.setDate(start.getDate() - start.getDay());
+  const selectedKey = pickerValueFor(datePickerState.selected, 'date');
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const key = pickerValueFor(d, 'date');
+    const cls = 'date-picker-day' + (d.getMonth() !== month.getMonth() ? ' muted' : '') + (key === selectedKey ? ' selected' : '');
+    cells.push('<button class="' + cls + '" onclick="selectDatePickerDay(\'' + key + '\')">' + d.getDate() + '</button>');
+  }
+  document.getElementById('date-picker-grid').innerHTML = cells.join('');
+}
+window.moveDatePickerMonth = function(delta) {
+  if (!datePickerState) return;
+  datePickerState.month = new Date(datePickerState.month.getFullYear(), datePickerState.month.getMonth() + delta, 1);
+  renderDatePicker();
+};
+window.selectDatePickerDay = function(key) {
+  if (!datePickerState) return;
+  datePickerState.selected = parsePickerDate(key + (datePickerState.time ? 'T' + datePickerState.time : ''));
+  renderDatePicker();
+};
+window.cancelDatePicker = function() {
+  datePickerState = null;
+  hide('date-picker-modal');
+};
+window.clearDatePickerValue = function() {
+  if (!datePickerState) return;
+  if (datePickerState.mode === 'stage') updateStageField(datePickerState.fid, datePickerState.stageIdx, datePickerState.fieldKey, '');
+  else if (datePickerState.mode === 'round') updateRound(datePickerState.fid, datePickerState.roundIdx, 'date', '');
+  window.cancelDatePicker();
+};
+window.confirmDatePicker = function() {
+  if (!datePickerState) return;
+  const timeInput = document.getElementById('date-picker-time');
+  const time = datePickerState.type === 'datetime-local' ? (timeInput.value || '09:00') : '';
+  const value = pickerValueFor(datePickerState.selected, datePickerState.type, time);
+  if (datePickerState.mode === 'stage') updateStageField(datePickerState.fid, datePickerState.stageIdx, datePickerState.fieldKey, value);
+  else if (datePickerState.mode === 'round') updateRound(datePickerState.fid, datePickerState.roundIdx, 'date', value);
+  window.cancelDatePicker();
+};
+window.openStageDatePicker = function(fid, stageIdx, fieldKey, type, value) {
+  openDatePicker({ mode: 'stage', fid, stageIdx, fieldKey, type, value });
+};
+window.openRoundDatePicker = function(fid, roundIdx, type, value) {
+  openDatePicker({ mode: 'round', fid, roundIdx, type, value });
+};
 
 const _timers = {};
 function debounceSave(key, fid, fields, delay) { clearTimeout(_timers[key]); _timers[key] = setTimeout(() => saveField(fid, fields), delay || 1000); }
