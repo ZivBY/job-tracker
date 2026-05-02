@@ -9,11 +9,25 @@
 <meta name="apple-mobile-web-app-title" content="Jobs">
 <meta name="theme-color" content="#1a1a1a">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Job Tracker</title>
+<script>
+if (location.hostname === '127.0.0.1') {
+  location.replace('http://localhost' + (location.port ? ':' + location.port : '') + location.pathname + location.search + location.hash);
+}
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; color: #1a1a1a; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+:root {
+  --text-primary: #1a1a1a;
+  --text-secondary: #555;
+  --text-muted: #6b655d;
+  --text-subtle: #7c766e;
+  --text-disabled: #9b958d;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; color: var(--text-primary); min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
 
 /* ── Topbar ───────────────────────────────────────────────────────────── */
 .topbar { background: white; border-bottom: 0.5px solid #e0ddd6; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; gap: 12px; flex-wrap: wrap; }
@@ -24,20 +38,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .tracker-name-input:hover, .tracker-name-input:focus { border-bottom-color: #185FA5; }
 .tracker-name-input:disabled { color: #1a1a1a; border-bottom-color: transparent; }
 .tracker-title-suffix { white-space: nowrap; }
-.app-sub { font-size: 12px; color: #888; margin-top: 1px; }
+.app-sub { font-size: 12px; color: var(--text-subtle); margin-top: 1px; }
 .topbar-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .add-btn { font-size: 13px; padding: 7px 14px; border-radius: 8px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; }
 .share-btn, .admin-btn { font-size: 12px; padding: 7px 12px; border-radius: 8px; border: 0.5px solid #d0cdc6; background: white; color: #555; cursor: pointer; }
 .signout-btn { font-size: 12px; padding: 7px 12px; border-radius: 8px; border: 0.5px solid #e0ddd6; background: transparent; color: #aaa; cursor: pointer; }
 .user-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.user-avatar-placeholder { width: 30px; height: 30px; border-radius: 50%; background: #e0ddd6; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #888; flex-shrink: 0; }
+.user-avatar-placeholder { width: 30px; height: 30px; border-radius: 50%; background: #e0ddd6; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-subtle); flex-shrink: 0; }
 
 /* ── Tabs ────────────────────────────────────────────────────────────── */
 .tab-row { display: flex; gap: 4px; padding: 0 24px; background: white; border-bottom: 0.5px solid #e0ddd6; overflow-x: auto; }
 .tab-row::-webkit-scrollbar { display: none; }
-.tab { font-size: 13px; padding: 10px 16px; border: none; background: transparent; cursor: pointer; color: #888; border-bottom: 2px solid transparent; margin-bottom: -0.5px; font-family: inherit; white-space: nowrap; }
+.tab { font-size: 13px; padding: 10px 16px; border: none; background: transparent; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -0.5px; font-family: inherit; white-space: nowrap; }
 .tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 500; }
-.tab .tab-count { font-size: 11px; color: #aaa; margin-left: 5px; }
+.tab .tab-count { font-size: 11px; color: var(--text-subtle); margin-left: 5px; }
 .tab.active .tab-count { color: #185FA5; }
 
 /* ── Layout ──────────────────────────────────────────────────────────── */
@@ -51,13 +65,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .hero-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
 .hero-greeting { font-size: 16px; font-weight: 600; }
 .hero-greeting .accent { color: #185FA5; }
-.hero-date { font-size: 12px; color: #888; }
+.hero-date { font-size: 12px; color: var(--text-subtle); }
 .calendar-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 @media (max-width: 600px) { .calendar-strip { gap: 4px; } }
 .cal-day { background: #f8f7f4; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 8px 6px 6px; min-height: 80px; cursor: pointer; transition: background 0.15s; position: relative; }
 .cal-day:hover { background: #f0ede8; }
 .cal-day.today { border-color: #185FA5; border-width: 1.5px; background: white; }
-.cal-day-name { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 2px; }
+.cal-day-name { font-size: 10px; color: var(--text-subtle); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-bottom: 2px; }
 .cal-day-num { font-size: 16px; font-weight: 600; text-align: center; margin-bottom: 6px; }
 .cal-day.today .cal-day-num { color: #185FA5; }
 .cal-event { font-size: 9.5px; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
@@ -74,7 +88,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .calendar-modal-layout { display: grid; grid-template-columns: minmax(560px, 1fr) 280px; gap: 18px; }
 @media (max-width: 860px) { .calendar-modal-layout { grid-template-columns: 1fr; } }
 .full-calendar-weekdays, .full-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.full-calendar-weekday { font-size: 10px; font-weight: 600; color: #aaa; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
+.full-calendar-weekday { font-size: 10px; font-weight: 600; color: var(--text-subtle); text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
 .full-calendar-grid { margin-top: 6px; }
 .full-calendar-day { min-height: 92px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #f8f7f4; padding: 6px; cursor: pointer; overflow: hidden; min-width: 0; }
 .full-calendar-day:hover { background: #f0ede8; }
@@ -91,15 +105,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .calendar-event-list { display: flex; flex-direction: column; gap: 7px; max-height: 520px; overflow-y: auto; padding-right: 2px; }
 .calendar-list-section { display: flex; flex-direction: column; gap: 7px; }
 .calendar-list-section + .calendar-list-section { margin-top: 14px; padding-top: 12px; border-top: 0.5px solid #f0ede8; }
-.calendar-list-heading { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+.calendar-list-heading { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .calendar-list-heading strong { color: #1a1a1a; font-weight: 700; }
 .calendar-list-item { border: 0.5px solid #e0ddd6; background: #f8f7f4; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
 .calendar-list-item.primary { border-color: #185FA5; background: #F4F9FE; }
 .calendar-list-item:hover { background: #f0ede8; }
-.calendar-list-date { font-size: 11px; color: #888; margin-bottom: 3px; }
+.calendar-list-date { font-size: 11px; color: var(--text-subtle); margin-bottom: 3px; }
 .calendar-list-main { font-size: 13px; font-weight: 600; color: #1a1a1a; }
 .calendar-list-sub { font-size: 12px; color: #555; margin-top: 2px; }
-.calendar-empty { font-size: 13px; color: #888; padding: 14px 0; text-align: center; }
+.calendar-empty { font-size: 13px; color: var(--text-subtle); padding: 14px 0; text-align: center; }
 @media (max-width: 560px) {
   .modal.calendar-modal { max-width: 100%; }
   .full-calendar-weekdays, .full-calendar-grid { gap: 4px; }
@@ -119,7 +133,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .attention-card.warning { border-left: 3px solid #BA7517; }
 .attention-card.danger { border-left: 3px solid #E24B4A; }
 .attention-card.success { border-left: 3px solid #3B6D11; }
-.attention-action { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 6px; }
+.attention-action { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px; }
 .attention-action.urgent { color: #185FA5; }
 .attention-action.warning { color: #BA7517; }
 .attention-action.danger { color: #A32D2D; }
@@ -127,14 +141,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .attention-body { display: flex; align-items: center; gap: 10px; }
 .attention-text { flex: 1; min-width: 0; }
 .attention-title { font-size: 13px; font-weight: 600; color: #1a1a1a; line-height: 1.3; }
-.attention-sub { font-size: 11px; color: #888; margin-top: 2px; }
-.empty-attention { background: #faf9f7; border: 0.5px dashed #d0cdc6; border-radius: 12px; padding: 20px; text-align: center; color: #888; font-size: 13px; }
+.attention-sub { font-size: 11px; color: var(--text-subtle); margin-top: 2px; }
+.empty-attention { background: #faf9f7; border: 0.5px dashed #d0cdc6; border-radius: 12px; padding: 20px; text-align: center; color: var(--text-subtle); font-size: 13px; }
 
 /* ── Pipeline swimlane ───────────────────────────────────────────────── */
 .swimlane-section { margin-bottom: 20px; }
 .swim-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 4px; gap: 10px; flex-wrap: wrap; }
 .swim-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-.swim-filter { font-size: 11px; padding: 5px 11px; border-radius: 20px; border: 0.5px solid #d0cdc6; background: white; color: #666; cursor: pointer; font-family: inherit; }
+.swim-filter { font-size: 11px; padding: 5px 11px; border-radius: 20px; border: 0.5px solid #d0cdc6; background: white; color: var(--text-muted); cursor: pointer; font-family: inherit; }
 .swim-filter.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
 .swimlane { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
 .swim-row-wrap { border-bottom: 0.5px solid #f0ede8; }
@@ -149,7 +163,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .swim-job { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .swim-job-info { min-width: 0; flex: 1; }
 .swim-job-title { font-size: 13px; font-weight: 600; color: #1a1a1a; line-height: 1.3; }
-.swim-job-company { font-size: 11px; color: #888; margin-top: 1px; }
+.swim-job-company { font-size: 11px; color: var(--text-subtle); margin-top: 1px; }
 .logo-sm { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
 
 /* Mini pizza track */
@@ -167,7 +181,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .mt-dot.offer { background: #3B6D11; border-color: #3B6D11; color: white; }
 .mt-dot.rejected { background: #E24B4A; border-color: #E24B4A; color: white; }
 .mt-dot.declined { background: #854F0B; border-color: #854F0B; color: white; }
-.mt-step-label { font-size: 9px; color: #aaa; margin-top: 5px; max-width: 60px; text-align: center; line-height: 1.1; }
+.mt-step-label { font-size: 9px; color: var(--text-subtle); margin-top: 5px; max-width: 60px; text-align: center; line-height: 1.1; }
 .mt-step-label.current { color: #185FA5; font-weight: 600; }
 .mt-step-label.done { color: #1D9E75; }
 .mt-step-label.offer { color: #3B6D11; font-weight: 600; }
@@ -183,7 +197,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .swim-chip.declined { background: #FAEEDA; color: #854F0B; }
 .swim-chip.referral { background: #FFF3E0; color: #E65100; }
 .swim-chip.archived { background: #f5f0e8; color: #854F0B; }
-.swim-age { font-size: 10px; color: #aaa; }
+.swim-age { font-size: 10px; color: var(--text-subtle); }
 
 /* Expanded detail panel within swimlane row */
 .swim-detail { border-top: 0.5px solid #e0ddd6; background: #faf9f7; padding: 14px 16px; display: none; }
@@ -194,19 +208,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .stage-notes-panel { background: white; border: 0.5px solid #e0ddd6; border-radius: 10px; overflow: hidden; }
 .stage-tab-row { display: flex; overflow-x: auto; padding: 0 12px; gap: 0; border-bottom: 0.5px solid #f0ede8; background: white; }
 .stage-tab-row::-webkit-scrollbar { display: none; }
-.stage-tab { font-size: 11px; padding: 8px 12px; border: none; background: transparent; color: #aaa; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -0.5px; font-family: inherit; }
+.stage-tab { font-size: 11px; padding: 8px 12px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -0.5px; font-family: inherit; }
 .stage-tab.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 600; }
 .stage-tab.done-tab { color: #1D9E75; }
 .stage-tab.done-tab.active { border-bottom-color: #1D9E75; }
 .stage-content { padding: 12px 14px; }
-.field-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.field-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
 .stage-input, .stage-select { font-size: 13px; padding: 7px 10px; border: 0.5px solid #e0ddd6; border-radius: 8px; background: #faf9f7; color: #333; font-family: inherit; outline: none; width: 100%; }
 .stage-textarea { width: 100%; font-size: 12px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 60px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
 .stage-field { margin-bottom: 10px; }
 
 .interview-rounds { background: #f0ede8; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
 .rounds-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
-.rounds-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+.rounds-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 .round-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 0.5px solid #e0ddd6; }
 .round-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 .round-num-badge { width: 22px; height: 22px; border-radius: 50%; background: #185FA5; color: white; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
@@ -232,7 +246,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-radius: 8px; padding: 8px 10px; resize: vertical; min-height: 60px; font-family: inherit; color: #333; background: #faf9f7; line-height: 1.5; outline: none; }
 
 .detail-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid #f0ede8; }
-.action-btn { font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid #e0ddd6; background: transparent; color: #888; cursor: pointer; white-space: nowrap; font-family: inherit; }
+.action-btn { font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid #d0cdc6; background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; font-family: inherit; }
 .action-btn.red.active { background: #fef2f2; color: #A32D2D; border-color: #F09595; }
 .action-btn.amber.active { background: #FAEEDA; color: #854F0B; border-color: #FAC775; }
 .action-btn.green { border-color: #C0DD97; background: #EAF3DE; color: #3B6D11; }
@@ -243,7 +257,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 /* ── Sidebar ─────────────────────────────────────────────────────────── */
 .sidebar { background: white; border-left: 0.5px solid #e0ddd6; padding: 18px 16px 90px; overflow-y: auto; }
 .sb-section { margin-bottom: 24px; }
-.sb-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 10px; }
+.sb-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 10px; }
 
 .heatmap { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px; margin-bottom: 6px; }
 .hm-cell { aspect-ratio: 1; border-radius: 2px; background: #f0ede8; }
@@ -251,20 +265,20 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 .hm-cell.l2 { background: #9bd3a8; }
 .hm-cell.l3 { background: #5cb574; }
 .hm-cell.l4 { background: #1D9E75; }
-.heatmap-legend { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #aaa; justify-content: flex-end; }
+.heatmap-legend { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-subtle); justify-content: flex-end; }
 .heatmap-legend .hl-cell { width: 10px; height: 10px; border-radius: 2px; }
-.heatmap-summary { font-size: 11px; color: #666; margin-top: 6px; }
+.heatmap-summary { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 .heatmap-summary .accent { color: #1a1a1a; font-weight: 600; }
 
 .funnel-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 12px; gap: 8px; }
-.funnel-label { color: #666; display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-width: 80px; }
+.funnel-label { color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-width: 80px; }
 .funnel-bar-bg { flex: 1; height: 6px; background: #f0ede8; border-radius: 3px; overflow: hidden; min-width: 30px; }
 .funnel-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
 .funnel-num { color: #1a1a1a; font-weight: 600; min-width: 22px; text-align: right; }
 
 .sb-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .sb-stat-card { background: #faf9f7; border: 0.5px solid #f0ede8; border-radius: 8px; padding: 8px 10px; }
-.sb-stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.sb-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
 .sb-stat-val { font-size: 18px; font-weight: 600; color: #1a1a1a; }
 .sb-stat-val .accent { color: #185FA5; }
 
@@ -280,18 +294,18 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 
 .search-results { position: fixed; bottom: 82px; right: 22px; width: min(420px, calc(100vw - 44px)); max-height: 60vh; background: white; border: 0.5px solid #e0ddd6; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.14); z-index: 199; overflow: hidden; display: none; }
 .search-results.open { display: flex; flex-direction: column; }
-.search-results-header { padding: 10px 14px; border-bottom: 0.5px solid #f0ede8; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
+.search-results-header { padding: 10px 14px; border-bottom: 0.5px solid #f0ede8; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
 .search-results-list { overflow-y: auto; padding: 6px 0; }
 .search-result { padding: 10px 14px; cursor: pointer; border-bottom: 0.5px solid #f5f3f0; }
 .search-result:last-child { border-bottom: none; }
 .search-result:hover { background: #faf9f7; }
 .search-result-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .search-result-title { font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1; min-width: 0; }
-.search-result-stage { font-size: 10px; color: #aaa; flex-shrink: 0; }
-.search-result-company { font-size: 11px; color: #888; margin-bottom: 4px; }
-.search-result-snippet { font-size: 11px; color: #666; line-height: 1.4; max-height: 36px; overflow: hidden; }
+.search-result-stage { font-size: 10px; color: var(--text-subtle); flex-shrink: 0; }
+.search-result-company { font-size: 11px; color: var(--text-subtle); margin-bottom: 4px; }
+.search-result-snippet { font-size: 11px; color: var(--text-muted); line-height: 1.4; max-height: 36px; overflow: hidden; }
 .search-result-snippet mark { background: #FAEEDA; color: #854F0B; padding: 0 2px; border-radius: 2px; }
-.search-empty { padding: 20px; text-align: center; color: #aaa; font-size: 13px; }
+.search-empty { padding: 20px; text-align: center; color: var(--text-subtle); font-size: 13px; }
 
 /* ── Modals (preserved from v1) ──────────────────────────────────────── */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 300; }
@@ -302,7 +316,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 @media (min-width: 600px) { .modal-handle { display: none; } }
 .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
 .form-row { margin-bottom: 10px; }
-.form-row label { font-size: 12px; color: #888; display: block; margin-bottom: 4px; }
+.form-row label { font-size: 12px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 4px; }
 .form-row input, .form-row select { width: 100%; padding: 10px 12px; font-size: 15px; border: 0.5px solid #d0cdc6; border-radius: 10px; background: #faf9f7; color: #1a1a1a; font-family: inherit; outline: none; }
 .modal-btns { display: flex; gap: 8px; margin-top: 1.25rem; }
 .btn-cancel { flex: 1; font-size: 15px; padding: 12px; border-radius: 10px; border: 0.5px solid #d0cdc6; background: transparent; color: #888; cursor: pointer; font-family: inherit; }
@@ -312,7 +326,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 .jd-url-input { flex: 1; font-size: 14px; padding: 10px 12px; border: 0.5px solid #d0cdc6; border-radius: 10px; background: white; color: #1a1a1a; font-family: inherit; outline: none; min-width: 0; }
 .jd-fetch-btn { font-size: 13px; padding: 10px 14px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; white-space: nowrap; flex-shrink: 0; font-family: inherit; }
 .jd-fetch-btn:disabled { background: #aaa; cursor: not-allowed; }
-.jd-or { text-align: center; font-size: 11px; color: #bbb; margin: 8px 0; }
+.jd-or { text-align: center; font-size: 11px; color: var(--text-subtle); margin: 8px 0; }
 .jd-textarea { width: 100%; font-size: 12px; border: 0.5px solid #d0cdc6; border-radius: 10px; padding: 10px 12px; resize: vertical; min-height: 90px; font-family: inherit; color: #333; background: white; line-height: 1.5; outline: none; }
 .jd-status { font-size: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 8px; display: none; }
 .jd-status.loading { display: block; background: #f0ede8; color: #888; }
@@ -320,7 +334,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 .jd-status.success { display: block; background: #EAF3DE; color: #3B6D11; }
 .divider { display: flex; align-items: center; gap: 8px; margin: 1rem 0 0.75rem; }
 .divider-line { flex: 1; height: 0.5px; background: #e0ddd6; }
-.divider-label { font-size: 11px; color: #bbb; }
+.divider-label { font-size: 11px; color: var(--text-subtle); }
 .share-url-box { background: #f5f3f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #555; word-break: break-all; margin: 10px 0; }
 .copy-btn { width: 100%; font-size: 14px; padding: 11px; border-radius: 10px; border: none; background: #1a1a1a; color: white; cursor: pointer; font-weight: 500; font-family: inherit; }
 .copy-btn.copied { background: #1D9E75; }
@@ -340,16 +354,18 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 .admin-user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8f7f4; border-radius: 8px; border: 0.5px solid #e0ddd6; gap: 8px; }
 .admin-user-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .admin-user-email { font-size: 13px; color: #1a1a1a; font-weight: 500; }
-.admin-user-uid { font-size: 10px; color: #aaa; font-family: monospace; }
+.admin-user-uid { font-size: 10px; color: var(--text-subtle); font-family: monospace; }
 .admin-remove-btn { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #F09595; background: transparent; color: #A32D2D; cursor: pointer; white-space: nowrap; font-family: inherit; }
 
 /* ── Login / readonly ────────────────────────────────────────────────── */
 .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; text-align: center; }
 .login-logo { width: 64px; height: 64px; border-radius: 16px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 1.5rem; color: white; }
 .login-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
-.login-sub { font-size: 14px; color: #888; margin-bottom: 2rem; max-width: 320px; }
+.login-sub { font-size: 14px; color: var(--text-subtle); margin-bottom: 2rem; max-width: 320px; }
 .google-btn { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 12px; border: 0.5px solid #d0cdc6; background: white; font-size: 15px; font-weight: 500; cursor: pointer; color: #1a1a1a; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-family: inherit; }
 .google-icon { width: 20px; height: 20px; }
+.login-alt { margin-top: 16px; font-size: 12px; color: var(--text-subtle); max-width: 340px; line-height: 1.4; }
+.login-alt a { color: #185FA5; text-decoration: none; font-weight: 600; }
 .readonly-banner { background: #FAEEDA; border-bottom: 0.5px solid #FAC775; padding: 10px 1rem; text-align: center; font-size: 12px; color: #854F0B; }
 
 /* ── Toast ───────────────────────────────────────────────────────────── */
@@ -362,8 +378,8 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 /* ── v2 banner ───────────────────────────────────────────────────────── */
 .v2-banner { background: #185FA5; color: white; text-align: center; padding: 5px; font-size: 11px; letter-spacing: 0.04em; }
 
-.empty { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
-.loading-msg { text-align: center; padding: 3rem 1rem; color: #aaa; font-size: 13px; }
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text-subtle); font-size: 13px; }
+.loading-msg { text-align: center; padding: 3rem 1rem; color: var(--text-subtle); font-size: 13px; }
 
 @keyframes pulse-blue { 0%,100%{box-shadow:0 0 0 0 rgba(24,95,165,0.25)} 50%{box-shadow:0 0 0 5px rgba(24,95,165,0)} }
 .mt-dot.current { animation: pulse-blue 2s infinite; }
@@ -374,6 +390,14 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 <div class="v2-banner">v3 preview · your live tracker still runs at index.html</div>
 
 <!-- Login / denied / readonly -->
+<div id="boot-screen">
+  <div class="login-screen">
+    <div class="login-logo">💼</div>
+    <div class="login-title">Loading tracker</div>
+    <div class="login-sub" id="boot-status">Checking your session...</div>
+  </div>
+</div>
+
 <div id="login-screen" style="display:none;">
   <div class="login-screen">
     <div class="login-logo">💼</div>
@@ -383,6 +407,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
       <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Sign in with Google
     </button>
+    <div class="login-alt" id="local-login-help" style="display:none;">Local sign-in can be unreliable in embedded browsers. <a href="https://zivby.github.io/job-tracker/index_v3.html">Open the GitHub Pages version</a>.</div>
   </div>
 </div>
 
@@ -539,7 +564,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
       <div class="modal-handle"></div>
       <h3>Add application</h3>
       <div class="jd-box">
-        <div style="font-size:12px;color:#888;margin-bottom:8px;">Paste a job posting URL and Claude will fill in the details</div>
+        <div style="font-size:12px;color:var(--text-subtle);margin-bottom:8px;">Paste a job posting URL and Claude will fill in the details</div>
         <div class="jd-input-row">
           <input class="jd-url-input" id="jd-url" type="url" placeholder="https://jobs.lever.co/..." />
           <button class="jd-fetch-btn" id="jd-btn" onclick="extractFromUrl()">Extract</button>
@@ -593,14 +618,14 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
     <div class="modal">
       <div class="modal-handle"></div>
       <h3>Manage access</h3>
-      <p style="font-size:13px;color:#888;margin-bottom:1rem;">Add a user's email below. They must have signed in at least once so Firebase has their account.</p>
+      <p style="font-size:13px;color:var(--text-subtle);margin-bottom:1rem;">Add a user's email below. They must have signed in at least once so Firebase has their account.</p>
       <div class="admin-input-row">
         <input class="admin-input" id="admin-email-input" type="email" placeholder="friend@gmail.com" />
         <button class="admin-add-btn" id="admin-add-btn" onclick="adminAddUser()">Add user</button>
       </div>
       <div class="admin-status" id="admin-status"></div>
       <div class="field-label" style="margin-bottom:8px;">Approved users</div>
-      <div class="admin-users-list" id="admin-users-list"><div style="font-size:13px;color:#aaa;">Loading...</div></div>
+      <div class="admin-users-list" id="admin-users-list"><div style="font-size:13px;color:var(--text-subtle);">Loading...</div></div>
       <button class="btn-cancel" style="width:100%;margin-top:1rem;" onclick="hideAdminPanel()">Done</button>
     </div>
   </div>
@@ -612,7 +637,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
     <div class="modal">
       <div class="modal-handle"></div>
       <h3>📧 Sync inbox</h3>
-      <p style="font-size:13px;color:#888;margin-bottom:1rem;">Connect Gmail to scan for recruiter emails and get suggested stage updates.</p>
+      <p style="font-size:13px;color:var(--text-subtle);margin-bottom:1rem;">Connect Gmail to scan for recruiter emails and get suggested stage updates.</p>
       <div id="gmail-connect-section">
         <button class="admin-add-btn" style="width:100%;margin-bottom:8px;" onclick="connectGmail()">Connect Gmail</button>
       </div>
@@ -636,7 +661,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
     <div class="modal">
       <div class="modal-handle"></div>
       <h3>Share your tracker</h3>
-      <p style="font-size:13px;color:#888;margin-bottom:12px;">Anyone with this link can view your tracker in read-only mode.</p>
+      <p style="font-size:13px;color:var(--text-subtle);margin-bottom:12px;">Anyone with this link can view your tracker in read-only mode.</p>
       <div class="share-url-box" id="share-url-display"></div>
       <button class="copy-btn" id="copy-btn" onclick="copyShareUrl()">Copy link</button>
       <button class="btn-cancel" style="width:100%;margin-top:8px;" onclick="hideShareModal()">Done</button>
@@ -647,7 +672,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDUNgIm11WNevESCPMbN440xnu-TGbdURE",
@@ -662,6 +687,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+setPersistence(auth, browserLocalPersistence).catch(e => console.error('Auth persistence error:', e));
 
 const STAGES = ['Interested','Applied','Screen','Interview','Final round','Offer'];
 const STAGES_SHORT = ['Int.','App.','Scrn','Intvw','Final','Offer'];
@@ -699,6 +726,16 @@ let calendarSelectedDay = new Date();
 
 const urlParams = new URLSearchParams(window.location.search);
 const viewingUid = urlParams.get('view');
+
+window.addEventListener('error', e => {
+  console.error('Unhandled app error:', e.error || e.message);
+  showToast('App error: ' + (e.message || 'check console'), 'error', 6000);
+});
+window.addEventListener('unhandledrejection', e => {
+  console.error('Unhandled promise rejection:', e.reason);
+  const msg = e.reason && (e.reason.code || e.reason.message) ? (e.reason.code || e.reason.message) : 'check console';
+  showToast('App error: ' + msg, 'error', 6000);
+});
 
 // ── Page navigation ──────────────────────────────────────────────────────────
 
@@ -851,9 +888,62 @@ window.resizeTrackerNameInput = function(e) {
   input.style.width = Math.max(4, Math.min(input.value.length + 1, 28)) + 'ch';
 };
 
+function getAuthErrorMessage(e) {
+  const code = e && e.code ? e.code : 'auth/unknown';
+  if (code === 'auth/unauthorized-domain') return 'Sign in blocked: add localhost to Firebase authorized domains.';
+  if (code === 'auth/popup-blocked') return 'Popup blocked. Trying redirect sign-in...';
+  if (code === 'auth/popup-closed-by-user') return 'Sign in window was closed.';
+  if (code === 'auth/cancelled-popup-request') return 'Sign in already in progress.';
+  return 'Sign in failed: ' + code;
+}
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' timed out')), ms))
+  ]);
+}
+
+function setBootStatus(msg) {
+  const el = document.getElementById('boot-status');
+  if (el) el.textContent = msg;
+}
+
+function updateLocalLoginHelp() {
+  const help = document.getElementById('local-login-help');
+  if (help) help.style.display = location.hostname === 'localhost' ? 'block' : 'none';
+}
+
+getRedirectResult(auth).catch(e => {
+  console.error('Redirect sign in error:', e);
+  showToast(getAuthErrorMessage(e), 'error', 6000);
+});
+
+setTimeout(() => {
+  const bootVisible = document.getElementById('boot-screen') && document.getElementById('boot-screen').style.display !== 'none';
+  if (bootVisible) {
+    hide('boot-screen');
+    show('login-screen');
+    updateLocalLoginHelp();
+    showToast('Firebase auth did not finish on localhost.', 'error', 6000);
+  }
+}, 8000);
+
 window.signInWithGoogle = async function() {
-  try { await signInWithPopup(auth, provider); }
-  catch(e) { console.error('Sign in error:', e); showToast('Sign in failed', 'error'); }
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    console.error('Sign in error:', e);
+    const msg = getAuthErrorMessage(e);
+    showToast(msg, msg.includes('Trying redirect') ? 'syncing' : 'error', 6000);
+    if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) {
+      try { await signInWithRedirect(auth, provider); }
+      catch(redirectError) {
+        console.error('Redirect start error:', redirectError);
+        showToast(getAuthErrorMessage(redirectError), 'error', 6000);
+      }
+    }
+  }
 };
 
 window.signOut = async function() {
@@ -862,7 +952,7 @@ window.signOut = async function() {
 };
 
 async function isAllowed(user) {
-  if (user.email === ADMIN_EMAIL) return true;
+  if ((user.email || '').toLowerCase() === ADMIN_EMAIL) return true;
   try {
     const snap = await getDoc(doc(db, 'allowlist', user.uid));
     return snap.exists();
@@ -874,7 +964,7 @@ onAuthStateChanged(auth, async user => {
     currentUser = user;
     if (viewingUid) {
       isReadOnly = true;
-      show('app'); hide('login-screen'); hide('denied-screen');
+      hide('boot-screen'); show('app'); hide('login-screen'); hide('denied-screen');
       document.getElementById('readonly-banner').style.display = 'block';
       document.getElementById('add-btn').style.display = 'none';
       document.getElementById('share-btn').style.display = 'none';
@@ -883,17 +973,27 @@ onAuthStateChanged(auth, async user => {
       setTrackerOwnerName('Shared');
       loadJobs(viewingUid);
     } else if (user) {
-      const safeEmail = user.email.replace(/\./g, '_');
-      setDoc(doc(db, 'emailToUid', safeEmail), { uid: user.uid, email: user.email }).catch(() => {});
-      const allowed = await isAllowed(user);
-      if (!allowed) { hide('app'); hide('login-screen'); show('denied-screen'); return; }
+      setBootStatus('Loading your tracker...');
+      const userEmail = (user.email || '').toLowerCase();
+      if (userEmail) {
+        const safeEmail = userEmail.replace(/\./g, '_');
+        setDoc(doc(db, 'emailToUid', safeEmail), { uid: user.uid, email: userEmail }).catch(e => console.error('Email map save error:', e));
+      }
       isReadOnly = false;
-      show('app'); hide('login-screen'); hide('denied-screen');
+      hide('boot-screen'); show('app'); hide('login-screen'); hide('denied-screen');
+      jobs = [];
+      render();
+      withTimeout(isAllowed(user), 5000, 'Access check').then(allowed => {
+        if (!allowed) { hide('app'); hide('login-screen'); show('denied-screen'); }
+      }).catch(e => {
+        console.error('Allowlist check warning:', e);
+        showToast('Access check is slow; showing your tracker while it loads.', 'syncing', 5000);
+      });
       document.getElementById('readonly-banner').style.display = 'none';
       document.getElementById('add-btn').style.display = 'inline-block';
       document.getElementById('share-btn').style.display = 'inline-block';
       document.getElementById('signout-btn').style.display = 'inline-block';
-      if (user.email === ADMIN_EMAIL) document.getElementById('admin-btn').style.display = 'inline-block';
+      document.getElementById('admin-btn').style.display = userEmail === ADMIN_EMAIL ? 'inline-block' : 'none';
       document.getElementById('gmail-btn').style.display = 'inline-block';
       setTrackerEditingEnabled(true);
       const wrap = document.getElementById('user-avatar-wrap');
@@ -903,7 +1003,8 @@ onAuthStateChanged(auth, async user => {
       await loadTrackerName(user);
       loadJobs(user.uid);
     } else {
-      show('login-screen'); hide('app'); hide('denied-screen');
+      hide('boot-screen'); show('login-screen'); hide('app'); hide('denied-screen');
+      updateLocalLoginHelp();
       document.getElementById('readonly-banner').style.display = 'none';
       document.title = 'Job Tracker';
       setTrackerOwnerName('My');
@@ -911,7 +1012,16 @@ onAuthStateChanged(auth, async user => {
       jobs = [];
     }
     updateStatsTabVisibility();
-  } catch(e) { console.error('Auth error:', e); show('login-screen'); hide('app'); }
+  } catch(e) {
+    console.error('Auth error:', e);
+    if (user) {
+      hide('boot-screen'); show('app'); hide('login-screen'); hide('denied-screen');
+      showToast('Loaded with an auth warning: ' + (e.code || e.message || 'check console'), 'error', 6000);
+    } else {
+      hide('boot-screen'); show('login-screen'); hide('app'); hide('denied-screen');
+      updateLocalLoginHelp();
+    }
+  }
 });
 
 function show(id) { document.getElementById(id).style.display = 'block'; }
@@ -1194,7 +1304,7 @@ function renderFullCalendar() {
     if (d.getTime() === today.getTime()) classes.push('today');
     if (d.getTime() === selected.getTime()) classes.push('selected');
     const eventHtml = dayEvents.slice(0, 3).map(e => renderEventPill(e, 'full-calendar-event')).join('');
-    const more = dayEvents.length > 3 ? '<div class="full-calendar-event" style="background:#f0ede8;color:#888;">+' + (dayEvents.length - 3) + ' more</div>' : '';
+    const more = dayEvents.length > 3 ? '<div class="full-calendar-event" style="background:#f0ede8;color:var(--text-muted);">+' + (dayEvents.length - 3) + ' more</div>' : '';
     cells.push('<div class="' + classes.join(' ') + '" onclick="selectCalendarDay(\'' + d.toISOString() + '\')">' +
       '<div class="full-calendar-day-num">' + d.getDate() + '</div>' +
       eventHtml + more +
@@ -1347,7 +1457,7 @@ function renderToday() {
       const time = e.kind === 'deadline' ? '⏰' : fmtTime(e.date);
       return '<div class="cal-event ' + cls + '" onclick="event.stopPropagation();W._gotoJob(\'' + e.job.firestoreId + '\')" title="' + escapeHtml(e.job.company + ' - ' + e.label) + '">' + time + ' ' + escapeHtml(e.job.company) + '</div>';
     }).join('');
-    const more = dayEvents.length > 3 ? '<div class="cal-event" style="background:#f0ede8;color:#888;border-left-color:#888;">+' + (dayEvents.length - 3) + ' more</div>' : '';
+    const more = dayEvents.length > 3 ? '<div class="cal-event" style="background:#f0ede8;color:var(--text-muted);border-left-color:var(--text-muted);">+' + (dayEvents.length - 3) + ' more</div>' : '';
     const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = d.getDate();
     return '<div class="cal-day' + (idx === 0 ? ' today' : '') + '" onclick="openCalendarModal(\'' + d.toISOString() + '\')" title="Open full calendar">' +
@@ -1535,15 +1645,15 @@ function renderJobDetail(j) {
       const roundBorder = rs ? 'border-left:3px solid ' + borderColor + ';padding-left:10px;' : '';
       function pill(label, val, activeBg, activeColor) {
         const active = rs === val;
-        return '<button onclick="W._roundStatus(\'' + fid + '\',' + i + ',\'' + val + '\')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid ' + (active ? activeBg : '#d0cdc6') + ';background:' + (active ? activeBg : 'transparent') + ';color:' + (active ? activeColor : '#888') + ';cursor:pointer;font-family:inherit;white-space:nowrap;">' + label + '</button>';
+        return '<button onclick="W._roundStatus(\'' + fid + '\',' + i + ',\'' + val + '\')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid ' + (active ? activeBg : '#d0cdc6') + ';background:' + (active ? activeBg : 'transparent') + ';color:' + (active ? activeColor : 'var(--text-muted)') + ';cursor:pointer;font-family:inherit;white-space:nowrap;">' + label + '</button>';
       }
       const statusRow = !ro ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">' +
-        '<span style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-right:2px;">Round outcome:</span>' +
+        '<span style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-right:2px;">Round outcome:</span>' +
         pill('✓ Completed', 'completed', '#1D9E75', 'white') +
         pill('✕ Rejected after this', 'rejected', '#E24B4A', 'white') +
         pill('↩ I withdrew', 'withdrew', '#854F0B', 'white') +
         '</div>' +
-        (rs && statusAt ? '<div style="font-size:10px;color:#aaa;margin-bottom:6px;">' + (rs === 'completed' ? 'Completed' : rs === 'rejected' ? 'Rejected' : 'Withdrew') + ': ' + statusAt + '</div>' : '') : '';
+        (rs && statusAt ? '<div style="font-size:10px;color:var(--text-subtle);margin-bottom:6px;">' + (rs === 'completed' ? 'Completed' : rs === 'rejected' ? 'Rejected' : 'Withdrew') + ': ' + statusAt + '</div>' : '') : '';
       const prevTerminal = rounds.slice(0, i).some(prev => prev.status === 'rejected' || prev.status === 'withdrew');
       const dimStyle = prevTerminal ? 'opacity:0.4;pointer-events:none;' : '';
       content += '<div class="round-item" style="' + roundBorder + dimStyle + '">' +
@@ -1562,7 +1672,7 @@ function renderJobDetail(j) {
     '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._sn(\'' + fid + '\',' + activeTab + ',this.value)"') + ' placeholder="Notes specific to this stage...">' + escapeHtml(sn[activeTab] || '') + '</textarea>';
 
   // Pipeline-advance hint
-  const advanceRow = (!ro && !j.rejected && !j.declined && !j.archived) ? '<div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;margin-top:4px;">Tip: tap a dot on the row above to advance the stage</div>' : '';
+  const advanceRow = (!ro && !j.rejected && !j.declined && !j.archived) ? '<div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;margin-top:4px;">Tip: tap a dot on the row above to advance the stage</div>' : '';
 
   // Extras
   const atts = j.attachments || [];
@@ -1662,13 +1772,13 @@ function renderOverview() {
     }).join('');
 
     const chips = [];
-    if (sd[1] && sd[1].appliedDate) chips.push('<span class="swim-chip" style="background:#f5f3f0;color:#888;">Applied ' + fmtDate(sd[1].appliedDate) + '</span>');
+    if (sd[1] && sd[1].appliedDate) chips.push('<span class="swim-chip" style="background:#f5f3f0;color:var(--text-muted);">Applied ' + fmtDate(sd[1].appliedDate) + '</span>');
     if (sd[2] && sd[2].screenDate) chips.push('<span class="swim-chip next">📅 Screen: ' + fmtDateTime(sd[2].screenDate) + '</span>');
     rounds.forEach((r, i) => { if (r.date) chips.push('<span class="swim-chip next">📅 R' + (i+1) + ': ' + fmtDateTime(r.date) + '</span>'); });
     if (sd[4] && sd[4].finalDate) chips.push('<span class="swim-chip next">📅 Final: ' + fmtDateTime(sd[4].finalDate) + '</span>');
     if (sd[5] && sd[5].offerDate) chips.push('<span class="swim-chip" style="background:#EAF3DE;color:#3B6D11;">🎉 ' + fmtDate(sd[5].offerDate) + '</span>');
     if (sd[5] && sd[5].offerDeadline) chips.push('<span class="swim-chip deadline">⏰ ' + fmtDate(sd[5].offerDeadline) + '</span>');
-    if (!j.rejected && !j.declined && j.stage > 0) chips.push('<span class="swim-chip" style="background:#f5f3f0;color:#888;">⏱ ' + fmtDur(now() - stageEnteredAt(j)) + ' in ' + stageName + '</span>');
+    if (!j.rejected && !j.declined && j.stage > 0) chips.push('<span class="swim-chip" style="background:#f5f3f0;color:var(--text-muted);">⏱ ' + fmtDur(now() - stageEnteredAt(j)) + ' in ' + stageName + '</span>');
 
     return '<div class="swim-row-wrap" style="background:white;border:0.5px solid #e0ddd6;border-radius:12px;margin-bottom:10px;cursor:pointer;" onclick="W._gotoJob(\'' + j.firestoreId + '\')">' +
       '<div class="swim-row" style="border:none;">' +
@@ -1861,27 +1971,27 @@ window.disconnectGmail = async function() {
 
 function renderGmailSuggestions(suggestions, scannedAt) {
   const container = document.getElementById('gmail-suggestions');
-  if (!suggestions || suggestions.length === 0) { container.innerHTML = '<div style="font-size:13px;color:#888;text-align:center;padding:1rem;">No relevant recruiter emails found.</div>'; return; }
+  if (!suggestions || suggestions.length === 0) { container.innerHTML = '<div style="font-size:13px;color:var(--text-subtle);text-align:center;padding:1rem;">No relevant recruiter emails found.</div>'; return; }
   const header = scannedAt
-    ? '<div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last scanned: ' + fmtDateTime(scannedAt) + ' · ' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>'
-    : '<div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>';
+    ? '<div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last scanned: ' + fmtDateTime(scannedAt) + ' · ' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>'
+    : '<div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">' + suggestions.length + ' suggestion' + (suggestions.length !== 1 ? 's' : '') + '</div>';
   const cards = suggestions.map((s, i) => {
     const matchedJob = jobs.find(j => j.company.toLowerCase().includes(s.company.toLowerCase()) || s.company.toLowerCase().includes(j.company.toLowerCase()));
     const jobId = matchedJob ? matchedJob.firestoreId : null;
     const stageName = STAGES[s.suggestedStage] || '';
     const applied = s.applied || false;
     return '<div id="gmail-card-' + i + '" style="background:' + (applied ? '#f0fdf4' : '#f8f7f4') + ';border:0.5px solid ' + (applied ? '#86efac' : '#e0ddd6') + ';border-radius:10px;padding:12px;margin-bottom:8px;">' +
-      '<div style="font-size:11px;color:#888;margin-bottom:3px;">' + escapeHtml(s.emailFrom) + '</div>' +
+      '<div style="font-size:11px;color:var(--text-subtle);margin-bottom:3px;">' + escapeHtml(s.emailFrom) + '</div>' +
       '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">' + escapeHtml(s.emailSubject) + '</div>' +
       '<div style="font-size:12px;color:#555;margin-bottom:6px;">' + escapeHtml(s.reason) + '</div>' +
       (s.interviewRounds && s.interviewRounds.length > 0 ? '<div style="font-size:11px;color:#185FA5;background:#E6F1FB;border-radius:6px;padding:6px 8px;margin-bottom:8px;">🎙️ ' + s.interviewRounds.length + ' rounds detected: ' + escapeHtml(s.interviewRounds.map(r => r.type).join(', ')) + '</div>' : '') +
       '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
         '<span style="font-size:11px;background:#f0ede8;color:#555;padding:2px 8px;border-radius:20px;">' + escapeHtml(s.company) + '</span>' +
-        '<span style="font-size:11px;color:#aaa;">→</span>' +
+        '<span style="font-size:11px;color:var(--text-subtle);">→</span>' +
         '<span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:2px 8px;border-radius:20px;">' + stageName + '</span>' +
         (applied ? '<span style="margin-left:auto;font-size:11px;color:#1D9E75;font-weight:500;">✓ Applied</span>'
           : jobId ? '<button onclick="W._applyGmail(\'' + jobId + '\',' + s.suggestedStage + ',' + i + ')" style="margin-left:auto;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:#1a1a1a;color:white;cursor:pointer;">Apply update</button>'
-          : '<span style="margin-left:auto;font-size:11px;color:#aaa;font-style:italic;">Not in tracker</span>') +
+          : '<span style="margin-left:auto;font-size:11px;color:var(--text-subtle);font-style:italic;">Not in tracker</span>') +
       '</div></div>';
   }).join('');
   container.innerHTML = header + cards;
@@ -1958,10 +2068,10 @@ function setAdminStatus(msg, type) { const el = document.getElementById('admin-s
 
 async function loadAdminUsers() {
   const list = document.getElementById('admin-users-list');
-  list.innerHTML = '<div style="font-size:13px;color:#aaa;">Loading...</div>';
+  list.innerHTML = '<div style="font-size:13px;color:var(--text-subtle);">Loading...</div>';
   try {
     const snap = await getDocs(collection(db, 'allowlist'));
-    if (snap.empty) { list.innerHTML = '<div style="font-size:13px;color:#aaa;">No approved users yet.</div>'; return; }
+    if (snap.empty) { list.innerHTML = '<div style="font-size:13px;color:var(--text-subtle);">No approved users yet.</div>'; return; }
     list.innerHTML = snap.docs.map(d => {
       const data = d.data();
       return '<div class="admin-user-row"><div class="admin-user-info"><div class="admin-user-email">' + escapeHtml(data.email || 'Unknown') + '</div><div class="admin-user-uid">' + d.id + '</div></div><button class="admin-remove-btn" onclick="adminRemoveUser(\'' + d.id + '\')">Remove</button></div>';
