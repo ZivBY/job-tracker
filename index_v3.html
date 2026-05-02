@@ -224,6 +224,17 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1
 .swim-row-wrap.expanded .swim-detail { display: block; }
 .detail-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
+/* ── Overview snapshot ───────────────────────────────────────────────── */
+.overview-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+@media (max-width: 720px) { .overview-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.overview-stat { background: white; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 10px 12px; }
+.overview-stat-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.overview-stat-value { font-size: 20px; font-weight: 650; color: #1a1a1a; }
+.overview-stat-note { font-size: 11px; color: var(--text-subtle); margin-top: 2px; }
+.overview-card { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; margin-bottom: 10px; cursor: default; }
+.overview-card .swim-row { cursor: default; }
+.overview-card .swim-row:hover { background: transparent; }
+
 /* ── Stage panel (preserved from v1) ─────────────────────────────────── */
 .stage-notes-panel { background: white; border: 0.5px solid #e0ddd6; border-radius: 10px; overflow: hidden; }
 .stage-tab-row { display: flex; overflow-x: auto; padding: 0 12px; gap: 0; border-bottom: 0.5px solid #f0ede8; background: white; }
@@ -519,6 +530,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
           <button class="swim-filter" id="ov-interviews" onclick="setOvFilter('interviews',this)">Interviews</button>
           <button class="swim-filter" id="ov-offers" onclick="setOvFilter('offers',this)">Offers</button>
         </div>
+        <div id="overview-summary" class="overview-summary"></div>
         <div id="overview-list"></div>
       </div>
 
@@ -1920,9 +1932,21 @@ function renderJobDetail(j) {
 // ── Overview render (preserved logic) ────────────────────────────────────────
 
 function renderOverview() {
-  let visible = jobs.filter(j => !j.archived && matchesSearch(j, searchQuery));
+  const allVisible = jobs.filter(j => !j.archived && matchesSearch(j, searchQuery));
+  let visible = allVisible.slice();
   if (ovFilter === 'interviews') visible = visible.filter(j => !j.rejected && !j.declined && j.stage === 3);
   else if (ovFilter === 'offers') visible = visible.filter(j => !j.rejected && !j.declined && j.stage === 5);
+
+  const active = allVisible.filter(j => !j.rejected && !j.declined);
+  const interviewing = active.filter(j => j.stage >= 2 && j.stage < 5).length;
+  const offers = active.filter(j => j.stage === 5).length;
+  const completedRounds = active.reduce((sum, j) => sum + (j.interviewRounds || []).filter(r => r.status === 'completed' || r.completed).length, 0);
+  const totalRounds = active.reduce((sum, j) => sum + (j.interviewRounds || []).length, 0);
+  document.getElementById('overview-summary').innerHTML =
+    '<div class="overview-stat"><div class="overview-stat-label">Active</div><div class="overview-stat-value">' + active.length + '</div><div class="overview-stat-note">not rejected or declined</div></div>' +
+    '<div class="overview-stat"><div class="overview-stat-label">Interviewing</div><div class="overview-stat-value">' + interviewing + '</div><div class="overview-stat-note">screen through final</div></div>' +
+    '<div class="overview-stat"><div class="overview-stat-label">Offers</div><div class="overview-stat-value">' + offers + '</div><div class="overview-stat-note">ready to compare</div></div>' +
+    '<div class="overview-stat"><div class="overview-stat-label">Rounds</div><div class="overview-stat-value">' + completedRounds + '/' + totalRounds + '</div><div class="overview-stat-note">completed interviews</div></div>';
 
   const list = document.getElementById('overview-list');
   if (!visible.length) { list.innerHTML = '<div class="empty">No applications here yet.</div>'; return; }
@@ -1966,7 +1990,7 @@ function renderOverview() {
     if (sd[5] && sd[5].offerDeadline) chips.push('<span class="swim-chip deadline">⏰ ' + fmtDate(sd[5].offerDeadline) + '</span>');
     if (!j.rejected && !j.declined && j.stage > 0) chips.push('<span class="swim-chip" style="background:#f5f3f0;color:var(--text-muted);">⏱ ' + fmtDur(now() - stageEnteredAt(j)) + ' in ' + stageName + '</span>');
 
-    return '<div class="swim-row-wrap" style="background:white;border:0.5px solid #e0ddd6;border-radius:12px;margin-bottom:10px;cursor:pointer;" onclick="W._gotoJob(\'' + j.firestoreId + '\')">' +
+    return '<div class="overview-card">' +
       '<div class="swim-row" style="border:none;">' +
         '<div class="swim-job">' +
           '<div class="logo-sm" style="background:' + j.color + '18;color:' + j.color + ';">' + escapeHtml(j.emoji || j.company[0]) + '</div>' +
