@@ -928,7 +928,11 @@ textarea.gen-notes { width:100%;font-size:13px;border:1px solid var(--rule);bord
 .toast.syncing { background:var(--ink-md);color:#fff; }
 .toast.error   { background:var(--coral);color:#fff; }
 
-/* ─── MISC ───────────────────────────────────────────────────────────── */
+/* Shell display defaults */
+#boot-screen { display: block; }
+#login-screen, #denied-screen, #app { display: none; }
+
+
 .empty { text-align:center;padding:3rem 1rem;color:var(--t3);font-size:13px;font-weight:300;line-height:1.6; }
 .loading-msg { text-align:center;padding:3rem 1rem;color:var(--t3);font-size:13px;font-weight:300; }
 
@@ -1305,20 +1309,6 @@ textarea.gen-notes { width:100%;font-size:13px;border:1px solid var(--rule);bord
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RENDER HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-
-function logoEl(j, size) {
-  size = size || 36;
-  const r = Math.round(size * 0.28);
-  return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:' + r + 'px;background:' + j.color + '18;color:' + j.color + ';display:flex;align-items:center;justify-content:center;font-size:' + Math.round(size*0.42) + 'px;font-weight:600;flex-shrink:0;">' + escapeHtml(j.emoji || (j.company || '?')[0]) + '</div>';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TODAY — NEXT ACTIONS
-// ─────────────────────────────────────────────────────────────────────────────
 
 function renderNextActions(jobs) {
   const items = getNextActionItems(jobs);
@@ -2425,8 +2415,8 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-function show(id) { document.getElementById(id).style.display = 'block'; }
-function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id) { const el = document.getElementById(id); if (el) el.style.display = ''; }
+function hide(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
 
 function loadJobs(uid) {
   if (unsubscribe) unsubscribe();
