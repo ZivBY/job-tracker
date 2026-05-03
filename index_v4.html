@@ -4115,6 +4115,7 @@ async function applyGmailSuggestion(fid, newStage, idx) {
     const rounds = suggestion.interviewRounds.map(r => ({ type: r.type || '', notes: r.notes || '', date: '', with: '', status: '', statusAt: null, completed: false, completedAt: null }));
     j.interviewRounds = rounds; updates.interviewRounds = rounds;
     activeStageTab[fid] = 3;
+    expanded.clear();
     expanded.add(fid);
   }
   render();
@@ -4310,14 +4311,25 @@ async function advanceStage(fid, curStage, step) {
     ? [{ date: '', type: '', notes: '', with: '' }] : (j.interviewRounds || []);
   j.stage = newStage; j.stageHistory = hist; j.interviewRounds = interviewRounds;
   activeStageTab[fid] = newStage;
-  if (newStage === 3) expanded.add(fid);
+  if (newStage === 3) {
+    expanded.clear();
+    expanded.add(fid);
+  }
   render();
   await saveField(fid, { stage: newStage, stageHistory: hist, interviewRounds });
 }
 
 async function toggleRejected(fid, cur) { await saveField(fid, { rejected: !cur, declined: false, endedAt: !cur ? now() : null }); }
 async function toggleDeclined(fid, cur) { await saveField(fid, { declined: !cur, rejected: false, endedAt: !cur ? now() : null }); }
-function toggleExpand(fid) { if (expanded.has(fid)) expanded.delete(fid); else expanded.add(fid); render(); }
+function toggleExpand(fid) {
+  if (expanded.has(fid)) {
+    expanded.delete(fid);
+  } else {
+    expanded.clear();
+    expanded.add(fid);
+  }
+  render();
+}
 function setStageTab(fid, idx) { activeStageTab[fid] = idx; render(); }
 function archiveJob(fid) { pendingArchive = fid; render(); }
 async function confirmArchive(fid) { pendingArchive = null; expanded.delete(fid); await saveField(fid, { archived: true }); }
