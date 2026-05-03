@@ -2052,15 +2052,15 @@ textarea.gen-notes {
   }
 }
 
-/* ── v4.4 sticky app header ────────────────────────────────────────── */
+/* ── v4.4 app header scroll behavior ───────────────────────────────── */
 #app {
   overflow: visible;
 }
 
 .topbar {
-  position: sticky !important;
-  top: 12px;
-  z-index: 260;
+  position: relative !important;
+  top: auto !important;
+  z-index: 40;
   backdrop-filter: blur(18px);
 }
 
@@ -2081,7 +2081,7 @@ textarea.gen-notes {
 
 @media (max-width: 720px) {
   .topbar {
-    top: 8px;
+    top: auto !important;
   }
 
   .swim-row-wrap,
