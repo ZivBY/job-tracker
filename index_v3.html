@@ -235,6 +235,28 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1
 .overview-card .swim-row { cursor: default; }
 .overview-card .swim-row:hover { background: transparent; }
 
+/* ── Insights ────────────────────────────────────────────────────────── */
+.insights-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 1000px) { .insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .insights-grid { grid-template-columns: 1fr; } }
+.insight-card { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; padding: 12px 14px; }
+.insight-label { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.insight-value { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+.insight-note { font-size: 11px; color: var(--text-subtle); margin-top: 2px; line-height: 1.35; }
+.insight-section { margin-bottom: 18px; }
+.insight-table { background: white; border: 0.5px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
+.insight-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) 72px 1fr 76px 76px 76px; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 0.5px solid #f0ede8; font-size: 12px; }
+.insight-row:last-child { border-bottom: none; }
+.insight-row.header { background: #faf9f7; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.insight-name { font-weight: 650; color: #1a1a1a; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.insight-num { text-align: right; font-weight: 650; color: #1a1a1a; }
+.insight-bar-bg { height: 7px; border-radius: 4px; background: #f0ede8; overflow: hidden; min-width: 40px; }
+.insight-bar { height: 100%; border-radius: 4px; background: #185FA5; }
+@media (max-width: 760px) {
+  .insight-row { grid-template-columns: minmax(0, 1fr) 56px 76px; }
+  .insight-row .hide-sm { display: none; }
+}
+
 /* ── Stage panel (preserved from v1) ─────────────────────────────────── */
 .stage-notes-panel { background: white; border: 0.5px solid #e0ddd6; border-radius: 10px; overflow: hidden; }
 .stage-tab-row { display: flex; overflow-x: auto; padding: 0 12px; gap: 0; border-bottom: 0.5px solid #f0ede8; background: white; }
@@ -494,6 +516,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
     <button id="tab-today" class="tab active" onclick="setPage('today')">Today <span class="tab-count" id="tab-today-count"></span></button>
     <button id="tab-pipeline" class="tab" onclick="setPage('pipeline')">Pipeline <span class="tab-count" id="tab-pipeline-count"></span></button>
     <button id="tab-overview" class="tab" onclick="setPage('overview')">Overview</button>
+    <button id="tab-insights" class="tab" onclick="setPage('insights')">Insights</button>
     <button id="tab-stats" class="tab" onclick="setPage('stats')" style="display:none;">Stats</button>
   </div>
 
@@ -542,6 +565,12 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
         <div class="swim-filters" id="overview-filters" style="margin-bottom:14px;"></div>
         <div id="overview-summary" class="overview-summary"></div>
         <div id="overview-list"></div>
+      </div>
+
+      <!-- Insights page -->
+      <div id="page-insights" style="display:none;">
+        <div class="section-title">🧭 Application insights</div>
+        <div id="insights-content"></div>
       </div>
 
       <!-- Stats page (mobile only — sidebar promoted to a tab) -->
@@ -626,6 +655,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
       <div class="divider"><div class="divider-line"></div><div class="divider-label">or fill in manually</div><div class="divider-line"></div></div>
       <div class="form-row"><label>Company</label><input id="f-company" placeholder="e.g. Stripe" autocomplete="organization" /></div>
       <div class="form-row"><label>Role</label><input id="f-role" placeholder="e.g. Head of Operations" /></div>
+      <div class="form-row"><label>Industry</label><input id="f-industry" placeholder="e.g. Fintech, Healthcare, AI" autocomplete="off" /></div>
       <div class="form-row"><label>Location</label><input id="f-loc" placeholder="e.g. San Francisco, CA" autocomplete="off" /></div>
       <div class="form-row"><label>Employment type</label>
         <select id="f-type"><option>Full-time</option><option>Contract</option><option>Part-time</option></select>
@@ -836,7 +866,7 @@ window.addEventListener('unhandledrejection', e => {
 
 window.setPage = function(page) {
   currentPage = page;
-  ['today','pipeline','overview','stats'].forEach(p => {
+  ['today','pipeline','overview','insights','stats'].forEach(p => {
     document.getElementById('page-' + p).style.display = p === page ? 'block' : 'none';
     const tab = document.getElementById('tab-' + p);
     if (tab) {
@@ -1206,7 +1236,7 @@ function escapeHtml(s) { if (s == null) return ''; return String(s).replace(/[&<
 // ── Search index ─────────────────────────────────────────────────────────────
 
 function buildSearchIndex(j) {
-  const parts = [j.company, j.role, j.loc, j.type, j.recruiterName, j.referralName, j.notes, j.salary, j.url];
+  const parts = [j.company, j.role, j.industry, j.loc, j.type, j.recruiterName, j.referralName, j.notes, j.salary, j.url];
   const sd = j.stageData || {};
   Object.keys(sd).forEach(k => Object.values(sd[k] || {}).forEach(v => parts.push(v)));
   Object.values(j.stageNotes || {}).forEach(v => parts.push(v));
@@ -1957,6 +1987,8 @@ function renderJobDetail(j) {
     '<div class="detail-extras">' +
       '<div class="field-label">Recruiter</div>' +
       '<input class="url-input" type="text" value="' + escapeHtml(j.recruiterName||'') + '" ' + (ro?'readonly':'oninput="W._recruiter(\''+fid+'\',this.value)"') + ' placeholder="Recruiter name..." style="margin-bottom:4px;" />' +
+      '<div class="field-label">Industry</div>' +
+      '<input class="url-input" type="text" value="' + escapeHtml(j.industry||'') + '" ' + (ro?'readonly':'oninput="W._industry(\''+fid+'\',this.value)"') + ' placeholder="e.g. Fintech, Healthcare, AI" />' +
       '<div class="field-label">Contacts met</div>' + (contRows || '') +
       (!ro ? '<button class="add-row-btn" onclick="W._contAdd(\'' + fid + '\')">+ Add contact</button>' : '') +
       '<div class="field-label">Job posting URL</div>' +
@@ -2076,6 +2108,99 @@ function renderOverview() {
   }).join('');
 }
 
+// ── Insights render ──────────────────────────────────────────────────────────
+
+function roleFamily(role) {
+  const r = (role || '').toLowerCase();
+  if (!r) return 'Unspecified role';
+  if (r.includes('product')) return 'Product';
+  if (r.includes('operation') || r.includes('ops')) return 'Operations';
+  if (r.includes('strategy') || r.includes('chief of staff') || r.includes('bizops')) return 'Strategy / BizOps';
+  if (r.includes('sales') || r.includes('account')) return 'Sales';
+  if (r.includes('marketing') || r.includes('growth')) return 'Marketing / Growth';
+  if (r.includes('engineer') || r.includes('developer') || r.includes('technical')) return 'Technical';
+  if (r.includes('finance') || r.includes('invest')) return 'Finance';
+  if (r.includes('people') || r.includes('talent') || r.includes('recruit')) return 'People / Talent';
+  if (r.includes('principal')) return 'Principal / Lead';
+  if (r.includes('director') || r.includes('head of') || r.includes('vp')) return 'Leadership';
+  return 'Other roles';
+}
+
+function locationBucket(loc) {
+  if (!loc) return 'Unspecified location';
+  const l = loc.toLowerCase();
+  if (l.includes('remote')) return 'Remote';
+  return loc.split(',')[0].trim() || 'Unspecified location';
+}
+
+function aggregateJobs(sourceJobs, groupFn) {
+  const groups = new Map();
+  sourceJobs.forEach(j => {
+    const key = groupFn(j) || 'Unspecified';
+    if (!groups.has(key)) groups.set(key, { name: key, count: 0, stageSum: 0, screen: 0, final: 0, offers: 0, wins: 0 });
+    const g = groups.get(key);
+    g.count += 1;
+    g.stageSum += Number(j.stage || 0);
+    if (!j.rejected && !j.declined && j.stage >= 2) g.screen += 1;
+    if (!j.rejected && !j.declined && j.stage >= 4) g.final += 1;
+    if (!j.rejected && !j.declined && j.stage === 5) g.offers += 1;
+    if (j.stage === 5) g.wins += 1;
+  });
+  return [...groups.values()]
+    .map(g => Object.assign(g, {
+      avgStage: g.count ? g.stageSum / g.count : 0,
+      screenRate: g.count ? g.screen / g.count : 0,
+      finalRate: g.count ? g.final / g.count : 0,
+      offerRate: g.count ? g.offers / g.count : 0
+    }))
+    .sort((a, b) => b.count - a.count || b.avgStage - a.avgStage || a.name.localeCompare(b.name))
+    .slice(0, 8);
+}
+
+function renderInsightTable(title, rows) {
+  if (!rows.length) return '';
+  const maxStage = 5;
+  return '<div class="insight-section">' +
+    '<div class="section-title">' + escapeHtml(title) + '</div>' +
+    '<div class="insight-table">' +
+      '<div class="insight-row header"><div>Category</div><div class="insight-num">Apps</div><div class="hide-sm">Progress</div><div class="insight-num hide-sm">Screen+</div><div class="insight-num hide-sm">Final+</div><div class="insight-num">Offers</div></div>' +
+      rows.map(r => '<div class="insight-row">' +
+        '<div class="insight-name" title="' + escapeHtml(r.name) + '">' + escapeHtml(r.name) + '</div>' +
+        '<div class="insight-num">' + r.count + '</div>' +
+        '<div class="insight-bar-bg hide-sm"><div class="insight-bar" style="width:' + Math.round((r.avgStage / maxStage) * 100) + '%;"></div></div>' +
+        '<div class="insight-num hide-sm">' + Math.round(r.screenRate * 100) + '%</div>' +
+        '<div class="insight-num hide-sm">' + Math.round(r.finalRate * 100) + '%</div>' +
+        '<div class="insight-num">' + r.offers + '</div>' +
+      '</div>').join('') +
+    '</div></div>';
+}
+
+function renderInsights() {
+  const target = document.getElementById('insights-content');
+  const visible = jobs.filter(j => !j.archived && matchesSearch(j, searchQuery));
+  if (!visible.length) { target.innerHTML = '<div class="empty">No applications to analyze yet.</div>'; return; }
+
+  const active = visible.filter(j => !j.rejected && !j.declined);
+  const screenPlus = visible.filter(j => !j.rejected && !j.declined && j.stage >= 2).length;
+  const finalPlus = visible.filter(j => !j.rejected && !j.declined && j.stage >= 4).length;
+  const offers = visible.filter(j => !j.rejected && !j.declined && j.stage === 5).length;
+  const avgStage = visible.reduce((sum, j) => sum + Number(j.stage || 0), 0) / visible.length;
+
+  const summary =
+    '<div class="insights-grid">' +
+      '<div class="insight-card"><div class="insight-label">Tracked focus</div><div class="insight-value">' + visible.length + '</div><div class="insight-note">non-archived applications</div></div>' +
+      '<div class="insight-card"><div class="insight-label">Interview reach</div><div class="insight-value">' + Math.round((screenPlus / visible.length) * 100) + '%</div><div class="insight-note">' + screenPlus + ' reached screen or later</div></div>' +
+      '<div class="insight-card"><div class="insight-label">Final reach</div><div class="insight-value">' + Math.round((finalPlus / visible.length) * 100) + '%</div><div class="insight-note">' + finalPlus + ' reached final or offer</div></div>' +
+      '<div class="insight-card"><div class="insight-label">Average stage</div><div class="insight-value">' + avgStage.toFixed(1) + '/5</div><div class="insight-note">' + active.length + ' active right now · ' + offers + ' offers</div></div>' +
+    '</div>';
+
+  target.innerHTML = summary +
+    renderInsightTable('By industry', aggregateJobs(visible, j => j.industry || 'Unspecified industry')) +
+    renderInsightTable('By role family', aggregateJobs(visible, j => roleFamily(j.role))) +
+    renderInsightTable('By company', aggregateJobs(visible, j => j.company || 'Unknown company')) +
+    renderInsightTable('By location', aggregateJobs(visible, j => locationBucket(j.loc)));
+}
+
 // ── Sidebar render ───────────────────────────────────────────────────────────
 
 function buildHeatmap(jobs) {
@@ -2176,6 +2301,7 @@ function render() {
   if (currentPage === 'today')         renderToday();
   else if (currentPage === 'pipeline') renderPipeline();
   else if (currentPage === 'overview') renderOverview();
+  else if (currentPage === 'insights') renderInsights();
   else if (currentPage === 'stats')    renderSidebar('mobile-stats-content');
   renderSidebar('sidebar');
   if (searchQuery) renderSearchResults();
@@ -2464,6 +2590,7 @@ function setJdStatus(msg, type) { const el = document.getElementById('jd-status'
 function fillForm(data) {
   if (data.company)  document.getElementById('f-company').value  = data.company;
   if (data.role)     document.getElementById('f-role').value     = data.role;
+  if (data.industry) document.getElementById('f-industry').value = data.industry;
   if (data.location) document.getElementById('f-loc').value      = data.location;
   if (data.url)      document.getElementById('f-url').value      = data.url;
   if (data.type) {
@@ -2525,7 +2652,7 @@ window.handleOverlayClick = function(e) { if (e.target.classList.contains('modal
 window.showModal = function() { if (isReadOnly) return; show('modal'); setTimeout(() => document.getElementById('jd-url').focus(), 100); };
 window.hideModal = function() {
   hide('modal');
-  ['f-company','f-role','f-loc','f-url','jd-url','jd-text','f-recruiter','f-referral-name'].forEach(id => document.getElementById(id).value = '');
+  ['f-company','f-role','f-industry','f-loc','f-url','jd-url','jd-text','f-recruiter','f-referral-name'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-stage').value = '0';
   document.getElementById('f-type').value = 'Full-time';
   document.getElementById('f-referral').checked = false;
@@ -2544,6 +2671,7 @@ window.addJob = async function() {
   const ts = now();
   const job = {
     company, role,
+    industry: document.getElementById('f-industry').value.trim(),
     loc: document.getElementById('f-loc').value.trim(),
     type: document.getElementById('f-type').value,
     stage: stageVal,
@@ -2684,6 +2812,7 @@ function debounceSave(key, fid, fields, delay) { clearTimeout(_timers[key]); _ti
 function updateNote(fid, val)      { debounceSave('note'+fid, fid, { notes: val }); }
 function updateSalary(fid, val)    { debounceSave('sal'+fid, fid, { salary: val }); }
 function updateRecruiter(fid, val) { debounceSave('rec'+fid, fid, { recruiterName: val }); }
+function updateIndustry(fid, val)  { debounceSave('ind'+fid, fid, { industry: val }); }
 function updateUrl(fid, val)       { debounceSave('url'+fid, fid, { url: val.trim() }, 800); }
 
 function updateStageField(fid, stageIdx, fieldKey, val) {
@@ -2765,6 +2894,7 @@ const W = {
   _note:      updateNote,
   _salary:    updateSalary,
   _recruiter: updateRecruiter,
+  _industry:  updateIndustry,
   _url:       updateUrl,
   _sf:        updateStageField,
   _sn:        updateStageNote,
