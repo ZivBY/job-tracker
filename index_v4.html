@@ -1637,6 +1637,221 @@ body::before {
     border-radius: 22px;
   }
 }
+
+/* ── v4.2 consistency cleanup ──────────────────────────────────────── */
+.topbar::before,
+.topbar::after,
+.hero::before,
+.attention-card::after,
+.next-action-card::after {
+  display: none;
+}
+
+.topbar,
+.hero,
+.attention-card,
+.next-action-card,
+.swimlane,
+.overview-card,
+.overview-stat,
+.insight-card,
+.insight-table,
+.stage-notes-panel,
+.detail-extras,
+.sb-section,
+.search-results,
+.modal,
+.cal-day,
+.full-calendar-day,
+.calendar-list-item,
+.sb-stat-card {
+  box-shadow: 0 14px 28px rgba(23,63,57,0.09);
+}
+
+.topbar,
+.hero,
+.attention-card,
+.next-action-card,
+.swimlane,
+.overview-card,
+.overview-stat,
+.insight-card,
+.insight-table,
+.stage-notes-panel,
+.detail-extras,
+.sb-section,
+.search-results,
+.modal {
+  overflow: clip;
+  background-clip: padding-box;
+}
+
+.topbar {
+  overflow: visible;
+}
+
+.hero::after {
+  display: block;
+  background: linear-gradient(90deg, rgba(245,201,213,0.82) 0 50%, rgba(63,112,101,0.72) 50% 100%);
+  box-shadow: 0 8px 18px rgba(23,63,57,0.08);
+}
+
+.attention-card.urgent,
+.next-action-card.prep,
+.attention-card.warning,
+.next-action-card.follow,
+.attention-card.success,
+.next-action-card.offer {
+  box-shadow: 0 14px 28px rgba(23,63,57,0.09);
+}
+
+.tab .tab-count,
+.section-title .count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: auto;
+  height: auto;
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 720;
+  box-shadow: none;
+}
+
+.tab .tab-count::before,
+.section-title .count::before {
+  content: "(";
+  font-weight: 520;
+}
+
+.tab .tab-count::after,
+.section-title .count::after {
+  content: ")";
+  font-weight: 520;
+}
+
+.tab.active .tab-count {
+  background: transparent;
+  color: rgba(255,253,247,0.86);
+}
+
+.section-title .count {
+  color: var(--qs-pine);
+}
+
+.section-title::before {
+  border-radius: 8px;
+  box-shadow: none;
+  background:
+    linear-gradient(135deg, var(--qs-marigold) 0 50%, var(--qs-blush) 50% 100%);
+}
+
+.sb-title::before {
+  box-shadow: none;
+}
+
+.sidebar {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.sidebar .sb-section {
+  width: 100%;
+  transform: none;
+  overflow: visible;
+}
+
+.sb-section:nth-child(2n) {
+  transform: none;
+}
+
+.heatmap {
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+}
+
+.heatmap-legend {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+.heatmap-summary {
+  line-height: 1.4;
+  word-break: normal;
+}
+
+.hm-cell,
+.hl-cell {
+  border-radius: 4px;
+}
+
+.funnel-label {
+  min-width: 92px;
+}
+
+.funnel-row {
+  gap: 10px;
+}
+
+.insight-table {
+  overflow-x: auto;
+}
+
+.insight-row {
+  min-width: 720px;
+}
+
+.overview-card .swim-row:hover,
+.swim-row:hover {
+  transform: none;
+}
+
+.cal-day:nth-child(2n),
+.cal-day.today {
+  transform: none;
+}
+
+.cal-day.today {
+  box-shadow: 0 14px 28px rgba(23,63,57,0.10), inset 0 0 0 2px rgba(247,184,30,0.42);
+}
+
+@media (max-width: 1100px) {
+  .insight-row {
+    min-width: 640px;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar,
+  .hero,
+  .attention-card,
+  .next-action-card,
+  .swimlane,
+  .overview-card,
+  .overview-stat,
+  .insight-card,
+  .insight-table,
+  .stage-notes-panel,
+  .detail-extras,
+  .sb-section,
+  .search-results,
+  .modal {
+    border-radius: 20px;
+  }
+
+  .hero::after {
+    display: none;
+  }
+}
 </style>
 </head>
 <body>
