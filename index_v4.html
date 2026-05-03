@@ -1852,6 +1852,205 @@ body::before {
     display: none;
   }
 }
+
+/* ── v4.3 layout polish: sticky nav, forms, insight tables ─────────── */
+.tab-row {
+  position: relative;
+  top: auto;
+  z-index: 20;
+}
+
+.stage-tab-row {
+  position: relative;
+  top: auto;
+}
+
+.field-label {
+  margin-top: 18px;
+  margin-bottom: 7px;
+}
+
+.detail-extras {
+  padding: clamp(18px, 2vw, 24px);
+}
+
+.detail-extras .field-label:first-child {
+  margin-top: 0;
+}
+
+.url-row,
+.attachment-row,
+.contact-row,
+.jd-input-row,
+.admin-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.attachment-row {
+  grid-template-columns: minmax(120px, .35fr) minmax(220px, 1fr) auto auto;
+}
+
+.contact-row {
+  grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr) auto;
+}
+
+.url-input,
+.att-label-input,
+.att-url-input,
+.contact-input,
+.stage-input,
+.stage-select,
+.stage-textarea,
+.form-row input,
+.form-row select,
+.jd-url-input,
+.admin-input,
+textarea.gen-notes {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.url-input,
+.att-url-input,
+.jd-url-input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-textarea,
+textarea.gen-notes {
+  min-height: 104px;
+}
+
+.job-link,
+.att-open,
+.add-row-btn,
+.row-remove,
+.jd-fetch-btn,
+.admin-add-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.add-row-btn {
+  width: fit-content;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--qs-line);
+  border-radius: 999px;
+  background: rgba(255,253,247,0.86);
+}
+
+.row-remove {
+  width: 34px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.insight-section {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  overflow: visible;
+}
+
+.insight-section > .section-title {
+  margin-left: 0;
+}
+
+.insight-table {
+  border-radius: 24px;
+  overflow: clip;
+  background: rgba(255,253,247,0.94);
+  border: 1.4px solid var(--qs-line-strong);
+}
+
+.insight-row {
+  min-width: 0;
+  grid-template-columns: minmax(180px, 1.2fr) 64px minmax(180px, 1fr) 78px 78px 70px;
+  background: transparent;
+}
+
+.insight-row.header {
+  background: rgba(237,245,245,0.52);
+  border-radius: 22px 22px 0 0;
+}
+
+.insight-row:last-child {
+  border-radius: 0 0 22px 22px;
+}
+
+.insight-bar-bg {
+  height: 8px;
+  border-radius: 999px;
+}
+
+.insight-bar {
+  border-radius: 999px;
+}
+
+.overview-card {
+  overflow: clip;
+}
+
+.overview-card .swim-row {
+  border-radius: 0;
+}
+
+.overview-card .swim-row:first-child {
+  border-radius: 22px 22px 0 0;
+}
+
+.overview-card .swim-row:last-child {
+  border-radius: 0 0 22px 22px;
+}
+
+.sidebar {
+  position: relative;
+  top: auto;
+}
+
+@media (max-width: 900px) {
+  .url-row,
+  .attachment-row,
+  .contact-row,
+  .jd-input-row,
+  .admin-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .job-link,
+  .att-open,
+  .jd-fetch-btn,
+  .admin-add-btn {
+    width: fit-content;
+  }
+
+  .insight-table {
+    overflow-x: auto;
+  }
+
+  .insight-row {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 720px) {
+  .insight-row {
+    min-width: 560px;
+  }
+}
 </style>
 </head>
 <body>
