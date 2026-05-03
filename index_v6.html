@@ -254,7 +254,7 @@ a { color: inherit; }
 .hero-card {
   background: var(--forest);
   border-radius: 18px;
-  padding: 22px 24px 20px;
+  padding: 26px 28px 22px;
   margin-bottom: 20px;
   position: relative;
   overflow: hidden;
@@ -309,7 +309,7 @@ a { color: inherit; }
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   padding: 8px 5px 7px;
-  min-height: 80px;
+  min-height: 86px;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -434,7 +434,7 @@ a { color: inherit; }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0,1fr));
+  grid-template-columns: repeat(3, minmax(0,1fr)); align-items: stretch;
   gap: 10px;
 }
 @media (max-width: 1000px) { .actions-grid { grid-template-columns: repeat(2,1fr); } }
@@ -870,7 +870,7 @@ a { color: inherit; }
 .snap-card-lbl { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 4px; }
 .snap-card-val {
   font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 400;
   color: var(--text-1);
   letter-spacing: -0.03em;
@@ -1356,7 +1356,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 1px solid var(--borde
 .sb-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .sb-stat-card { background: var(--cream); border: 1px solid var(--border-lt); border-radius: 12px; padding: 12px 14px; }
 .sb-stat-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 4px; }
-.sb-stat-val { font-family: 'DM Serif Display', Georgia, serif; font-size: 26px; font-weight: 400; color: var(--text-1); letter-spacing: -0.03em; line-height: 1; }
+.sb-stat-val { font-family: 'DM Serif Display', Georgia, serif; font-size: 32px; font-weight: 400; color: var(--text-1); letter-spacing: -0.03em; line-height: 1; }
 .sb-stat-val .accent { color: var(--forest); }
 .heatmap-legend { display: flex; align-items: center; gap: 3px; font-size: 9px; color: var(--text-3); justify-content: flex-end; }
 .heatmap-legend .hl-cell { width: 9px; height: 9px; border-radius: 2px; }
@@ -2636,596 +2636,662 @@ function getNextActionItems(jobs) {
     .slice(0, 6);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function logoEl(j, size) {
+  size = size || 36;
+  const r = Math.round(size * 0.28);
+  return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:' + r + 'px;background:' + j.color + '18;color:' + j.color + ';display:flex;align-items:center;justify-content:center;font-size:' + Math.round(size*0.42) + 'px;font-weight:600;flex-shrink:0;">' + escapeHtml(j.emoji || (j.company || '?')[0]) + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TODAY — NEXT ACTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
 function renderNextActions(jobs) {
   const items = getNextActionItems(jobs);
   const count = document.getElementById('next-actions-count');
-  const grid = document.getElementById('next-actions-grid');
+  const grid  = document.getElementById('next-actions-grid');
   if (!count || !grid) return;
-  count.textContent = items.length ? items.length : '';
+  count.textContent = items.length || '';
+
   if (!items.length) {
-    grid.style.gridTemplateColumns = '1fr';
-    grid.innerHTML = '<div class="empty-attention">No next actions queued. You are caught up for now.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;background:var(--ivory);border:1.5px dashed var(--border);border-radius:20px;padding:32px;text-align:center;color:var(--text-3);font-size:13px;font-weight:300;">You\'re all caught up. No next actions queued.</div>';
     return;
   }
-  grid.style.gridTemplateColumns = '';
-  grid.innerHTML = items.map(it =>
-    '<div class="action-card ' + it.kind + '" onclick="W._gotoJob(\'' + it.job.firestoreId + '\')">' +
-      '<div class="ac-kicker"><span>' + escapeHtml(it.kicker) + '</span><span class="ac-kicker-time">' + escapeHtml(it.time) + '</span></div>' +
-      '<div class="ac-body">' + it.logo +
-        '<div class="ac-copy">' +
-          '<div class="ac-title">' + escapeHtml(it.title) + '</div>' +
-          '<div class="ac-sub">' + escapeHtml(it.sub) + '</div>' +
+
+  const kindColor = { prep:'var(--forest)', follow:'var(--gold)', complete:'var(--plum)', offer:'var(--sage)' };
+  const kindBg    = { prep:'rgba(30,61,53,0.06)', follow:'rgba(201,150,42,0.07)', complete:'rgba(124,92,138,0.07)', offer:'rgba(74,121,102,0.06)' };
+
+  grid.innerHTML = items.map(it => {
+    const ac = kindColor[it.kind] || 'var(--forest)';
+    const ab = kindBg[it.kind]   || 'rgba(30,61,53,0.06)';
+    return (
+      '<div onclick="W._gotoJob(\'' + it.job.firestoreId + '\')" style="' +
+        'background:var(--ivory);border:1px solid var(--border-lt);border-radius:20px;' +
+        'padding:18px 20px;cursor:pointer;display:flex;flex-direction:column;gap:12px;' +
+        'min-height:130px;transition:box-shadow 0.15s,transform 0.15s;' +
+        'box-shadow:0 2px 8px rgba(30,61,53,0.04);" ' +
+        'onmouseenter="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 12px 32px rgba(30,61,53,0.12)\'" ' +
+        'onmouseleave="this.style.transform=\'\';this.style.boxShadow=\'0 2px 8px rgba(30,61,53,0.04)\'">' +
+
+        // top: kicker pill + time
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+          '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;' +
+            'color:' + ac + ';background:' + ab + ';padding:4px 10px;border-radius:100px;">' +
+            escapeHtml(it.kicker) +
+          '</span>' +
+          '<span style="font-size:11px;color:var(--text-3);white-space:nowrap;">' + escapeHtml(it.time) + '</span>' +
         '</div>' +
-      '</div>' +
-      '<div class="ac-cta">' + escapeHtml(it.cta) + '</div>' +
-    '</div>'
-  ).join('');
+
+        // middle: logo + text
+        '<div style="display:flex;align-items:flex-start;gap:12px;flex:1;">' +
+          logoEl(it.job, 34) +
+          '<div style="min-width:0;flex:1;">' +
+            '<div style="font-size:13px;font-weight:500;color:var(--text-1);line-height:1.35;margin-bottom:4px;">' + escapeHtml(it.title) + '</div>' +
+            '<div style="font-size:11px;color:var(--text-3);line-height:1.4;">' + escapeHtml(it.sub) + '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // bottom: CTA link
+        '<div style="font-size:11px;font-weight:600;color:' + ac + ';display:flex;align-items:center;gap:4px;">' +
+          escapeHtml(it.cta) +
+          '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="opacity:0.7"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</div>' +
+
+      '</div>'
+    );
+  }).join('');
 }
 
-// ── Today render ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// TODAY — MAIN
+// ─────────────────────────────────────────────────────────────────────────────
 
 function renderToday() {
   const filtered = jobs.filter(j => matchesSearch(j, searchQuery));
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const today    = new Date();
+  const dateStr  = today.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   document.getElementById('hero-date').textContent = dateStr;
 
-  const items = getAttentionItems(filtered);
+  const items    = getAttentionItems(filtered);
   const greetHour = today.getHours();
-  const greet = greetHour < 12 ? 'Good morning' : greetHour < 18 ? 'Good afternoon' : 'Good evening';
-  const firstName = trackerOwnerName && trackerOwnerName !== 'My' ? trackerOwnerName.split(/\s+/)[0] : 'there';
-  document.getElementById('hero-greeting').innerHTML = items.length === 0
-    ? greet + ', ' + escapeHtml(firstName) + '. <span class="accent">No urgent items.</span>'
-    : greet + ', ' + escapeHtml(firstName) + '. <span class="accent">' + items.length + ' thing' + (items.length === 1 ? '' : 's') + '</span> need' + (items.length === 1 ? 's' : '') + ' you.';
+  const greet    = greetHour < 12 ? 'Good morning' : greetHour < 18 ? 'Good afternoon' : 'Good evening';
+  const firstName = (trackerOwnerName && trackerOwnerName !== 'My') ? trackerOwnerName.split(/\s+/)[0] : 'there';
 
-  // 7-day calendar strip starting today
+  document.getElementById('hero-greeting').innerHTML = items.length === 0
+    ? greet + ', ' + escapeHtml(firstName) + '. <span style="color:var(--gold-lt);">No urgent items.</span>'
+    : greet + ', ' + escapeHtml(firstName) + '. <span style="color:var(--gold-lt);">' + items.length + ' thing' + (items.length===1?'':'s') + '</span> need' + (items.length===1?'s':'') + ' you.';
+
+  // ── Week strip ──────────────────────────────────────────────────────────────
   const events = getJobEvents(filtered);
-  const days = [];
+  const days   = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(today); d.setHours(0,0,0,0); d.setDate(d.getDate() + i);
     days.push(d);
   }
   document.getElementById('calendar-strip').innerHTML = days.map((d, idx) => {
-    const dayMs = d.getTime();
-    const dayEvents = events.filter(e => e.ts >= dayMs && e.ts < dayMs + 86400000);
-    const evHtml = dayEvents.slice(0, 3).map(e => {
-      const cls = e.kind === 'interview' ? 'interview' : e.kind === 'screen' ? 'screen' : e.kind === 'final' ? 'final' : 'deadline';
+    const dayMs    = d.getTime();
+    const dayEvts  = events.filter(e => e.ts >= dayMs && e.ts < dayMs + 86400000);
+    const kindCls  = { interview:'interview', screen:'screen', final:'final', deadline:'deadline' };
+    const evHtml   = dayEvts.slice(0,3).map(e => {
+      const cls  = kindCls[e.kind] || 'interview';
       const time = e.kind === 'deadline' ? '⏰' : fmtTime(e.date);
       return '<div class="cal-event ' + cls + '" onclick="event.stopPropagation();W._gotoJob(\'' + e.job.firestoreId + '\')" title="' + escapeHtml(e.job.company + ' - ' + e.label) + '">' + time + ' ' + escapeHtml(e.job.company) + '</div>';
     }).join('');
-    const more = dayEvents.length > 3 ? '<div class="cal-event" style="background:var(--parchment);color:var(--text-3);border-left-color:var(--text-3);">+' + (dayEvents.length - 3) + ' more</div>' : '';
-    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayNum = d.getDate();
-    return '<div class="cal-day' + (idx === 0 ? ' today' : '') + '" onclick="openCalendarModal(\'' + d.toISOString() + '\')" title="Open full calendar">' +
-      '<div class="cal-day-name">' + (idx === 0 ? 'Today' : dayName) + '</div>' +
-      '<div class="cal-day-num">' + dayNum + '</div>' +
+    const more = dayEvts.length > 3 ? '<div class="cal-event" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);">+' + (dayEvts.length-3) + ' more</div>' : '';
+    const dayName = idx===0 ? 'Today' : d.toLocaleDateString('en-US',{weekday:'short'});
+
+    return '<div class="week-day' + (idx===0?' today':'') + '" onclick="openCalendarModal(\'' + d.toISOString() + '\')">' +
+      '<div class="wd-name">' + dayName + '</div>' +
+      '<div class="wd-num">' + d.getDate() + '</div>' +
       evHtml + more +
-      '</div>';
+    '</div>';
   }).join('');
 
-  // Attention inbox
+  // ── Attention ───────────────────────────────────────────────────────────────
   document.getElementById('attention-count').textContent = items.length;
   const grid = document.getElementById('attention-grid');
+
   if (items.length === 0) {
-    grid.style.gridTemplateColumns = '1fr';
-    grid.innerHTML = '<div class="empty-attention">Nothing urgent right now. Add scheduled interviews or check in on stale apps.</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;background:var(--ivory);border:1.5px dashed var(--border);border-radius:20px;padding:28px;text-align:center;color:var(--text-3);font-size:13px;font-weight:300;">Nothing urgent right now. Add scheduled interviews or check in on stale apps.</div>';
   } else {
-    grid.style.gridTemplateColumns = '';
+    const clsMap = { urgent:'var(--forest)', warning:'var(--gold)', danger:'var(--coral)', success:'var(--sage)' };
     grid.innerHTML = items.map(it => {
-      let cls, action, title, sub;
-      const j = it.job;
-      const logo = '<div class="logo-sm" style="background:' + j.color + '18;color:' + j.color + ';">' + escapeHtml(j.emoji || j.company[0]) + '</div>';
-      if (it.kind === 'prep-today')    { cls = 'urgent';  action = 'Prep for today'; title = j.company + ' — ' + it.label; sub = 'Today at ' + it.when; }
-      else if (it.kind === 'prep-tomorrow') { cls = 'urgent';  action = 'Prep tomorrow'; title = j.company + ' — ' + it.label; sub = it.when; }
-      else if (it.kind === 'offer-decide')  { cls = 'success'; action = 'Decide soon'; title = j.company + ' — offer'; sub = it.days === 0 ? 'Decide today' : it.days === 1 ? 'Decide tomorrow' : it.days + ' days left'; }
-      else if (it.kind === 'stale')         { cls = 'warning'; action = 'Follow up'; title = j.company + ' — silent ' + it.days + ' days'; sub = STAGES[j.stage] + ' · consider a polite check-in'; }
-      return '<div class="attention-card ' + cls + '" onclick="W._gotoJob(\'' + j.firestoreId + '\')">' +
-        '<div class="att-kicker ' + cls + '">' + action + '</div>' +
-        '<div class="att-body">' + logo + '<div class="attention-text"><div class="att-title">' + escapeHtml(title) + '</div><div class="att-sub">' + escapeHtml(sub) + '</div></div></div>' +
-        '</div>';
+      const j   = it.job;
+      const ac  = clsMap[it.kind === 'prep-today' || it.kind === 'prep-tomorrow' ? 'urgent' : it.kind === 'offer-decide' ? 'success' : it.kind === 'stale' ? 'warning' : 'urgent'] || 'var(--forest)';
+      let action, title, sub;
+      if (it.kind==='prep-today')    { action='Prep for today';    title=j.company+' — '+it.label; sub='Today at '+it.when; }
+      else if (it.kind==='prep-tomorrow'){ action='Prep tomorrow'; title=j.company+' — '+it.label; sub=it.when; }
+      else if (it.kind==='offer-decide'){ action='Decide soon';    title=j.company+' — offer';     sub=it.days===0?'Decide today':it.days===1?'Decide tomorrow':it.days+' days left'; }
+      else if (it.kind==='stale')    { action='Follow up';         title=j.company+' — silent '+it.days+'d'; sub=STAGES[j.stage]+' · consider a check-in'; }
+      else                           { action='Action needed';     title=j.company; sub=''; }
+
+      return (
+        '<div onclick="W._gotoJob(\'' + j.firestoreId + '\')" style="' +
+          'background:var(--ivory);border:1px solid var(--border-lt);border-left:3px solid ' + ac + ';border-radius:0 20px 20px 0;' +
+          'padding:16px 18px;cursor:pointer;display:flex;flex-direction:column;gap:8px;' +
+          'box-shadow:0 2px 8px rgba(30,61,53,0.04);transition:box-shadow 0.15s,transform 0.15s;" ' +
+          'onmouseenter="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(30,61,53,0.10)\'" ' +
+          'onmouseleave="this.style.transform=\'\';this.style.boxShadow=\'0 2px 8px rgba(30,61,53,0.04)\'">' +
+          '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:' + ac + ';">' + escapeHtml(action) + '</div>' +
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            logoEl(j, 32) +
+            '<div style="min-width:0;">' +
+              '<div style="font-size:13px;font-weight:500;color:var(--text-1);line-height:1.3;">' + escapeHtml(title) + '</div>' +
+              '<div style="font-size:11px;color:var(--text-3);margin-top:2px;">' + escapeHtml(sub) + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
     }).join('');
   }
 
-  // Tab counts
-  document.getElementById('tab-today-count').textContent = items.length ? items.length : '';
+  document.getElementById('tab-today-count').textContent = items.length || '';
   renderNextActions(filtered);
 }
 
-// ── Pipeline render ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// PIPELINE
+// ─────────────────────────────────────────────────────────────────────────────
 
 function pipelineFiltered() {
   let visible = jobs.filter(j => matchesSearch(j, searchQuery));
-  if (pipelineFilter === 'all')         visible = visible.filter(j => !j.archived);
-  else if (pipelineFilter === 'active') visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 1 && j.stage < 5);
-  else if (pipelineFilter === 'interested') visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 0);
-  else if (pipelineFilter === 'interview')  visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && (j.stage === 2 || j.stage === 3 || j.stage === 4));
-  else if (pipelineFilter === 'offer')      visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 5);
-  else if (pipelineFilter === 'stale')      visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 1 && j.stage < 5 && (now() - stageEnteredAt(j)) >= 14*86400000);
-  else if (pipelineFilter === 'rejected')   visible = visible.filter(j => !j.archived && j.rejected);
-  else if (pipelineFilter === 'declined')   visible = visible.filter(j => !j.archived && j.declined);
-  else if (pipelineFilter === 'archived')   visible = visible.filter(j => j.archived);
+  if      (pipelineFilter==='all')        visible = visible.filter(j => !j.archived);
+  else if (pipelineFilter==='active')     visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage>=1 && j.stage<5);
+  else if (pipelineFilter==='interested') visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage===0);
+  else if (pipelineFilter==='interview')  visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && (j.stage===2||j.stage===3||j.stage===4));
+  else if (pipelineFilter==='offer')      visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage===5);
+  else if (pipelineFilter==='stale')      visible = visible.filter(j => !j.archived && !j.rejected && !j.declined && j.stage>=1 && j.stage<5 && (now()-stageEnteredAt(j))>=14*86400000);
+  else if (pipelineFilter==='rejected')   visible = visible.filter(j => !j.archived && j.rejected);
+  else if (pipelineFilter==='declined')   visible = visible.filter(j => !j.archived && j.declined);
+  else if (pipelineFilter==='archived')   visible = visible.filter(j => j.archived);
   return visible;
 }
 
 function renderPipeline() {
-  const visible = pipelineFiltered();
+  const visible     = pipelineFiltered();
   const totalActive = jobs.filter(j => !j.archived).length;
-  document.getElementById('tab-pipeline-count').textContent = totalActive ? totalActive : '';
-  document.getElementById('pipeline-count').textContent = visible.length;
+  document.getElementById('tab-pipeline-count').textContent = totalActive || '';
+  document.getElementById('pipeline-count').textContent     = visible.length;
   const lane = document.getElementById('swimlane');
   if (!visible.length) { lane.innerHTML = '<div class="empty">No applications match this filter.</div>'; return; }
-
   lane.innerHTML = visible.map(j => renderSwimRow(j)).join('');
 }
 
 function renderSwimRow(j) {
-  const fid = j.firestoreId;
-  const sched = getNextScheduled(j);
-  const t = now();
-  const stageMs = j.stage > 0 ? (t - stageEnteredAt(j)) : null;
+  const fid      = j.firestoreId;
+  const sched    = getNextScheduled(j);
+  const t        = now();
+  const stageMs  = j.stage > 0 ? (t - stageEnteredAt(j)) : null;
   const totalDays = j.createdAt && j.createdAt.toMillis ? Math.floor((t - j.createdAt.toMillis()) / 86400000) : null;
-  const isStale = !j.rejected && !j.declined && !j.archived && j.stage >= 1 && j.stage < 5 && stageMs >= 14*86400000;
-  // Urgent if: offer pending, or any scheduled event (screen / round / final) within next 48h
-  const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
-  const within48h = ts => !isNaN(ts) && ts >= todayMs && ts < todayMs + 2*86400000;
-  const sd0 = j.stageData || {};
+  const isStale  = !j.rejected && !j.declined && !j.archived && j.stage>=1 && j.stage<5 && stageMs >= 14*86400000;
+  const todayMs  = (() => { const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const within48h = ts => !isNaN(ts) && ts>=todayMs && ts<todayMs+2*86400000;
+  const sd0      = j.stageData || {};
   const upcoming = [
-    sd0[2] && sd0[2].screenDate && new Date(sd0[2].screenDate).getTime(),
-    sd0[4] && sd0[4].finalDate  && new Date(sd0[4].finalDate).getTime(),
-    ...((j.interviewRounds || []).filter(r => r.date && !r.completed && r.status !== 'rejected' && r.status !== 'withdrew').map(r => new Date(r.date).getTime()))
+    sd0[2]&&sd0[2].screenDate && new Date(sd0[2].screenDate).getTime(),
+    sd0[4]&&sd0[4].finalDate  && new Date(sd0[4].finalDate).getTime(),
+    ...((j.interviewRounds||[]).filter(r=>r.date&&!r.completed&&r.status!=='rejected'&&r.status!=='withdrew').map(r=>new Date(r.date).getTime()))
   ].filter(Boolean);
-  const isUrgent = !j.archived && !j.rejected && !j.declined && (j.stage === 5 || upcoming.some(within48h));
-
-  // Mini track — dots are clickable to advance stage (with stopPropagation so the row doesn't toggle expand)
+  const isUrgent = !j.archived && !j.rejected && !j.declined && (j.stage===5 || upcoming.some(within48h));
   const clickable = !isReadOnly && !j.archived && !j.rejected && !j.declined;
-  const rounds = j.interviewRounds || [];
+  const rounds   = j.interviewRounds || [];
+
+  // Progress track
   const steps = STAGES.map((s, i) => {
-    let dotCls = 'mt-dot', labelCls = 'mt-step-label', icon = '';
-    let bef = 'mt-line-b', aft = 'mt-line-a';
-    if (j.rejected || j.archived) {
-      if (i < j.stage) { dotCls += ' done'; icon = '✓'; bef += ' done'; aft += ' done'; labelCls += ' done'; }
-      else if (i === j.stage) { dotCls += ' rejected'; bef += ' done'; icon = '✕'; }
+    let dotCls='mt-dot', labelCls='mt-step-label', icon='';
+    let bef='mt-line-b', aft='mt-line-a';
+    if (j.rejected||j.archived) {
+      if (i<j.stage)       { dotCls+=' done'; icon='✓'; bef+=' done'; aft+=' done'; labelCls+=' done'; }
+      else if(i===j.stage) { dotCls+=' rejected'; bef+=' done'; icon='✕'; }
     } else if (j.declined) {
-      if (i < j.stage) { dotCls += ' done'; icon = '✓'; bef += ' done'; aft += ' done'; labelCls += ' done'; }
-      else if (i === j.stage) { dotCls += ' declined'; bef += ' done'; icon = '↩'; }
-    } else if (i < j.stage) {
-      dotCls += ' done'; icon = '✓'; bef += ' done'; aft += ' done'; labelCls += ' done';
-    } else if (i === j.stage) {
-      if (i === 5) { dotCls += ' offer'; icon = '🎉'; labelCls += ' offer'; }
-      else { dotCls += ' current'; labelCls += ' current'; if (i === 3 && rounds.length > 0) icon = rounds.filter(r => r.status === 'completed').length + '/' + rounds.length; }
-      bef += ' done';
+      if (i<j.stage)       { dotCls+=' done'; icon='✓'; bef+=' done'; aft+=' done'; labelCls+=' done'; }
+      else if(i===j.stage) { dotCls+=' declined'; bef+=' done'; icon='↩'; }
+    } else if (i<j.stage) { dotCls+=' done'; icon='✓'; bef+=' done'; aft+=' done'; labelCls+=' done'; }
+    else if (i===j.stage) {
+      if (i===5) { dotCls+=' offer'; icon='🎉'; labelCls+=' offer'; }
+      else { dotCls+=' current'; labelCls+=' current'; if(i===3&&rounds.length>0) icon=rounds.filter(r=>r.status==='completed').length+'/'+rounds.length; }
+      bef+=' done';
     }
-    const dotAttrs = clickable
-      ? ' style="cursor:pointer;" onclick="event.stopPropagation();W._adv(\'' + fid + '\',' + j.stage + ',' + i + ')" title="Advance to ' + s + '"'
-      : '';
-    return '<div class="mt-step"><div class="' + bef + '"></div><div class="' + aft + '"></div><div class="' + dotCls + '"' + dotAttrs + '>' + icon + '</div><div class="' + labelCls + '">' + STAGES_SHORT[i] + '</div></div>';
+    const da = clickable ? ' style="cursor:pointer;" onclick="event.stopPropagation();W._adv(\''+fid+'\','+j.stage+','+i+')" title="Advance to '+s+'"' : '';
+    return '<div class="mt-step"><div class="'+bef+'"></div><div class="'+aft+'"></div><div class="'+dotCls+'"'+da+'>'+icon+'</div><div class="'+labelCls+'">'+STAGES_SHORT[i]+'</div></div>';
   }).join('');
 
-  // Right meta chips
+  // Status chips
   const chips = [];
-  if (j.archived) chips.push('<span class="swim-chip archived">📦 Archived</span>');
-  else if (j.rejected) chips.push('<span class="swim-chip rejected">❌ They rejected</span>');
-  else if (j.declined) chips.push('<span class="swim-chip declined">↩ I declined</span>');
-  else if (sched) chips.push('<span class="swim-chip next">📅 ' + sched.label + ': ' + sched.dt + '</span>');
-  if (isStale) chips.push('<span class="swim-chip stale">Silent ' + Math.floor(stageMs / 86400000) + 'd</span>');
-  if (j.referral) chips.push('<span class="swim-chip referral">🤝 Referral</span>');
-  if (j.stage === 5 && j.stageData && j.stageData[5] && j.stageData[5].offerDeadline) {
-    chips.push('<span class="swim-chip deadline">⏰ ' + fmtDate(j.stageData[5].offerDeadline) + '</span>');
-  }
-  if (chips.length === 0 && j.stage === 0) chips.push('<span class="swim-chip fresh">⭐ Interested</span>');
+  if (j.archived)       chips.push('<span class="swim-chip archived">📦 Archived</span>');
+  else if (j.rejected)  chips.push('<span class="swim-chip rejected">✕ Rejected</span>');
+  else if (j.declined)  chips.push('<span class="swim-chip declined">↩ Declined</span>');
+  else if (sched)       chips.push('<span class="swim-chip next">📅 '+sched.label+': '+sched.dt+'</span>');
+  if (isStale)          chips.push('<span class="swim-chip stale">'+Math.floor(stageMs/86400000)+'d quiet</span>');
+  if (j.referral)       chips.push('<span class="swim-chip referral">🤝 Referral</span>');
+  if (j.stage===5&&j.stageData&&j.stageData[5]&&j.stageData[5].offerDeadline)
+    chips.push('<span class="swim-chip deadline">⏰ '+fmtDate(j.stageData[5].offerDeadline)+'</span>');
+  if (!chips.length&&j.stage===0) chips.push('<span class="swim-chip fresh">Interested</span>');
 
   const isExpanded = expanded.has(fid);
-  const detailHtml = isExpanded ? renderJobDetail(j) : '';
+  const urgentAccent = isUrgent ? 'border-left:3px solid var(--coral);' : '';
 
-  return '<div class="swim-row-wrap' + (isExpanded ? ' expanded' : '') + '" id="row-' + fid + '">' +
-    '<div class="swim-row' + (isStale ? '' : '') + (isUrgent ? ' urgent' : '') + '" onclick="W._toggleExpand(\'' + fid + '\')">' +
-      '<div class="swim-job">' +
-        '<div class="logo-sm" style="background:' + j.color + '18;color:' + j.color + ';">' + escapeHtml(j.emoji || j.company[0]) + '</div>' +
-        '<div class="swim-job-info">' +
-          '<div class="swim-job-title">' + escapeHtml(j.role) + '</div>' +
-          '<div class="swim-job-company">' + escapeHtml(j.company) + (j.loc ? ' · ' + escapeHtml(j.loc) : '') + '</div>' +
+  return (
+    '<div class="swim-row-wrap' + (isExpanded?' expanded':'') + '" id="row-'+fid+'">' +
+      '<div onclick="W._toggleExpand(\''+fid+'\')" style="' +
+        'display:grid;grid-template-columns:minmax(160px,1.1fr) minmax(200px,1.5fr) minmax(130px,0.8fr);' +
+        'gap:16px;align-items:center;padding:14px 22px;cursor:pointer;' +
+        'transition:background 0.12s;' + urgentAccent + '" ' +
+        'onmouseenter="this.style.background=\'var(--cream)\'" ' +
+        'onmouseleave="this.style.background=\'\'">' +
+
+        // Job col
+        '<div style="display:flex;align-items:center;gap:12px;min-width:0;">' +
+          logoEl(j, 36) +
+          '<div style="min-width:0;">' +
+            '<div style="font-size:13px;font-weight:500;color:var(--text-1);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(j.role) + '</div>' +
+            '<div style="font-size:11px;color:var(--text-3);margin-top:2px;">' + escapeHtml(j.company) + (j.loc?' · '+escapeHtml(j.loc):'') + '</div>' +
+          '</div>' +
         '</div>' +
+
+        // Track col
+        '<div class="mini-track">' + steps + '</div>' +
+
+        // Meta col
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+          chips.join('') +
+          (totalDays!=null ? '<span style="font-size:10px;color:var(--text-4);">'+totalDays+'d</span>' : '') +
+        '</div>' +
+
       '</div>' +
-      '<div class="mini-track">' + steps + '</div>' +
-      '<div class="swim-meta">' + chips.join('') + (totalDays != null ? '<span class="swim-age">' + totalDays + 'd in pipeline</span>' : '') + '</div>' +
-    '</div>' +
-    '<div class="swim-detail">' + detailHtml + '</div>' +
-  '</div>';
+      '<div class="swim-detail">' + (isExpanded ? renderJobDetail(j) : '') + '</div>' +
+    '</div>'
+  );
 }
 
 function renderJobDetail(j) {
-  const fid = j.firestoreId;
-  const ro = isReadOnly || j.archived;
-  const sd = j.stageData || {};
-  const sn = j.stageNotes || {};
+  const fid       = j.firestoreId;
+  const ro        = isReadOnly || j.archived;
+  const sd        = j.stageData || {};
+  const sn        = j.stageNotes || {};
   const activeTab = activeStageTab[fid] !== undefined ? activeStageTab[fid] : j.stage;
-  const rounds = j.interviewRounds || [];
+  const rounds    = j.interviewRounds || [];
+  const maxTab    = j.stage;
 
-  const maxTab = j.stage;
   let tabs = '';
-  for (let i = 0; i <= maxTab; i++) {
-    const isDone = i < j.stage;
+  for (let i=0; i<=maxTab; i++) {
+    const isDone   = i < j.stage;
     const isActive = i === activeTab;
-    tabs += '<button class="stage-tab' + (isDone ? ' done-tab' : '') + (isActive ? ' active' : '') + '" onclick="W._stageTab(\'' + fid + '\',' + i + ')">' +
-      (isDone ? '✓ ' : '') + STAGES[i] + '</button>';
+    tabs += '<button class="stage-tab' + (isDone?' done-tab':'') + (isActive?' active':'') + '" onclick="W._stageTab(\''+fid+'\','+i+')">' + (isDone?'✓ ':'') + STAGES[i] + '</button>';
   }
 
-  const def = STAGE_DEFS[activeTab];
+  const def            = STAGE_DEFS[activeTab];
   const stageFieldData = sd[activeTab] || {};
   let content = '';
+
   function datePickerTrigger(type, value, openCall) {
-    if (ro) return '<input class="stage-input" type="text" value="' + escapeHtml(pickerDisplayValue(value, type)) + '" readonly />';
-    return '<button class="stage-input date-picker-trigger' + (value ? '' : ' empty') + '" type="button" onclick="' + openCall + '">' + escapeHtml(pickerDisplayValue(value, type)) + '</button>';
+    if (ro) return '<input class="stage-input" type="text" value="' + escapeHtml(pickerDisplayValue(value,type)) + '" readonly />';
+    return '<button class="stage-input date-picker-trigger' + (value?'':' empty') + '" type="button" onclick="'+openCall+'">' + escapeHtml(pickerDisplayValue(value,type)) + '</button>';
   }
+
   if (def) {
     def.fields.forEach(f => {
       const val = stageFieldData[f.key] || '';
-      if (f.type === 'textarea') {
-        content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
-          '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',this.value)"') + ' placeholder="' + (f.placeholder || '') + '">' + escapeHtml(val) + '</textarea></div>';
-      } else if (f.type === 'date' || f.type === 'datetime-local') {
-        content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
-          datePickerTrigger(f.type, val, 'openStageDatePicker(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',\'' + f.type + '\',\'' + escapeHtml(val) + '\')') +
-          '</div>';
+      if (f.type==='textarea') {
+        content += '<div class="stage-field"><div class="field-label">'+f.label+'</div>' +
+          '<textarea class="stage-textarea" '+(ro?'readonly':'oninput="W._sf(\''+fid+'\','+activeTab+',\''+f.key+'\',this.value)"')+' placeholder="'+(f.placeholder||'')+'">'+escapeHtml(val)+'</textarea></div>';
+      } else if (f.type==='date'||f.type==='datetime-local') {
+        content += '<div class="stage-field"><div class="field-label">'+f.label+'</div>' +
+          datePickerTrigger(f.type, val, 'openStageDatePicker(\''+fid+'\','+activeTab+',\''+f.key+'\',\''+f.type+'\',\''+escapeHtml(val)+'\')') + '</div>';
       } else {
-        content += '<div class="stage-field"><div class="field-label">' + f.label + '</div>' +
-          '<input class="stage-input" type="' + f.type + '" value="' + escapeHtml(val) + '" ' + (ro ? 'readonly' : 'oninput="W._sf(\'' + fid + '\',' + activeTab + ',\'' + f.key + '\',this.value)"') + ' placeholder="' + (f.placeholder || '') + '" /></div>';
+        content += '<div class="stage-field"><div class="field-label">'+f.label+'</div>' +
+          '<input class="stage-input" type="'+f.type+'" value="'+escapeHtml(val)+'" '+(ro?'readonly':'oninput="W._sf(\''+fid+'\','+activeTab+',\''+f.key+'\',this.value)"')+' placeholder="'+(f.placeholder||'')+'" /></div>';
       }
     });
   }
 
-  if (activeTab === 3) {
+  if (activeTab===3) {
     content += '<div class="interview-rounds">';
-    content += '<div class="rounds-header"><span class="rounds-label">How many interview rounds do you expect?</span>' +
-      (!ro ? '<input type="number" min="1" max="10" value="' + rounds.length + '" onchange="W._setRounds(\'' + fid + '\',this.value)" style="width:56px;font-size:14px;font-weight:600;padding:4px 8px;border:0.5px solid #d0cdc6;border-radius:8px;background:#faf9f7;text-align:center;font-family:inherit;outline:none;" />'
-        : '<span style="font-size:16px;font-weight:600;">' + rounds.length + '</span>') +
-      '</div>';
-    rounds.forEach((r, i) => {
-      const typeOptions = INTERVIEW_TYPES.map(t => '<option value="' + t + '"' + (r.type === t ? ' selected' : '') + '>' + (t || 'Select type...') + '</option>').join('');
-      const rs = r.status || '';
+    content += '<div class="rounds-header"><span class="rounds-label">Interview rounds</span>' +
+      (!ro ? '<input type="number" min="1" max="10" value="'+rounds.length+'" onchange="W._setRounds(\''+fid+'\',this.value)" style="width:52px;font-size:14px;font-weight:600;padding:4px 8px;border:1px solid var(--border);border-radius:8px;background:var(--cream);text-align:center;outline:none;" />' : '<span style="font-size:16px;font-weight:600;">'+rounds.length+'</span>') + '</div>';
+
+    rounds.forEach((r,i) => {
+      const typeOptions = INTERVIEW_TYPES.map(t => '<option value="'+t+'"'+(r.type===t?' selected':'')+'>'+((t||'Select type…'))+'</option>').join('');
+      const rs = r.status||'';
       const statusAt = r.statusAt ? fmtDateTime(r.statusAt) : null;
-      const borderColor = rs === 'completed' ? 'var(--sage)' : rs === 'rejected' ? 'var(--coral)' : rs === 'withdrew' ? 'var(--gold)' : 'transparent';
-      const badgeBg     = rs === 'completed' ? 'var(--sage)' : rs === 'rejected' ? 'var(--coral)' : rs === 'withdrew' ? 'var(--gold)' : 'var(--forest)';
-      const badgeIcon   = rs === 'completed' ? '✓' : rs === 'rejected' ? '✕' : rs === 'withdrew' ? '↩' : (i + 1);
-      const roundBorder = rs ? 'border-left:3px solid ' + borderColor + ';padding-left:10px;' : '';
-      function pill(label, val, activeBg, activeColor) {
-        const active = rs === val;
-        return '<button onclick="W._roundStatus(\'' + fid + '\',' + i + ',\'' + val + '\')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid ' + (active ? activeBg : '#d0cdc6') + ';background:' + (active ? activeBg : 'transparent') + ';color:' + (active ? activeColor : 'var(--text-3)') + ';cursor:pointer;font-family:inherit;white-space:nowrap;">' + label + '</button>';
+      const borderColor = rs==='completed'?'var(--sage)':rs==='rejected'?'var(--coral)':rs==='withdrew'?'var(--gold)':'transparent';
+      const badgeBg     = rs==='completed'?'var(--sage)':rs==='rejected'?'var(--coral)':rs==='withdrew'?'var(--gold)':'var(--forest)';
+      const badgeIcon   = rs==='completed'?'✓':rs==='rejected'?'✕':rs==='withdrew'?'↩':(i+1);
+      const roundBorder = rs ? 'border-left:3px solid '+borderColor+';padding-left:10px;' : '';
+      function pill(label,val,activeBg,activeColor) {
+        const active = rs===val;
+        return '<button onclick="W._roundStatus(\''+fid+'\','+i+',\''+val+'\')" style="font-size:11px;padding:4px 10px;border-radius:100px;border:1px solid '+(active?activeBg:'var(--border)')+';background:'+(active?activeBg:'transparent')+';color:'+(active?activeColor:'var(--text-3)')+';cursor:pointer;white-space:nowrap;">'+label+'</button>';
       }
       const statusRow = !ro ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">' +
-        '<span style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-right:2px;">Round outcome:</span>' +
-        pill('✓ Completed', 'completed', 'var(--sage)', 'white') +
-        pill('✕ Rejected after this', 'rejected', 'var(--coral)', 'white') +
-        pill('↩ I withdrew', 'withdrew', 'var(--gold)', 'white') +
+        '<span style="font-size:9px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-right:2px;">Outcome:</span>' +
+        pill('✓ Completed','completed','var(--sage)','white') +
+        pill('✕ Rejected','rejected','var(--coral)','white') +
+        pill('↩ Withdrew','withdrew','var(--gold)','white') +
         '</div>' +
-        (rs && statusAt ? '<div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">' + (rs === 'completed' ? 'Completed' : rs === 'rejected' ? 'Rejected' : 'Withdrew') + ': ' + statusAt + '</div>' : '') : '';
-      const prevTerminal = rounds.slice(0, i).some(prev => prev.status === 'rejected' || prev.status === 'withdrew');
+        (rs&&statusAt ? '<div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">'+(rs==='completed'?'Completed':rs==='rejected'?'Rejected':'Withdrew')+': '+statusAt+'</div>' : '') : '';
+      const prevTerminal = rounds.slice(0,i).some(prev=>prev.status==='rejected'||prev.status==='withdrew');
       const dimStyle = prevTerminal ? 'opacity:0.4;pointer-events:none;' : '';
-      content += '<div class="round-item" style="' + roundBorder + dimStyle + '">' +
-        '<div class="round-num-badge" style="background:' + badgeBg + ';">' + badgeIcon + '</div>' +
-        '<div class="round-fields">' + statusRow +
-        '<select class="stage-select" ' + (ro ? 'disabled' : 'onchange="W._round(\'' + fid + '\',' + i + ',\'type\',this.value)"') + '>' + typeOptions + '</select>' +
-        datePickerTrigger('datetime-local', r.date || '', 'openRoundDatePicker(\'' + fid + '\',' + i + ',\'datetime-local\',\'' + escapeHtml(r.date || '') + '\')') +
-        '<input class="stage-input" type="text" value="' + escapeHtml(r.with || '') + '" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'with\',this.value)"') + ' placeholder="Interviewer name / title" />' +
-        '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._round(\'' + fid + '\',' + i + ',\'notes\',this.value)"') + ' placeholder="Notes, questions asked, key takeaways...">' + escapeHtml(r.notes || '') + '</textarea>' +
+      content += '<div class="round-item" style="'+roundBorder+dimStyle+'">' +
+        '<div class="round-num-badge" style="background:'+badgeBg+';">'+badgeIcon+'</div>' +
+        '<div class="round-fields">'+statusRow +
+        '<select class="stage-select" '+(ro?'disabled':'onchange="W._round(\''+fid+'\','+i+',\'type\',this.value)"')+'>'+typeOptions+'</select>' +
+        datePickerTrigger('datetime-local', r.date||'', 'openRoundDatePicker(\''+fid+'\','+i+',\'datetime-local\',\''+escapeHtml(r.date||'')+'\')') +
+        '<input class="stage-input" type="text" value="'+escapeHtml(r.with||'')+'" '+(ro?'readonly':'oninput="W._round(\''+fid+'\','+i+',\'with\',this.value)"')+' placeholder="Interviewer name / title" />' +
+        '<textarea class="stage-textarea" '+(ro?'readonly':'oninput="W._round(\''+fid+'\','+i+',\'notes\',this.value)"')+' placeholder="Notes, questions, key takeaways…">'+escapeHtml(r.notes||'')+'</textarea>' +
         '</div></div>';
     });
     content += '</div>';
   }
 
   content += '<div class="field-label" style="margin-top:8px;">Stage notes</div>' +
-    '<textarea class="stage-textarea" ' + (ro ? 'readonly' : 'oninput="W._sn(\'' + fid + '\',' + activeTab + ',this.value)"') + ' placeholder="Notes specific to this stage...">' + escapeHtml(sn[activeTab] || '') + '</textarea>';
+    '<textarea class="stage-textarea" '+(ro?'readonly':'oninput="W._sn(\''+fid+'\','+activeTab+',this.value)"')+' placeholder="Notes for this stage…">'+escapeHtml(sn[activeTab]||'')+'</textarea>';
 
-  // Pipeline-advance hint
-  const advanceRow = (!ro && !j.rejected && !j.declined && !j.archived) ? '<div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;margin-top:4px;">Tip: tap a dot on the row above to advance the stage</div>' : '';
+  const advRow = (!ro&&!j.rejected&&!j.declined&&!j.archived)
+    ? '<div style="font-size:10px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;margin-top:4px;">Tip: tap a dot above to advance the stage</div>' : '';
 
   // Extras
-  const atts = j.attachments || [];
-  const attRows = atts.map((a, i) =>
+  const atts = j.attachments||[];
+  const attRows = atts.map((a,i) =>
     '<div class="attachment-row">' +
-    '<input class="att-label-input" value="' + escapeHtml(a.label||'') + '" placeholder="Label" ' + (ro?'readonly':'oninput="W._attLbl(\''+fid+'\','+i+',this.value)"') + ' />' +
-    '<input class="att-url-input" value="' + escapeHtml(a.url||'') + '" placeholder="https://drive.google.com/..." type="url" ' + (ro?'readonly':'oninput="W._attUrl2(\''+fid+'\','+i+',this.value)"') + ' />' +
-    (a.url ? '<a href="' + escapeHtml(a.url) + '" target="_blank" class="att-open">↗</a>' : '') +
+    '<input class="att-label-input" value="'+escapeHtml(a.label||'')+'" placeholder="Label" '+(ro?'readonly':'oninput="W._attLbl(\''+fid+'\','+i+',this.value)"')+' />' +
+    '<input class="att-url-input" value="'+escapeHtml(a.url||'')+'" placeholder="https://…" type="url" '+(ro?'readonly':'oninput="W._attUrl2(\''+fid+'\','+i+',this.value)"')+' />' +
+    (a.url ? '<a href="'+escapeHtml(a.url)+'" target="_blank" class="att-open">↗</a>' : '') +
     (!ro ? '<button class="row-remove" onclick="W._attRm(\''+fid+'\','+i+')">×</button>' : '') + '</div>'
   ).join('');
-  const conts = j.contacts || [];
-  const contRows = conts.map((c, i) =>
+
+  const conts = j.contacts||[];
+  const contRows = conts.map((c,i) =>
     '<div class="contact-row">' +
-    '<input class="contact-input" value="' + escapeHtml(c.name||'') + '" placeholder="Name" ' + (ro?'readonly':'oninput="W._contName(\''+fid+'\','+i+',this.value)"') + ' />' +
-    '<input class="contact-input" value="' + escapeHtml(c.title||'') + '" placeholder="Title / Role" ' + (ro?'readonly':'oninput="W._contTitle(\''+fid+'\','+i+',this.value)"') + ' />' +
+    '<input class="contact-input" value="'+escapeHtml(c.name||'')+'" placeholder="Name" '+(ro?'readonly':'oninput="W._contName(\''+fid+'\','+i+',this.value)"')+' />' +
+    '<input class="contact-input" value="'+escapeHtml(c.title||'')+'" placeholder="Title / Role" '+(ro?'readonly':'oninput="W._contTitle(\''+fid+'\','+i+',this.value)"')+' />' +
     (!ro ? '<button class="row-remove" onclick="W._contRm(\''+fid+'\','+i+')">×</button>' : '') + '</div>'
   ).join('');
 
-  // Action row
   let actionBtns = '';
   if (!isReadOnly) {
     if (j.archived) {
-      actionBtns = '<button class="action-btn green" onclick="W._restore(\'' + fid + '\')">Restore</button>';
+      actionBtns = '<button class="action-btn green" onclick="W._restore(\''+fid+'\')">Restore</button>';
     } else {
       actionBtns =
-        '<button class="action-btn red ' + (j.rejected ? 'active' : '') + '" onclick="W._rej(\'' + fid + '\',' + !!j.rejected + ')">' + (j.rejected ? 'Reactivate' : 'They rejected') + '</button>' +
-        '<button class="action-btn amber ' + (j.declined ? 'active' : '') + '" onclick="W._dec(\'' + fid + '\',' + !!j.declined + ')">' + (j.declined ? 'Reactivate' : 'I declined') + '</button>' +
-        (pendingArchive === fid
-          ? '<span class="confirm-inline">Archive? <button onclick="W._confArch(\'' + fid + '\')">Yes</button><button onclick="W._canArch()">No</button></span>'
-          : '<button class="action-btn gray" onclick="W._arch(\'' + fid + '\')">Archive</button>');
+        '<button class="action-btn red '+(j.rejected?'active':'')+'" onclick="W._rej(\''+fid+'\','+!!j.rejected+')">'+(j.rejected?'Reactivate':'They rejected')+'</button>' +
+        '<button class="action-btn amber '+(j.declined?'active':'')+'" onclick="W._dec(\''+fid+'\','+!!j.declined+')">'+(j.declined?'Reactivate':'I declined')+'</button>' +
+        (pendingArchive===fid
+          ? '<span class="confirm-inline">Archive? <button onclick="W._confArch(\''+fid+'\')">Yes</button><button onclick="W._canArch()">No</button></span>'
+          : '<button class="action-btn gray" onclick="W._arch(\''+fid+'\')">Archive</button>');
     }
   }
 
   return '<div class="detail-grid">' +
     '<div class="stage-notes-panel">' +
       '<div class="stage-tab-row">' + tabs + '</div>' +
-      '<div class="stage-content">' + advanceRow + content + '</div>' +
+      '<div class="stage-content">' + advRow + content + '</div>' +
     '</div>' +
     '<div class="detail-extras">' +
       '<div class="field-label">Recruiter</div>' +
-      '<input class="url-input" type="text" value="' + escapeHtml(j.recruiterName||'') + '" ' + (ro?'readonly':'oninput="W._recruiter(\''+fid+'\',this.value)"') + ' placeholder="Recruiter name..." style="margin-bottom:4px;" />' +
+      '<input class="url-input" type="text" value="'+escapeHtml(j.recruiterName||'')+'" '+(ro?'readonly':'oninput="W._recruiter(\''+fid+'\',this.value)"')+' placeholder="Recruiter name…" style="margin-bottom:4px;" />' +
       '<div class="field-label">Industry</div>' +
-      '<input class="url-input" type="text" value="' + escapeHtml(j.industry||'') + '" ' + (ro?'readonly':'oninput="W._industry(\''+fid+'\',this.value)"') + ' placeholder="e.g. Fintech, Healthcare, AI" />' +
-      '<div class="field-label">Contacts met</div>' + (contRows || '') +
-      (!ro ? '<button class="add-row-btn" onclick="W._contAdd(\'' + fid + '\')">+ Add contact</button>' : '') +
+      '<input class="url-input" type="text" value="'+escapeHtml(j.industry||'')+'" '+(ro?'readonly':'oninput="W._industry(\''+fid+'\',this.value)"')+' placeholder="e.g. Fintech, Healthcare, AI" />' +
+      '<div class="field-label">Contacts met</div>' + (contRows||'') +
+      (!ro ? '<button class="add-row-btn" onclick="W._contAdd(\''+fid+'\')">+ Add contact</button>' : '') +
       '<div class="field-label">Job posting URL</div>' +
-      '<div class="url-row"><input class="url-input" type="url" value="' + escapeHtml(j.url||'') + '" ' + (ro?'readonly':'oninput="W._url(\''+fid+'\',this.value)"') + ' placeholder="https://..." />' +
-        (j.url ? '<a href="' + escapeHtml(j.url) + '" target="_blank" class="job-link">↗ Open</a>' : '') + '</div>' +
+      '<div class="url-row"><input class="url-input" type="url" value="'+escapeHtml(j.url||'')+'" '+(ro?'readonly':'oninput="W._url(\''+fid+'\',this.value)"')+' placeholder="https://…" />' +
+        (j.url ? '<a href="'+escapeHtml(j.url)+'" target="_blank" class="job-link">↗ Open</a>' : '') + '</div>' +
       '<div class="field-label">Attachments</div>' +
-      '<div class="attachments-list">' + attRows + '</div>' +
-      (!ro ? '<button class="add-row-btn" onclick="W._attAdd(\'' + fid + '\')">+ Add attachment</button>' : '') +
+      '<div class="attachments-list">'+attRows+'</div>' +
+      (!ro ? '<button class="add-row-btn" onclick="W._attAdd(\''+fid+'\')">+ Add attachment</button>' : '') +
       '<div class="field-label">Salary / Compensation</div>' +
-      '<input class="url-input" type="text" value="' + escapeHtml(j.salary||'') + '" ' + (ro?'readonly':'oninput="W._salary(\''+fid+'\',this.value)"') + ' placeholder="e.g. $130k-$160k base + equity" />' +
+      '<input class="url-input" type="text" value="'+escapeHtml(j.salary||'')+'" '+(ro?'readonly':'oninput="W._salary(\''+fid+'\',this.value)"')+' placeholder="e.g. $130k–$160k + equity" />' +
       '<div class="field-label">General notes</div>' +
-      '<textarea class="gen-notes" ' + (ro?'readonly':'oninput="W._note(\''+fid+'\',this.value)"') + ' placeholder="Context, contacts, next steps...">' + escapeHtml(j.notes||'') + '</textarea>' +
+      '<textarea class="gen-notes" '+(ro?'readonly':'oninput="W._note(\''+fid+'\',this.value)"')+' placeholder="Context, contacts, next steps…">'+escapeHtml(j.notes||'')+'</textarea>' +
       (actionBtns ? '<div class="detail-actions">' + actionBtns + '</div>' : '') +
     '</div>' +
   '</div>';
 }
 
-// ── Overview render ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// OVERVIEW
+// ─────────────────────────────────────────────────────────────────────────────
 
 function getOverviewFilters(allVisible) {
-  const filters = [{ key: 'all', label: 'All', count: allVisible.length }];
-  STAGES.forEach((stage, idx) => {
-    const count = allVisible.filter(j => !j.rejected && !j.declined && j.stage === idx).length;
-    if (count) filters.push({ key: 'stage-' + idx, label: stage, count });
+  const filters = [{ key:'all', label:'All', count:allVisible.length }];
+  STAGES.forEach((stage,idx) => {
+    const count = allVisible.filter(j => !j.rejected&&!j.declined&&j.stage===idx).length;
+    if (count) filters.push({ key:'stage-'+idx, label:stage, count });
   });
-  const rejectedCount = allVisible.filter(j => j.rejected).length;
-  const declinedCount = allVisible.filter(j => j.declined).length;
-  if (rejectedCount) filters.push({ key: 'rejected', label: 'Rejected', count: rejectedCount });
-  if (declinedCount) filters.push({ key: 'declined', label: 'I declined', count: declinedCount });
+  const rejC = allVisible.filter(j=>j.rejected).length;
+  const decC = allVisible.filter(j=>j.declined).length;
+  if (rejC) filters.push({ key:'rejected', label:'Rejected', count:rejC });
+  if (decC) filters.push({ key:'declined', label:'I declined', count:decC });
   return filters;
 }
 
 function renderOverviewFilters(allVisible) {
   const filters = getOverviewFilters(allVisible);
-  if (!filters.some(f => f.key === ovFilter)) ovFilter = 'all';
+  if (!filters.some(f=>f.key===ovFilter)) ovFilter='all';
   document.getElementById('overview-filters').innerHTML = filters.map(f =>
-    '<button class="swim-filter' + (f.key === ovFilter ? ' active' : '') + '" onclick="setOvFilter(\'' + f.key + '\',this)">' +
-      escapeHtml(f.label) + ' <span class="nav-tab-badge">' + f.count + '</span>' +
+    '<button class="swim-filter'+(f.key===ovFilter?' active':'')+'" onclick="setOvFilter(\''+f.key+'\',this)">'+
+      escapeHtml(f.label)+' <span style="font-size:10px;opacity:0.7;">'+f.count+'</span>'+
     '</button>'
   ).join('');
 }
 
 function renderOverview() {
-  const allVisible = jobs.filter(j => !j.archived && matchesSearch(j, searchQuery));
+  const allVisible = jobs.filter(j=>!j.archived&&matchesSearch(j,searchQuery));
   renderOverviewFilters(allVisible);
   let visible = allVisible.slice();
   if (ovFilter.startsWith('stage-')) {
-    const stageIdx = parseInt(ovFilter.replace('stage-', ''), 10);
-    visible = visible.filter(j => !j.rejected && !j.declined && j.stage === stageIdx);
-  } else if (ovFilter === 'rejected') visible = visible.filter(j => j.rejected);
-  else if (ovFilter === 'declined') visible = visible.filter(j => j.declined);
+    const idx = parseInt(ovFilter.replace('stage-',''),10);
+    visible = visible.filter(j=>!j.rejected&&!j.declined&&j.stage===idx);
+  } else if (ovFilter==='rejected') visible = visible.filter(j=>j.rejected);
+  else if (ovFilter==='declined')   visible = visible.filter(j=>j.declined);
 
-  const active = allVisible.filter(j => !j.rejected && !j.declined);
-  const interviewing = active.filter(j => j.stage >= 2 && j.stage < 5).length;
-  const offers = active.filter(j => j.stage === 5).length;
-  const completedRounds = active.reduce((sum, j) => sum + (j.interviewRounds || []).filter(r => r.status === 'completed' || r.completed).length, 0);
-  const totalRounds = active.reduce((sum, j) => sum + (j.interviewRounds || []).length, 0);
+  const active    = allVisible.filter(j=>!j.rejected&&!j.declined);
+  const interv    = active.filter(j=>j.stage>=2&&j.stage<5).length;
+  const offers    = active.filter(j=>j.stage===5).length;
+  const compRnds  = active.reduce((s,j)=>s+(j.interviewRounds||[]).filter(r=>r.status==='completed'||r.completed).length,0);
+  const totRnds   = active.reduce((s,j)=>s+(j.interviewRounds||[]).length,0);
+
   document.getElementById('overview-summary').innerHTML =
-    '<div class="overview-stat"><div class="overview-stat-label">Active</div><div class="overview-stat-value">' + active.length + '</div><div class="overview-stat-note">not rejected or declined</div></div>' +
-    '<div class="overview-stat"><div class="overview-stat-label">Interviewing</div><div class="overview-stat-value">' + interviewing + '</div><div class="overview-stat-note">screen through final</div></div>' +
-    '<div class="overview-stat"><div class="overview-stat-label">Offers</div><div class="overview-stat-value">' + offers + '</div><div class="overview-stat-note">ready to compare</div></div>' +
-    '<div class="overview-stat"><div class="overview-stat-label">Rounds</div><div class="overview-stat-value">' + completedRounds + '/' + totalRounds + '</div><div class="overview-stat-note">completed interviews</div></div>';
+    stat('Active',   active.length, 'not rejected or declined') +
+    stat('Interviewing', interv,    'screen through final') +
+    stat('Offers',   offers,        'ready to compare') +
+    stat('Rounds',   compRnds+'/'+totRnds, 'completed interviews');
 
   const list = document.getElementById('overview-list');
   if (!visible.length) { list.innerHTML = '<div class="empty">No applications here yet.</div>'; return; }
 
   list.innerHTML = visible.map(j => {
-    const stageName = STAGES[j.stage] || '';
-    const sd = j.stageData || {};
-    const rounds = j.interviewRounds || [];
+    const stageName  = STAGES[j.stage]||'';
+    const sd         = j.stageData||{};
+    const rounds     = j.interviewRounds||[];
 
-    let statusBadge;
-    if (j.rejected) statusBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(232,114,90,0.1);color:var(--coral);font-weight:500;">Rejected</span>';
-    else if (j.declined) statusBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(201,150,42,0.12);color:var(--gold);font-weight:500;">Declined</span>';
-    else if (j.stage === 5) statusBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(74,121,102,0.1);color:var(--sage);font-weight:500;">Offer</span>';
-    else if (j.stage === 0) statusBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(124,92,138,0.1);color:var(--plum);font-weight:500;">Interested</span>';
-    else statusBadge = '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:var(--parchment);color:#555;font-weight:500;">' + stageName + '</span>';
+    let badge;
+    if (j.rejected)     badge = chip('✕ Rejected',   'var(--coral)',  'rgba(232,114,90,0.1)');
+    else if (j.declined) badge = chip('↩ Declined',  'var(--gold)',   'rgba(201,150,42,0.1)');
+    else if (j.stage===5) badge= chip('🎉 Offer',     'var(--sage)',   'rgba(74,121,102,0.1)');
+    else if (j.stage===0) badge= chip('⭐ Interested','var(--plum)',   'rgba(124,92,138,0.1)');
+    else                  badge= chip(stageName,       'var(--text-2)', 'var(--parchment)');
 
-    const steps = STAGES.map((s, i) => {
-      let dotCls = 'mt-dot', labelCls = 'mt-step-label', icon = '';
-      let bef = 'mt-line-b', aft = 'mt-line-a';
-      if (j.rejected || j.archived) {
-        if (i < j.stage) { dotCls += ' done'; icon = '✓'; bef += ' done'; aft += ' done'; labelCls += ' done'; }
-        else if (i === j.stage) { dotCls += ' rejected'; bef += ' done'; icon = '✕'; }
-      } else if (j.declined) {
-        if (i < j.stage) { dotCls += ' done'; icon = '✓'; bef += ' done'; aft += ' done'; labelCls += ' done'; }
-        else if (i === j.stage) { dotCls += ' declined'; bef += ' done'; icon = '↩'; }
-      } else if (i < j.stage) { dotCls += ' done'; icon = '✓'; bef += ' done'; aft += ' done'; labelCls += ' done'; }
-      else if (i === j.stage) {
-        if (i === 5) { dotCls += ' offer'; icon = '🎉'; labelCls += ' offer'; }
-        else { dotCls += ' current'; labelCls += ' current'; if (i === 3 && rounds.length > 0) icon = rounds.filter(r => r.status === 'completed').length + '/' + rounds.length; }
-        bef += ' done';
+    const steps = STAGES.map((s,i) => {
+      let dotCls='mt-dot', labelCls='mt-step-label', icon='';
+      let bef='mt-line-b', aft='mt-line-a';
+      if (j.rejected||j.archived) {
+        if(i<j.stage){dotCls+=' done';icon='✓';bef+=' done';aft+=' done';labelCls+=' done';}
+        else if(i===j.stage){dotCls+=' rejected';bef+=' done';icon='✕';}
+      } else if(j.declined) {
+        if(i<j.stage){dotCls+=' done';icon='✓';bef+=' done';aft+=' done';labelCls+=' done';}
+        else if(i===j.stage){dotCls+=' declined';bef+=' done';icon='↩';}
+      } else if(i<j.stage){dotCls+=' done';icon='✓';bef+=' done';aft+=' done';labelCls+=' done';}
+      else if(i===j.stage){
+        if(i===5){dotCls+=' offer';icon='🎉';labelCls+=' offer';}
+        else{dotCls+=' current';labelCls+=' current';if(i===3&&rounds.length>0)icon=rounds.filter(r=>r.status==='completed').length+'/'+rounds.length;}
+        bef+=' done';
       }
-      return '<div class="mt-step"><div class="' + bef + '"></div><div class="' + aft + '"></div><div class="' + dotCls + '">' + icon + '</div><div class="' + labelCls + '">' + STAGES_SHORT[i] + '</div></div>';
+      return '<div class="mt-step"><div class="'+bef+'"></div><div class="'+aft+'"></div><div class="'+dotCls+'">'+icon+'</div><div class="'+labelCls+'">'+STAGES_SHORT[i]+'</div></div>';
     }).join('');
 
-    const chips = [];
-    if (sd[1] && sd[1].appliedDate) chips.push('<span class="swim-chip" style="background:var(--parchment);color:var(--text-2);">Applied ' + fmtDate(sd[1].appliedDate) + '</span>');
-    if (sd[2] && sd[2].screenDate) chips.push('<span class="swim-chip next">📅 Screen: ' + fmtDateTime(sd[2].screenDate) + '</span>');
-    rounds.forEach((r, i) => { if (r.date) chips.push('<span class="swim-chip next">📅 R' + (i+1) + ': ' + fmtDateTime(r.date) + '</span>'); });
-    if (sd[4] && sd[4].finalDate) chips.push('<span class="swim-chip next">📅 Final: ' + fmtDateTime(sd[4].finalDate) + '</span>');
-    if (sd[5] && sd[5].offerDate) chips.push('<span class="swim-chip" style="background:rgba(74,121,102,0.1);color:var(--sage);">🎉 ' + fmtDate(sd[5].offerDate) + '</span>');
-    if (sd[5] && sd[5].offerDeadline) chips.push('<span class="swim-chip deadline">⏰ ' + fmtDate(sd[5].offerDeadline) + '</span>');
-    if (!j.rejected && !j.declined && j.stage > 0) chips.push('<span class="swim-chip" style="background:var(--parchment);color:var(--text-2);">⏱ ' + fmtDur(now() - stageEnteredAt(j)) + ' in ' + stageName + '</span>');
+    const extraChips = [];
+    if(sd[1]&&sd[1].appliedDate) extraChips.push(chip('Applied '+fmtDate(sd[1].appliedDate),'var(--text-2)','var(--parchment)'));
+    if(sd[2]&&sd[2].screenDate)  extraChips.push(chip('📅 Screen: '+fmtDateTime(sd[2].screenDate),'var(--forest)','rgba(30,61,53,0.07)'));
+    rounds.forEach((r,i)=>{ if(r.date) extraChips.push(chip('📅 R'+(i+1)+': '+fmtDateTime(r.date),'var(--forest)','rgba(30,61,53,0.07)')); });
+    if(sd[4]&&sd[4].finalDate)   extraChips.push(chip('📅 Final: '+fmtDateTime(sd[4].finalDate),'var(--forest)','rgba(30,61,53,0.07)'));
+    if(sd[5]&&sd[5].offerDate)   extraChips.push(chip('🎉 '+fmtDate(sd[5].offerDate),'var(--sage)','rgba(74,121,102,0.1)'));
+    if(sd[5]&&sd[5].offerDeadline) extraChips.push(chip('⏰ '+fmtDate(sd[5].offerDeadline),'var(--gold)','rgba(201,150,42,0.12)'));
+    if(!j.rejected&&!j.declined&&j.stage>0) extraChips.push(chip('⏱ '+fmtDur(now()-stageEnteredAt(j))+' in '+stageName,'var(--text-2)','var(--parchment)'));
 
     return '<div class="overview-card">' +
-      '<div class="swim-row" style="border:none;">' +
-        '<div class="swim-job">' +
-          '<div class="logo-sm" style="background:' + j.color + '18;color:' + j.color + ';">' + escapeHtml(j.emoji || j.company[0]) + '</div>' +
-          '<div class="swim-job-info"><div class="swim-job-title">' + escapeHtml(j.role) + '</div><div class="swim-job-company">' + escapeHtml(j.company) + (j.loc ? ' · ' + escapeHtml(j.loc) : '') + '</div></div>' +
+      '<div style="display:grid;grid-template-columns:minmax(160px,1.1fr) minmax(200px,1.5fr) minmax(130px,0.8fr);gap:16px;align-items:center;padding:14px 22px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;min-width:0;">' +
+          logoEl(j,36) +
+          '<div style="min-width:0;"><div style="font-size:13px;font-weight:500;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(j.role)+'</div>' +
+          '<div style="font-size:11px;color:var(--text-3);">'+escapeHtml(j.company)+(j.loc?' · '+escapeHtml(j.loc):'')+'</div></div>' +
         '</div>' +
         '<div class="mini-track">' + steps + '</div>' +
-        '<div class="swim-meta">' + statusBadge + '</div>' +
+        '<div style="display:flex;justify-content:flex-end;">' + badge + '</div>' +
       '</div>' +
-      (chips.length ? '<div style="padding: 0 16px 12px;display:flex;gap:6px;flex-wrap:wrap;">' + chips.join('') + '</div>' : '') +
+      (extraChips.length ? '<div style="padding:0 22px 14px;display:flex;gap:6px;flex-wrap:wrap;">' + extraChips.join('') + '</div>' : '') +
     '</div>';
   }).join('');
 }
 
-// ── Insights render ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// INSIGHTS
+// ─────────────────────────────────────────────────────────────────────────────
 
 function roleFamily(role) {
-  const r = (role || '').toLowerCase();
+  const r = (role||'').toLowerCase();
   if (!r) return 'Unspecified role';
   if (r.includes('product')) return 'Product';
-  if (r.includes('operation') || r.includes('ops')) return 'Operations';
-  if (r.includes('strategy') || r.includes('chief of staff') || r.includes('bizops')) return 'Strategy / BizOps';
-  if (r.includes('sales') || r.includes('account')) return 'Sales';
-  if (r.includes('marketing') || r.includes('growth')) return 'Marketing / Growth';
-  if (r.includes('engineer') || r.includes('developer') || r.includes('technical')) return 'Technical';
-  if (r.includes('finance') || r.includes('invest')) return 'Finance';
-  if (r.includes('people') || r.includes('talent') || r.includes('recruit')) return 'People / Talent';
+  if (r.includes('operation')||r.includes('ops')) return 'Operations';
+  if (r.includes('strategy')||r.includes('chief of staff')||r.includes('bizops')) return 'Strategy / BizOps';
+  if (r.includes('sales')||r.includes('account')) return 'Sales';
+  if (r.includes('marketing')||r.includes('growth')) return 'Marketing / Growth';
+  if (r.includes('engineer')||r.includes('developer')||r.includes('technical')) return 'Technical';
+  if (r.includes('finance')||r.includes('invest')) return 'Finance';
+  if (r.includes('people')||r.includes('talent')||r.includes('recruit')) return 'People / Talent';
   if (r.includes('principal')) return 'Principal / Lead';
-  if (r.includes('director') || r.includes('head of') || r.includes('vp')) return 'Leadership';
+  if (r.includes('director')||r.includes('head of')||r.includes('vp')) return 'Leadership';
   return 'Other roles';
 }
 
 function locationBucket(loc) {
   if (!loc) return 'Unspecified location';
-  const l = loc.toLowerCase();
-  if (l.includes('remote')) return 'Remote';
+  if (loc.toLowerCase().includes('remote')) return 'Remote';
   return loc.split(',')[0].trim() || 'Unspecified location';
 }
 
 function aggregateJobs(sourceJobs, groupFn) {
   const groups = new Map();
   sourceJobs.forEach(j => {
-    const key = groupFn(j) || 'Unspecified';
-    if (!groups.has(key)) groups.set(key, { name: key, count: 0, stageSum: 0, screen: 0, final: 0, offers: 0, wins: 0 });
+    const key = groupFn(j)||'Unspecified';
+    if (!groups.has(key)) groups.set(key,{name:key,count:0,stageSum:0,screen:0,final:0,offers:0,wins:0});
     const g = groups.get(key);
-    g.count += 1;
-    g.stageSum += Number(j.stage || 0);
-    if (!j.rejected && !j.declined && j.stage >= 2) g.screen += 1;
-    if (!j.rejected && !j.declined && j.stage >= 4) g.final += 1;
-    if (!j.rejected && !j.declined && j.stage === 5) g.offers += 1;
-    if (j.stage === 5) g.wins += 1;
+    g.count++;
+    g.stageSum += Number(j.stage||0);
+    if(!j.rejected&&!j.declined&&j.stage>=2) g.screen++;
+    if(!j.rejected&&!j.declined&&j.stage>=4) g.final++;
+    if(!j.rejected&&!j.declined&&j.stage===5){ g.offers++; g.wins++; }
   });
   return [...groups.values()]
-    .map(g => Object.assign(g, {
-      avgStage: g.count ? g.stageSum / g.count : 0,
-      screenRate: g.count ? g.screen / g.count : 0,
-      finalRate: g.count ? g.final / g.count : 0,
-      offerRate: g.count ? g.offers / g.count : 0
+    .map(g=>Object.assign(g,{
+      avgStage:   g.count?g.stageSum/g.count:0,
+      screenRate: g.count?g.screen/g.count:0,
+      finalRate:  g.count?g.final/g.count:0,
+      offerRate:  g.count?g.offers/g.count:0
     }))
-    .sort((a, b) => b.count - a.count || b.avgStage - a.avgStage || a.name.localeCompare(b.name))
-    .slice(0, 8);
+    .sort((a,b)=>b.count-a.count||b.avgStage-a.avgStage||a.name.localeCompare(b.name))
+    .slice(0,8);
 }
 
 function renderInsightTable(title, rows) {
   if (!rows.length) return '';
-  const maxStage = 5;
   return '<div class="insight-section">' +
-    '<div class="section-title">' + escapeHtml(title) + '</div>' +
+    '<div class="section-title">'+escapeHtml(title)+'</div>' +
     '<div class="insight-table">' +
       '<div class="insight-row header"><div>Category</div><div class="insight-num">Apps</div><div class="hide-sm">Progress</div><div class="insight-num hide-sm">Screen+</div><div class="insight-num hide-sm">Final+</div><div class="insight-num">Offers</div></div>' +
-      rows.map(r => '<div class="insight-row">' +
-        '<div class="insight-name" title="' + escapeHtml(r.name) + '">' + escapeHtml(r.name) + '</div>' +
-        '<div class="insight-num">' + r.count + '</div>' +
-        '<div class="insight-bar-bg hide-sm"><div class="insight-bar" style="width:' + Math.round((r.avgStage / maxStage) * 100) + '%;"></div></div>' +
-        '<div class="insight-num hide-sm">' + Math.round(r.screenRate * 100) + '%</div>' +
-        '<div class="insight-num hide-sm">' + Math.round(r.finalRate * 100) + '%</div>' +
-        '<div class="insight-num">' + r.offers + '</div>' +
-      '</div>').join('') +
+      rows.map(r =>
+        '<div class="insight-row">' +
+          '<div class="insight-name" title="'+escapeHtml(r.name)+'">'+escapeHtml(r.name)+'</div>' +
+          '<div class="insight-num">'+r.count+'</div>' +
+          '<div class="insight-bar-bg hide-sm"><div class="insight-bar" style="width:'+Math.round((r.avgStage/5)*100)+'%;"></div></div>' +
+          '<div class="insight-num hide-sm">'+Math.round(r.screenRate*100)+'%</div>' +
+          '<div class="insight-num hide-sm">'+Math.round(r.finalRate*100)+'%</div>' +
+          '<div class="insight-num">'+r.offers+'</div>' +
+        '</div>'
+      ).join('') +
     '</div></div>';
 }
 
 function renderInsights() {
-  const target = document.getElementById('insights-content');
-  const visible = jobs.filter(j => !j.archived && matchesSearch(j, searchQuery));
-  if (!visible.length) { target.innerHTML = '<div class="empty">No applications to analyze yet.</div>'; return; }
+  const target  = document.getElementById('insights-content');
+  const visible = jobs.filter(j=>!j.archived&&matchesSearch(j,searchQuery));
+  if (!visible.length) { target.innerHTML='<div class="empty">No applications to analyze yet.</div>'; return; }
+  const active     = visible.filter(j=>!j.rejected&&!j.declined);
+  const screenPlus = visible.filter(j=>!j.rejected&&!j.declined&&j.stage>=2).length;
+  const finalPlus  = visible.filter(j=>!j.rejected&&!j.declined&&j.stage>=4).length;
+  const offers     = visible.filter(j=>!j.rejected&&!j.declined&&j.stage===5).length;
+  const avgStage   = visible.reduce((s,j)=>s+Number(j.stage||0),0)/visible.length;
 
-  const active = visible.filter(j => !j.rejected && !j.declined);
-  const screenPlus = visible.filter(j => !j.rejected && !j.declined && j.stage >= 2).length;
-  const finalPlus = visible.filter(j => !j.rejected && !j.declined && j.stage >= 4).length;
-  const offers = visible.filter(j => !j.rejected && !j.declined && j.stage === 5).length;
-  const avgStage = visible.reduce((sum, j) => sum + Number(j.stage || 0), 0) / visible.length;
-
-  const summary =
-    '<div class="insights-grid">' +
-      '<div class="insight-card"><div class="insight-label">Tracked focus</div><div class="insight-value">' + visible.length + '</div><div class="insight-note">non-archived applications</div></div>' +
-      '<div class="insight-card"><div class="insight-label">Interview reach</div><div class="insight-value">' + Math.round((screenPlus / visible.length) * 100) + '%</div><div class="insight-note">' + screenPlus + ' reached screen or later</div></div>' +
-      '<div class="insight-card"><div class="insight-label">Final reach</div><div class="insight-value">' + Math.round((finalPlus / visible.length) * 100) + '%</div><div class="insight-note">' + finalPlus + ' reached final or offer</div></div>' +
-      '<div class="insight-card"><div class="insight-label">Average stage</div><div class="insight-value">' + avgStage.toFixed(1) + '/5</div><div class="insight-note">' + active.length + ' active right now · ' + offers + ' offers</div></div>' +
+  const summary = '<div class="insights-grid">' +
+    kpi('Tracked focus',    visible.length, 'non-archived applications') +
+    kpi('Interview reach',  Math.round((screenPlus/visible.length)*100)+'%', screenPlus+' reached screen or later') +
+    kpi('Final reach',      Math.round((finalPlus/visible.length)*100)+'%',  finalPlus+' reached final or offer') +
+    kpi('Average stage',    avgStage.toFixed(1)+'/5', active.length+' active · '+offers+' offers') +
     '</div>';
 
   target.innerHTML = summary +
-    renderInsightTable('By industry', aggregateJobs(visible, j => j.industry || 'Unspecified industry')) +
-    renderInsightTable('By role family', aggregateJobs(visible, j => roleFamily(j.role))) +
-    renderInsightTable('By company', aggregateJobs(visible, j => j.company || 'Unknown company')) +
-    renderInsightTable('By location', aggregateJobs(visible, j => locationBucket(j.loc)));
+    renderInsightTable('By industry',    aggregateJobs(visible, j=>j.industry||'Unspecified industry')) +
+    renderInsightTable('By role family', aggregateJobs(visible, j=>roleFamily(j.role))) +
+    renderInsightTable('By company',     aggregateJobs(visible, j=>j.company||'Unknown company')) +
+    renderInsightTable('By location',    aggregateJobs(visible, j=>locationBucket(j.loc)));
 }
 
-// ── Sidebar render ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SIDEBAR
+// ─────────────────────────────────────────────────────────────────────────────
 
 function buildHeatmap(jobs) {
-  // Last 91 days, grid of 13 weeks × 7 days. Color by # of stage-history events that day.
   const today = new Date(); today.setHours(0,0,0,0);
-  const daysCount = 91;
+  const n = 91;
   const counts = {};
   jobs.forEach(j => {
-    (j.stageHistory || []).forEach(h => {
+    (j.stageHistory||[]).forEach(h => {
       if (!h.ts) return;
       const d = new Date(h.ts); d.setHours(0,0,0,0);
-      const key = d.getTime();
-      counts[key] = (counts[key] || 0) + 1;
+      counts[d.getTime()] = (counts[d.getTime()]||0)+1;
     });
-    (j.interviewRounds || []).forEach(r => {
-      if (r.statusAt) {
-        const d = new Date(r.statusAt); d.setHours(0,0,0,0);
-        counts[d.getTime()] = (counts[d.getTime()] || 0) + 1;
-      }
+    (j.interviewRounds||[]).forEach(r => {
+      if (r.statusAt) { const d=new Date(r.statusAt); d.setHours(0,0,0,0); counts[d.getTime()]=(counts[d.getTime()]||0)+1; }
     });
-    if (j.createdAt && j.createdAt.toMillis) {
-      const d = new Date(j.createdAt.toMillis()); d.setHours(0,0,0,0);
-      counts[d.getTime()] = (counts[d.getTime()] || 0) + 1;
+    if (j.createdAt&&j.createdAt.toMillis) {
+      const d=new Date(j.createdAt.toMillis()); d.setHours(0,0,0,0);
+      counts[d.getTime()]=(counts[d.getTime()]||0)+1;
     }
   });
-  const cells = [];
-  let total = 0;
-  for (let i = daysCount - 1; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    const c = counts[d.getTime()] || 0;
-    total += c;
-    let cls = '';
-    if (c >= 4) cls = 'l4'; else if (c === 3) cls = 'l3'; else if (c === 2) cls = 'l2'; else if (c === 1) cls = 'l1';
-    cells.push('<div class="hm-cell ' + cls + '" title="' + d.toLocaleDateString() + ': ' + c + ' event' + (c === 1 ? '' : 's') + '"></div>');
+  const cells=[]; let total=0;
+  for (let i=n-1;i>=0;i--) {
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    const c=counts[d.getTime()]||0; total+=c;
+    let cls=''; if(c>=4)cls='l4';else if(c===3)cls='l3';else if(c===2)cls='l2';else if(c===1)cls='l1';
+    cells.push('<div class="hm-cell '+cls+'" title="'+d.toLocaleDateString()+': '+c+' event'+(c===1?'':'s')+'"></div>');
   }
-  // Compute longest streak of consecutive non-zero days
-  let streak = 0, longest = 0;
-  for (let i = daysCount - 1; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    if ((counts[d.getTime()] || 0) > 0) { streak++; if (streak > longest) longest = streak; }
-    else streak = 0;
-  }
-  return { cellsHtml: cells.join(''), total, longest };
+  let streak=0,longest=0;
+  for(let i=n-1;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);if((counts[d.getTime()]||0)>0){streak++;if(streak>longest)longest=streak;}else streak=0;}
+  return { cellsHtml:cells.join(''), total, longest };
 }
 
 function buildFunnel(jobs) {
-  const counts = [0, 0, 0, 0, 0, 0];
+  const counts=[0,0,0,0,0,0];
   jobs.forEach(j => {
-    if (j.archived) return;
-    const reached = new Set();
-    (j.stageHistory || []).forEach(h => reached.add(h.stage));
-    if (reached.size === 0) reached.add(j.stage || 0);
-    reached.forEach(s => { if (s >= 0 && s <= 5) counts[s]++; });
+    if(j.archived) return;
+    const reached=new Set();
+    (j.stageHistory||[]).forEach(h=>reached.add(h.stage));
+    if(!reached.size) reached.add(j.stage||0);
+    reached.forEach(s=>{if(s>=0&&s<=5)counts[s]++;});
   });
   return counts;
 }
@@ -3233,48 +3299,100 @@ function buildFunnel(jobs) {
 function renderSidebar(targetId) {
   const target = document.getElementById(targetId);
   if (!target) return;
-  const hm = buildHeatmap(jobs);
+  const hm     = buildHeatmap(jobs);
   const funnel = buildFunnel(jobs);
-  const maxF = Math.max(...funnel, 1);
-
-  const tot  = jobs.filter(j => !j.archived).length;
-  const intv = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 3 && j.stage < 5).length;
-  const off  = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 5).length;
-  const stale = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 1 && j.stage < 5 && (now() - stageEnteredAt(j)) >= 14*86400000).length;
+  const maxF   = Math.max(...funnel,1);
+  const tot    = jobs.filter(j=>!j.archived).length;
+  const intv   = jobs.filter(j=>!j.archived&&!j.rejected&&!j.declined&&j.stage>=3&&j.stage<5).length;
+  const off    = jobs.filter(j=>!j.archived&&!j.rejected&&!j.declined&&j.stage===5).length;
+  const stale  = jobs.filter(j=>!j.archived&&!j.rejected&&!j.declined&&j.stage>=1&&j.stage<5&&(now()-stageEnteredAt(j))>=14*86400000).length;
 
   let html = '';
-  html += '<div class="sb-section"><div class="sb-title">Snapshot</div><div class="sb-stats">' +
-    '<div class="sb-stat-card"><div class="sb-stat-label">Active</div><div class="sb-stat-val">' + tot + '</div></div>' +
-    '<div class="sb-stat-card"><div class="sb-stat-label">Interviewing</div><div class="sb-stat-val"><span class="accent">' + intv + '</span></div></div>' +
-    '<div class="sb-stat-card"><div class="sb-stat-label">Offers</div><div class="sb-stat-val">' + off + '</div></div>' +
-    '<div class="sb-stat-card"><div class="sb-stat-label">Stale</div><div class="sb-stat-val">' + stale + '</div></div>' +
+
+  // Snapshot stats — 2×2 grid of large serif numbers
+  html += '<div class="sb-section">' +
+    '<div class="sb-title">Snapshot</div>' +
+    '<div class="sb-stats">' +
+      sbStat('Active',       tot,  false) +
+      sbStat('Interviewing', intv, true) +
+      sbStat('Offers',       off,  false) +
+      sbStat('Stale',        stale,false) +
     '</div></div>';
 
-  html += '<div class="sb-section"><div class="sb-title">📈 Activity (last 90 days)</div>' +
-    '<div class="heatmap">' + hm.cellsHtml + '</div>' +
-    '<div class="heatmap-legend">Less <div class="hl-cell" style="background:var(--parchment);"></div><div class="hl-cell" style="background:rgba(74,121,102,0.22);"></div><div class="hl-cell" style="background:rgba(74,121,102,0.45);"></div><div class="hl-cell" style="background:rgba(74,121,102,0.68);"></div><div class="hl-cell" style="background:var(--sage);"></div> More</div>' +
-    '<div class="heatmap-summary"><span class="accent">' + hm.total + '</span> events · longest streak <span class="accent">' + hm.longest + ' day' + (hm.longest === 1 ? '' : 's') + '</span></div>' +
-    '</div>';
+  // Activity heatmap
+  html += '<div class="sb-section">' +
+    '<div class="sb-title">Activity · last 90 days</div>' +
+    '<div class="heatmap">'+hm.cellsHtml+'</div>' +
+    '<div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text-3);justify-content:flex-end;margin-top:4px;">' +
+      'Less ' +
+      '<div style="width:9px;height:9px;border-radius:2px;background:var(--parchment);"></div>' +
+      '<div style="width:9px;height:9px;border-radius:2px;background:rgba(74,121,102,0.22);"></div>' +
+      '<div style="width:9px;height:9px;border-radius:2px;background:rgba(74,121,102,0.45);"></div>' +
+      '<div style="width:9px;height:9px;border-radius:2px;background:rgba(74,121,102,0.68);"></div>' +
+      '<div style="width:9px;height:9px;border-radius:2px;background:var(--sage);"></div> More' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--text-2);margin-top:6px;"><strong>'+hm.total+'</strong> events · longest streak <strong>'+hm.longest+' day'+(hm.longest===1?'':'s')+'</strong></div>' +
+  '</div>';
 
-  html += '<div class="sb-section"><div class="sb-title">🎯 Funnel</div>';
-  STAGES.forEach((s, i) => {
-    const pct = Math.round((funnel[i] / maxF) * 100);
-    html += '<div class="funnel-row"><div class="funnel-label">' + ICONS[i] + ' ' + s + '</div><div class="funnel-bar-bg"><div class="funnel-bar" style="width:' + pct + '%;background:' + STAGE_COLORS[i] + ';"></div></div><div class="funnel-num">' + funnel[i] + '</div></div>';
+  // Funnel
+  html += '<div class="sb-section"><div class="sb-title">Funnel</div>';
+  STAGES.forEach((s,i) => {
+    const pct = Math.round((funnel[i]/maxF)*100);
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">' +
+      '<div style="font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:5px;flex-shrink:0;min-width:90px;">'+ICONS[i]+' '+s+'</div>' +
+      '<div style="flex:1;height:5px;background:var(--parchment);border-radius:3px;overflow:hidden;min-width:20px;">' +
+        '<div style="height:100%;border-radius:3px;width:'+pct+'%;background:'+STAGE_COLORS[i]+';transition:width 0.3s;"></div>' +
+      '</div>' +
+      '<div style="font-size:12px;font-weight:600;color:var(--text-1);min-width:20px;text-align:right;">'+funnel[i]+'</div>' +
+    '</div>';
   });
   html += '</div>';
 
   target.innerHTML = html;
 }
 
-// ── Master render ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SMALL HELPERS for render functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+function stat(label, value, note) {
+  return '<div class="overview-stat">' +
+    '<div class="overview-stat-label">'+label+'</div>' +
+    '<div class="overview-stat-value">'+value+'</div>' +
+    '<div class="overview-stat-note">'+note+'</div>' +
+  '</div>';
+}
+
+function chip(label, color, bg) {
+  return '<span style="font-size:10px;font-weight:500;padding:3px 10px;border-radius:100px;color:'+color+';background:'+bg+';">'+escapeHtml(label)+'</span>';
+}
+
+function kpi(label, value, note) {
+  return '<div class="insight-card">' +
+    '<div class="insight-label">'+label+'</div>' +
+    '<div class="insight-value">'+value+'</div>' +
+    '<div class="insight-note">'+note+'</div>' +
+  '</div>';
+}
+
+function sbStat(label, value, accent) {
+  return '<div class="sb-stat-card">' +
+    '<div class="sb-stat-label">'+label+'</div>' +
+    '<div class="sb-stat-val'+(accent?' accent':'')+'" style="'+(accent?'color:var(--forest);':'')+'">'+value+'</div>' +
+  '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MASTER RENDER
+// ─────────────────────────────────────────────────────────────────────────────
 
 function render() {
   if (!currentUser && !viewingUid) return;
-  if (currentPage === 'today')         renderToday();
-  else if (currentPage === 'pipeline') renderPipeline();
-  else if (currentPage === 'overview') renderOverview();
-  else if (currentPage === 'insights') renderInsights();
-  else if (currentPage === 'stats')    renderSidebar('mobile-stats-content');
+  if      (currentPage==='today')    renderToday();
+  else if (currentPage==='pipeline') renderPipeline();
+  else if (currentPage==='overview') renderOverview();
+  else if (currentPage==='insights') renderInsights();
+  else if (currentPage==='stats')    renderSidebar('mobile-stats-content');
   renderSidebar('sidebar');
   if (searchQuery) renderSearchResults();
 }
