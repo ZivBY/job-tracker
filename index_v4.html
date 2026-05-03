@@ -2051,6 +2051,48 @@ textarea.gen-notes {
     min-width: 560px;
   }
 }
+
+/* ── v4.4 sticky app header ────────────────────────────────────────── */
+#app {
+  overflow: visible;
+}
+
+.topbar {
+  position: sticky !important;
+  top: 12px;
+  z-index: 260;
+  backdrop-filter: blur(18px);
+}
+
+.tab-row {
+  position: relative !important;
+  top: auto !important;
+  z-index: 20;
+}
+
+.swim-row-wrap,
+.hero,
+.attention-section,
+.next-actions-section,
+.swimlane-section,
+.insight-section {
+  scroll-margin-top: 150px;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    top: 8px;
+  }
+
+  .swim-row-wrap,
+  .hero,
+  .attention-section,
+  .next-actions-section,
+  .swimlane-section,
+  .insight-section {
+    scroll-margin-top: 190px;
+  }
+}
 </style>
 </head>
 <body>
