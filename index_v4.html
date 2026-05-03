@@ -4324,11 +4324,16 @@ async function toggleDeclined(fid, cur) { await saveField(fid, { declined: !cur,
 function toggleExpand(fid) {
   if (expanded.has(fid)) {
     expanded.delete(fid);
+    render();
   } else {
     expanded.clear();
     expanded.add(fid);
+    render();
+    requestAnimationFrame(() => {
+      const row = document.getElementById('row-' + fid);
+      if (row) row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
-  render();
 }
 function setStageTab(fid, idx) { activeStageTab[fid] = idx; render(); }
 function archiveJob(fid) { pendingArchive = fid; render(); }
