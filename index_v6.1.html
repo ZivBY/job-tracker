@@ -3296,6 +3296,9 @@ function renderJobDetail(j) {
       (!ro ? '<input type="number" min="1" max="10" value="' + rounds.length + '" onchange="W._setRounds(\'' + fid + '\',this.value)" style="width:56px;font-size:14px;font-weight:600;padding:4px 8px;border:0.5px solid #d0cdc6;border-radius:8px;background:#faf9f7;text-align:center;font-family:inherit;outline:none;" />'
         : '<span style="font-size:16px;font-weight:600;">' + rounds.length + '</span>') +
       '</div>';
+    if (!ro && rounds.length === 0) {
+      content += '<button class="add-row-btn" style="margin-bottom:10px;" onclick="W._setRounds(\'' + fid + '\',1)">Add first interview round with date & time</button>';
+    }
     rounds.forEach((r, i) => {
       const typeOptions = INTERVIEW_TYPES.map(t => '<option value="' + t + '"' + (r.type === t ? ' selected' : '') + '>' + (t || 'Select type...') + '</option>').join('');
       const rs = r.status || '';

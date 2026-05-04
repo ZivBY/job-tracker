@@ -351,11 +351,15 @@ a { color: inherit; }
   display: grid;
   place-items: center;
   padding: 8px 0 7px;
+  cursor: pointer;
 }
-.cal-day.today {
+.cal-day.today, .cal-day.selected {
   background: var(--pine-deep);
   color: var(--paper);
   border-color: var(--pine-deep);
+}
+.cal-day:not(.selected).today {
+  box-shadow: 0 0 0 2px rgba(240,180,41,0.24) inset;
 }
 .cal-day-name {
   font-size: 9px;
@@ -371,7 +375,7 @@ a { color: inherit; }
   line-height: 1.1;
   color: inherit;
 }
-.cal-day.today .cal-day-num { color: var(--marigold); }
+.cal-day.today .cal-day-num, .cal-day.selected .cal-day-num { color: var(--marigold); }
 .cal-day-dots {
   height: 5px;
   display: flex;
@@ -385,6 +389,28 @@ a { color: inherit; }
   background: var(--coral);
 }
 .agenda { display: grid; gap: 15px; }
+.cal-menu {
+  position: relative;
+  margin: -2px 0 10px auto;
+  width: min(210px, 68vw);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+}
+.cal-menu button {
+  width: 100%;
+  min-height: 38px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pine-deep);
+  text-align: left;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.cal-menu button:active { background: var(--paper-2); }
 .agenda-label {
   font-size: 10px;
   line-height: 1;
@@ -449,6 +475,12 @@ a { color: inherit; }
   text-transform: none;
   letter-spacing: 0;
 }
+.round-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.round-form-grid .two-col { gap: 8px; }
 .track {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -726,6 +758,9 @@ const state = {
   selectedId: null,
   filter: "all",
   query: "",
+  selectedCalendarDate: startOfDay(new Date()).toISOString(),
+  calendarMode: "day",
+  calendarMenuOpen: false,
   readOnly: false,
   unsubscribe: null,
   extractedPostDate: null,
@@ -761,9 +796,21 @@ document.addEventListener("click", e => {
   handleAction(action.dataset.action, action.dataset);
 });
 document.addEventListener("input", e => {
+  const roundField = e.target.closest("[data-round-field]");
+  if (roundField) {
+    debounceSave("round" + roundField.dataset.id + roundField.dataset.idx + roundField.dataset.roundField, () => {
+      updateRoundField(roundField.dataset.id, Number(roundField.dataset.idx), roundField.dataset.roundField, roundField.value);
+    }, 650);
+    return;
+  }
   const el = e.target.closest("[data-save]");
   if (!el) return;
   debounceSave(el.dataset.save + el.dataset.id, () => saveField(el.dataset.id, { [el.dataset.save]: el.value }), 700);
+});
+document.addEventListener("change", e => {
+  const roundField = e.target.closest("[data-round-field]");
+  if (!roundField) return;
+  updateRoundField(roundField.dataset.id, Number(roundField.dataset.idx), roundField.dataset.roundField, roundField.value);
 });
 
 getRedirectResult(auth).catch(e => showToast(authError(e), "error"));
@@ -989,23 +1036,31 @@ function renderCalendar() {
   setHeader("Calendar", "This <i>week</i>");
   const events = getEvents();
   const today = new Date();
+  const selectedDate = parseCalendarDate(state.selectedCalendarDate);
   const week = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
     return d;
   });
-  const grouped = groupAgenda(events, week[0], week[6]);
+  const grouped = state.calendarMode === "week"
+    ? groupAgenda(events, week[0], week[6])
+    : groupAgenda(events, selectedDate, selectedDate);
   els.view.innerHTML = `
-    <button class="cal-head-action" aria-label="Calendar menu">
+    <button class="cal-head-action" data-action="cal-menu" aria-label="Calendar menu">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
+    ${state.calendarMenuOpen ? `<div class="cal-menu">
+      <button data-action="cal-today">Jump to today</button>
+      <button data-action="cal-mode" data-mode="day">Show selected day</button>
+      <button data-action="cal-mode" data-mode="week">Show full week</button>
+    </div>` : ""}
     <div class="cal-week">${week.map(d => {
       const count = events.filter(e => sameDay(e.date, d)).length;
-      return `<div class="cal-day ${sameDay(d, today) ? "today" : ""}">
+      return `<button class="cal-day ${sameDay(d, today) ? "today" : ""} ${sameDay(d, selectedDate) ? "selected" : ""}" data-action="cal-day" data-date="${d.toISOString()}">
         <div class="cal-day-name">${d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1)}</div>
         <div class="cal-day-num">${d.getDate()}</div>
         <div class="cal-day-dots">${Array.from({ length: Math.min(count, 3) }).map(() => '<span class="cal-day-dot"></span>').join("")}</div>
-      </div>`;
+      </button>`;
     }).join("")}</div>
     <div class="agenda">${grouped.length ? grouped.map(agendaGroup).join("") : empty("Add screen/interview dates to see them here.")}</div>
   `;
@@ -1063,6 +1118,25 @@ function handleAction(action, data) {
   if (action === "close") return toggleRejected(data.id);
   if (action === "round-add") return addRound(data.id);
   if (action === "round-status") return setRoundStatus(data.id, Number(data.idx), data.status);
+  if (action === "round-remove") return removeRound(data.id, Number(data.idx));
+  if (action === "cal-day") {
+    state.selectedCalendarDate = startOfDay(new Date(data.date)).toISOString();
+    state.calendarMode = "day";
+    state.calendarMenuOpen = false;
+    return render();
+  }
+  if (action === "cal-menu") { state.calendarMenuOpen = !state.calendarMenuOpen; return render(); }
+  if (action === "cal-today") {
+    state.selectedCalendarDate = startOfDay(new Date()).toISOString();
+    state.calendarMode = "day";
+    state.calendarMenuOpen = false;
+    return render();
+  }
+  if (action === "cal-mode") {
+    state.calendarMode = data.mode;
+    state.calendarMenuOpen = false;
+    return render();
+  }
   if (action === "extract-url") return extractFromUrl();
   if (action === "extract-text") return extractFromText();
   if (action === "add-job") return addJob();
@@ -1102,6 +1176,22 @@ async function addRound(fid) {
   const job = state.jobs.find(j => j.firestoreId === fid);
   if (!job) return;
   const rounds = [...(job.interviewRounds || []), { date: "", type: "", with: "", notes: "", status: "" }];
+  await saveField(fid, { interviewRounds: rounds });
+}
+
+async function removeRound(fid, idx) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job) return;
+  const rounds = (job.interviewRounds || []).filter((_, i) => i !== idx);
+  await saveField(fid, { interviewRounds: rounds });
+}
+
+async function updateRoundField(fid, idx, field, value) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job) return;
+  const rounds = [...(job.interviewRounds || [])];
+  if (!rounds[idx]) return;
+  rounds[idx] = { ...rounds[idx], [field]: value };
   await saveField(fid, { interviewRounds: rounds });
 }
 
@@ -1367,10 +1457,32 @@ function renderRounds(job) {
           <div class="job-role">${esc(r.with || "Interviewer TBD")}${r.date ? " / " + esc(fmtDateTime(r.date)) : ""}</div>
         </div>
       </div>
+      <div class="round-form-grid">
+        <div class="two-col">
+          <div class="field">
+            <label>Round type</label>
+            <select data-round-field="type" data-id="${job.firestoreId}" data-idx="${i}" ${state.readOnly ? "disabled" : ""}>
+              ${["", "Phone screen", "1:1 Interview", "Hiring manager interview", "Panel interview", "Presentation interview", "Case study interview", "Technical interview", "Take-home assignment", "Culture fit interview", "Other"].map(type => `<option value="${esc(type)}" ${r.type === type ? "selected" : ""}>${esc(type || "Select type")}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label>Date & time</label>
+            <input type="datetime-local" data-round-field="date" data-id="${job.firestoreId}" data-idx="${i}" value="${esc(datetimeInputValue(r.date || ""))}" ${state.readOnly ? "readonly" : ""}>
+          </div>
+        </div>
+        <div class="field">
+          <label>Interviewer</label>
+          <input type="text" data-round-field="with" data-id="${job.firestoreId}" data-idx="${i}" value="${esc(r.with || "")}" placeholder="Name / title" ${state.readOnly ? "readonly" : ""}>
+        </div>
+        <div class="field">
+          <label>Round notes</label>
+          <textarea data-round-field="notes" data-id="${job.firestoreId}" data-idx="${i}" placeholder="Notes, questions, takeaways..." ${state.readOnly ? "readonly" : ""}>${esc(r.notes || "")}</textarea>
+        </div>
+      </div>
       <div class="chip-row" style="padding-bottom:0">
         ${["completed", "rejected", "withdrew"].map(status => `<button class="chip ${r.status === status ? "active" : ""}" data-action="round-status" data-id="${job.firestoreId}" data-idx="${i}" data-status="${status}">${status}</button>`).join("")}
+        ${state.readOnly ? "" : `<button class="chip" data-action="round-remove" data-id="${job.firestoreId}" data-idx="${i}">Remove</button>`}
       </div>
-      ${r.notes ? `<div class="job-role">${esc(r.notes)}</div>` : ""}
     </div>
   `).join("");
 }
@@ -1489,6 +1601,19 @@ function startOfDay(d) {
 
 function sameDay(a, b) {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+
+function parseCalendarDate(value) {
+  const d = new Date(value);
+  return isNaN(d) ? startOfDay(new Date()) : d;
+}
+
+function datetimeInputValue(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (isNaN(d)) return "";
+  const pad = n => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
 }
 
 function stageEnteredAt(job) {
