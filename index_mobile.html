@@ -749,6 +749,188 @@ a { color: inherit; }
   border-radius: 24px;
   background: var(--pine-deep);
   color: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.detail-hero::after {
+  content: "";
+  position: absolute;
+  right: -44px;
+  bottom: -46px;
+  width: 136px;
+  height: 136px;
+  border-radius: 60% 40% 48% 52%;
+  background: rgba(232,122,108,0.18);
+}
+.detail-hero > * { position: relative; z-index: 1; }
+.detail-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 0 12px;
+}
+.detail-nav-actions { display: flex; gap: 8px; }
+.detail-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--pine-deep);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+.detail-company-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.detail-hero .logo { width: 50px; height: 50px; border-radius: 15px; font-size: 22px; }
+.detail-company-name {
+  font-family: var(--serif);
+  color: var(--paper);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 600;
+}
+.detail-domain { color: rgba(251,247,236,0.62); font-size: 12px; font-weight: 700; margin-top: 3px; }
+.detail-role {
+  font-family: var(--serif);
+  color: var(--marigold);
+  font-size: 23px;
+  font-style: italic;
+  line-height: 1.15;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.detail-chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 17px; }
+.detail-chip {
+  border-radius: 999px;
+  padding: 6px 11px;
+  color: var(--paper);
+  background: rgba(251,247,236,0.16);
+  font-size: 11px;
+  font-weight: 900;
+}
+.detail-chip.hot { background: var(--coral); color: var(--paper); }
+.detail-stage-label {
+  color: rgba(251,247,236,0.56);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.detail-hero .track::before { background: rgba(251,247,236,0.16); }
+.detail-hero .dot { border-color: rgba(251,247,236,0.25); }
+.detail-hero .dot.done { background: rgba(251,247,236,0.22); border-color: rgba(251,247,236,0.22); }
+.detail-hero .dot-label { color: rgba(251,247,236,0.48); }
+.detail-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+.detail-tab-tile {
+  min-height: 62px;
+  border-radius: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.detail-tab-tile svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.next-step-card {
+  border-radius: 20px;
+  background: var(--coral);
+  color: white;
+  padding: 17px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.next-step-card::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 96px;
+  height: 96px;
+  border-radius: 60% 40% 50% 50%;
+  background: rgba(255,255,255,0.16);
+}
+.next-step-card > * { position: relative; z-index: 1; }
+.next-kicker {
+  color: rgba(255,255,255,0.82);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+}
+.next-title {
+  font-family: var(--serif);
+  font-size: 21px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+.next-sub { color: rgba(255,255,255,0.86); font-size: 12px; font-weight: 700; line-height: 1.35; margin-top: 6px; }
+.next-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 14px; }
+.next-actions button {
+  min-height: 42px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+.next-actions .light { background: white; color: var(--coral-dark); }
+.next-actions .outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.58); }
+.timeline { display: grid; gap: 0; margin: 8px 4px 18px; }
+.timeline-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 9px;
+  min-height: 48px;
+}
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--pine);
+  margin-top: 3px;
+  box-shadow: 0 0 0 5px rgba(45,74,62,0.08);
+}
+.timeline-dot.hot { background: var(--coral); box-shadow: 0 0 0 5px rgba(232,122,108,0.16); }
+.timeline-content {
+  border-left: 1px solid var(--line);
+  padding: 0 0 14px 12px;
+  margin-left: -16px;
+}
+.timeline-date {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.timeline-title { color: var(--pine-deep); font-size: 14px; font-weight: 900; line-height: 1.2; margin-top: 2px; }
+.timeline-sub { color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 2px; }
 }
 .detail-title {
   font-family: var(--serif);
@@ -1160,25 +1342,44 @@ function renderDetail() {
   if (!job) { setTab("list"); return; }
   setHeader("Application", esc(job.company));
   const stage = Number(job.stage || 0);
+  const next = nextStepForJob(job);
+  const timeline = timelineForJob(job);
   els.view.innerHTML = `
-    <button class="section-link" data-action="tab" data-target="list" style="margin:2px 0 12px">Back to list</button>
-    <div class="detail-hero">
-      <div class="job-main">
-        ${logo(job, 50)}
-        <div class="job-copy">
-          <div class="eyebrow" style="color:rgba(251,247,236,0.68)">${esc(STAGES[stage] || "Application")}</div>
-          <div class="detail-title">${esc(job.company || "Untitled")}</div>
-          <div class="detail-meta">${esc(job.role || "")}${job.loc ? " / " + esc(job.loc) : ""}</div>
-        </div>
-      </div>
-      <div style="margin-top:16px">${stageTrack(job, !state.readOnly)}</div>
-      <div class="quick-actions">
-        <button data-action="stage" data-id="${job.firestoreId}" data-step="${Math.max(0, stage - 1)}">Back</button>
-        <button data-action="stage" data-id="${job.firestoreId}" data-step="${Math.min(5, stage + 1)}">Advance</button>
-        <button data-action="close" data-id="${job.firestoreId}">${job.rejected ? "Reopen" : "Close"}</button>
+    <div class="detail-nav">
+      <button class="detail-icon-btn" data-action="tab" data-target="list" aria-label="Back">‹</button>
+      <div class="detail-nav-actions">
+        <button class="detail-icon-btn" data-action="favorite" aria-label="Favorite">♡</button>
+        <button class="detail-icon-btn" data-action="detail-menu" aria-label="More">···</button>
       </div>
     </div>
-    <div class="section-head"><h2 class="section-title">Notes</h2></div>
+    <div class="detail-hero">
+      <div class="detail-company-row">
+        ${logo(job, 50)}
+        <div style="min-width:0;flex:1">
+          <div class="detail-company-name">${esc(job.company || "Untitled")}</div>
+          <div class="detail-domain">${esc(companyDomain(job))}${activeJobs().length ? " · " + activeJobs().length + " active apps" : ""}</div>
+        </div>
+      </div>
+      <div class="detail-role">${esc(job.role || "Role not set")}</div>
+      <div class="detail-chip-row">
+        ${job.loc ? `<span class="detail-chip">${esc(shortLocation(job.loc))}</span>` : ""}
+        ${job.salary ? `<span class="detail-chip">${esc(job.salary)}</span>` : ""}
+        ${job.type ? `<span class="detail-chip">${esc(job.type)}</span>` : ""}
+        <span class="detail-chip hot">• ${esc(STAGES[stage] || "Stage")}</span>
+      </div>
+      <div class="detail-stage-label">Stage ${stage + 1} of ${STAGES.length} · ${esc(STAGES[stage] || "")}</div>
+      ${stageTrack(job, !state.readOnly)}
+    </div>
+    <div class="detail-tabs">
+      <button class="detail-tab-tile" data-action="focus-notes"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Notes</span></button>
+      <button class="detail-tab-tile" data-action="focus-timeline"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg><span>Timeline</span></button>
+      <button class="detail-tab-tile" data-action="focus-contacts"><svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Contacts</span></button>
+      <button class="detail-tab-tile" data-action="focus-files"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>Files</span></button>
+    </div>
+    ${next ? nextStepCard(next, job) : ""}
+    <div class="section-head" style="margin-top:8px"><h2 class="section-title">Timeline</h2></div>
+    <div class="timeline">${timeline.length ? timeline.map(timelineRow).join("") : empty("No timeline yet.")}</div>
+    <div class="section-head" id="notes-section"><h2 class="section-title">Notes</h2></div>
     <div class="form-card card">
       <div class="field"><label>Stage notes</label><textarea data-id="${job.firestoreId}" data-save="notes" ${state.readOnly ? "readonly" : ""} placeholder="Add follow-up notes, prep, or decisions...">${esc(job.notes || "")}</textarea></div>
       <div class="two-col">
@@ -1187,7 +1388,7 @@ function renderDetail() {
       </div>
       <div class="field"><label>Job URL</label><input data-id="${job.firestoreId}" data-save="url" ${state.readOnly ? "readonly" : ""} value="${esc(job.url || "")}" placeholder="https://"></div>
     </div>
-    <div class="section-head"><h2 class="section-title">Interview rounds</h2><button class="section-link" data-action="round-add" data-id="${job.firestoreId}">Add</button></div>
+    <div class="section-head" id="timeline-section"><h2 class="section-title">Interview rounds</h2><button class="section-link" data-action="round-add" data-id="${job.firestoreId}">Add</button></div>
     <div class="stack">${renderRounds(job)}</div>
   `;
 }
@@ -1346,6 +1547,12 @@ function handleAction(action, data) {
   if (action === "share") return copyShareLink();
   if (action === "notify") return showToast("Notifications are set for Daily 9 AM", "success");
   if (action === "export") return exportCsv();
+  if (action === "favorite") return showToast("Saved as a priority application", "success");
+  if (action === "detail-menu") return showToast("More actions are coming here", "success");
+  if (action === "focus-notes") return scrollToId("notes-section");
+  if (action === "focus-timeline") return scrollToId("timeline-section");
+  if (action === "focus-contacts") return showToast("Contacts live in the editable detail fields for now", "success");
+  if (action === "focus-files") return showToast("Files support is coming next", "success");
 }
 
 async function saveField(fid, fields) {
@@ -1607,6 +1814,95 @@ function getActions() {
   }).sort((a, b) => a.priority - b.priority);
 }
 
+function nextStepForJob(job) {
+  const nowTs = Date.now();
+  const upcoming = getEvents().filter(e => e.job.firestoreId === job.firestoreId && e.ts >= nowTs)[0];
+  if (upcoming) {
+    return {
+      kicker: "Next step",
+      title: upcoming.label + " — " + relativeEventTime(upcoming.date),
+      sub: nextStepSub(job, upcoming),
+      primary: "Open prep ↗",
+      secondary: "Reschedule"
+    };
+  }
+  if (job.stage === 5) {
+    return {
+      kicker: "Next step",
+      title: "Review offer",
+      sub: (job.stageData?.[5]?.offerDeadline ? "Decision deadline " + fmtDateTime(job.stageData[5].offerDeadline) : "Capture compensation, deadline, and negotiation notes."),
+      primary: "Review offer",
+      secondary: "Close"
+    };
+  }
+  return {
+    kicker: "Next step",
+    title: "Advance or follow up",
+    sub: "Update the stage, schedule the next conversation, or add notes from your latest contact.",
+    primary: "Advance",
+    secondary: "Close"
+  };
+}
+
+function nextStepSub(job, event) {
+  const rounds = (job.interviewRounds || []).filter(r => r.date && !r.completed && r.status !== "rejected" && r.status !== "withdrew");
+  const people = rounds.map(r => r.with).filter(Boolean).slice(0, 2).join(", ");
+  const count = rounds.length ? rounds.length + " round" + (rounds.length === 1 ? "" : "s") : event.kind === "screen" ? "Screen" : "Scheduled";
+  return [count, people].filter(Boolean).join(" · ");
+}
+
+function relativeEventTime(date) {
+  const d = startOfDay(date).getTime();
+  const today = startOfDay(new Date()).getTime();
+  const diff = Math.round((d - today) / 86400000);
+  const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (diff === 0) return time + " today";
+  if (diff === 1) return time + " tomorrow";
+  return fmtDateTime(date);
+}
+
+function nextStepCard(next, job) {
+  return `
+    <div class="next-step-card">
+      <div class="next-kicker">${esc(next.kicker)}</div>
+      <div class="next-title">${esc(next.title)}</div>
+      <div class="next-sub">${esc(next.sub)}</div>
+      <div class="next-actions">
+        <button class="light" data-action="focus-timeline">${esc(next.primary)}</button>
+        <button class="outline" data-action="${next.secondary === "Close" ? "close" : "focus-timeline"}" data-id="${job.firestoreId}">${esc(next.secondary)}</button>
+      </div>
+    </div>
+  `;
+}
+
+function timelineForJob(job) {
+  const items = [];
+  getEvents().filter(e => e.job.firestoreId === job.firestoreId).forEach(e => {
+    items.push({ ts: e.ts, hot: e.ts >= Date.now(), date: fmtDateTime(e.date), title: e.label, sub: e.kind === "deadline" ? "Decision deadline" : "Scheduled" });
+  });
+  (job.stageHistory || []).forEach(h => {
+    const d = new Date(h.ts);
+    items.push({ ts: h.ts || 0, hot: false, date: isNaN(d) ? "" : fmtDateTime(d), title: (STAGES[h.stage] || "Stage") + (h.stage === job.stage ? " current" : ""), sub: "Stage updated" });
+  });
+  if (job.createdAt?.toMillis) {
+    items.push({ ts: job.createdAt.toMillis(), hot: false, date: fmtDateTime(job.createdAt.toMillis()), title: "Application added", sub: job.role || "" });
+  }
+  return items.sort((a, b) => b.ts - a.ts).slice(0, 6);
+}
+
+function timelineRow(item) {
+  return `
+    <div class="timeline-row">
+      <div class="timeline-dot ${item.hot ? "hot" : ""}"></div>
+      <div class="timeline-content">
+        <div class="timeline-date">${esc(item.date)}</div>
+        <div class="timeline-title">${esc(item.title)}</div>
+        <div class="timeline-sub">${esc(item.sub)}</div>
+      </div>
+    </div>
+  `;
+}
+
 function jobCard(job) {
   const flag = job.rejected || job.declined ? `<span class="pill hot">Closed</span>` : job.stage === 5 ? `<span class="pill offer">Offer</span>` : isStale(job) ? `<span class="pill stale">Stale</span>` : "";
   return `
@@ -1754,6 +2050,19 @@ function logo(job, size = 42) {
   const color = job.color || PALETTE[0];
   const letter = esc(job.emoji || (job.company || "?")[0]);
   return `<div class="logo" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.32)}px;background:${esc(color)}">${letter}</div>`;
+}
+
+function companyDomain(job) {
+  try {
+    if (job.url) return new URL(job.url).hostname.replace(/^www\./, "");
+  } catch {}
+  return (job.company || "company").toLowerCase().replace(/[^a-z0-9]+/g, "") + ".com";
+}
+
+function shortLocation(loc) {
+  const text = String(loc || "");
+  if (/remote/i.test(text)) return text.includes("·") ? text : "Remote · US";
+  return text.split(",")[0] || text;
 }
 
 function profileStat(label, value, note, accent = false) {
@@ -1937,6 +2246,11 @@ function exportCsv() {
   a.remove();
   URL.revokeObjectURL(url);
   showToast("CSV exported", "success");
+}
+
+function scrollToId(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 if ("serviceWorker" in navigator) {
