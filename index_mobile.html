@@ -11,6 +11,9 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400;9..144,1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>Quiet Signal</title>
 <script>
 if (location.hostname === '127.0.0.1') {
@@ -41,8 +44,8 @@ if (location.hostname === '127.0.0.1') {
   --danger: #b94b43;
   --success: #2d6a4f;
   --shadow: 0 10px 30px rgba(31,55,45,0.12);
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
-  --serif: Georgia, "Times New Roman", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
 }
 html, body { min-height: 100%; background: var(--bg); color: var(--text); }
 body {
@@ -129,7 +132,7 @@ a { color: inherit; }
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: calc(env(safe-area-inset-top) + 12px) 18px 10px;
+  padding: calc(env(safe-area-inset-top) + 18px) 22px 10px;
   background: linear-gradient(180deg, rgba(243,238,226,0.98), rgba(243,238,226,0.88));
   backdrop-filter: blur(16px);
 }
@@ -265,8 +268,16 @@ a { color: inherit; }
   display: flex;
   gap: 12px;
   align-items: center;
+  width: 100%;
+  text-align: left;
 }
-.job-card { flex-direction: column; align-items: stretch; }
+.job-card {
+  flex-direction: column;
+  align-items: stretch;
+  cursor: pointer;
+  min-height: 102px;
+}
+.job-card.compact { min-height: 0; }
 .job-main { display: flex; gap: 12px; align-items: center; min-width: 0; }
 .logo {
   width: 42px;
@@ -281,6 +292,8 @@ a { color: inherit; }
 .job-copy { flex: 1; min-width: 0; }
 .job-company, .action-title, .event-title { font-size: 15px; font-weight: 800; color: var(--pine-deep); line-height: 1.25; }
 .job-role, .action-sub, .event-sub { font-size: 12px; color: var(--muted); line-height: 1.35; margin-top: 2px; }
+.job-company-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.job-company-line .job-company { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip-row { display: flex; gap: 7px; overflow-x: auto; padding: 8px 2px 12px; scrollbar-width: none; }
 .chip-row::-webkit-scrollbar { display: none; }
 .chip {
@@ -312,14 +325,27 @@ a { color: inherit; }
 .track {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 5px;
+  gap: 0;
   align-items: center;
+  margin-top: 10px;
+  position: relative;
+}
+.track::before {
+  content: "";
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 5px;
+  height: 1px;
+  background: var(--line);
 }
 .dot-wrap {
   display: grid;
   gap: 5px;
   justify-items: center;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 .dot {
   width: 11px;
@@ -327,6 +353,8 @@ a { color: inherit; }
   border-radius: 99px;
   border: 1.5px solid var(--line-strong);
   background: transparent;
+  display: block;
+  padding: 0;
 }
 .dot.done { background: var(--pine); border-color: var(--pine); }
 .dot.current { background: var(--coral); border-color: var(--coral); box-shadow: 0 0 0 4px rgba(232,122,108,0.16); }
@@ -417,9 +445,9 @@ a { color: inherit; }
 .status.success { color: var(--success); }
 .tabs {
   position: fixed;
-  left: 14px;
-  right: 14px;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  left: 20px;
+  right: 20px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 30;
   height: 66px;
   border-radius: 999px;
@@ -428,29 +456,34 @@ a { color: inherit; }
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
-  padding: 0 8px;
+  padding: 0 10px;
 }
 .tab {
   color: rgba(251,247,236,0.56);
   background: transparent;
   display: grid;
   place-items: center;
-  gap: 3px;
-  font-size: 10px;
+  gap: 4px;
+  font-size: 9px;
   font-weight: 800;
+  min-width: 0;
 }
-.tab .tab-icon { font-size: 18px; line-height: 1; }
+.tab .tab-icon { width: 22px; height: 22px; display: grid; place-items: center; line-height: 1; }
+.tab svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tab.active { color: var(--marigold); }
 .tab.add {
   width: 54px;
   height: 54px;
   justify-self: center;
-  margin-top: -20px;
+  margin-top: -22px;
   border-radius: 999px;
   background: var(--marigold);
   color: var(--pine-deep);
   box-shadow: 0 10px 20px rgba(240,180,41,0.38);
-  font-size: 26px;
+  font-size: 0;
+}
+.tab.add svg { width: 24px; height: 24px; stroke-width: 2.7; }
+.tab span:last-child { line-height: 1; }
 }
 .toast {
   position: fixed;
@@ -476,7 +509,7 @@ a { color: inherit; }
 @media (min-width: 760px) {
   body { display: flex; justify-content: center; }
   .screen, .app { width: min(430px, 100vw); }
-  .tabs { left: 50%; right: auto; width: min(402px, calc(100vw - 28px)); transform: translateX(-50%); }
+  .tabs { left: 50%; right: auto; width: min(402px, calc(100vw - 40px)); transform: translateX(-50%); }
 }
 </style>
 </head>
@@ -522,11 +555,11 @@ a { color: inherit; }
   <section id="view" class="content"></section>
 
   <nav class="tabs" aria-label="Main navigation">
-    <button class="tab active" data-tab="home"><span class="tab-icon">H</span><span>Home</span></button>
-    <button class="tab" data-tab="list"><span class="tab-icon">L</span><span>List</span></button>
-    <button class="tab add" data-tab="add" aria-label="Add application">+</button>
-    <button class="tab" data-tab="calendar"><span class="tab-icon">C</span><span>Cal</span></button>
-    <button class="tab" data-tab="profile"><span class="tab-icon">M</span><span>Me</span></button>
+    <button class="tab active" data-tab="home"><span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span><span>Home</span></button>
+    <button class="tab" data-tab="list"><span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M7 7h14M7 12h14M7 17h14"/><circle cx="3.5" cy="7" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="17" r="1"/></svg></span><span>List</span></button>
+    <button class="tab add" data-tab="add" aria-label="Add application"><span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
+    <button class="tab" data-tab="calendar"><span class="tab-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span>Cal</span></button>
+    <button class="tab" data-tab="profile"><span class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span><span>Me</span></button>
   </nav>
 </main>
 
@@ -705,7 +738,8 @@ function loadJobs(uid) {
 }
 
 function render() {
-  document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === state.tab));
+  const activeTab = state.tab === "detail" ? "list" : state.tab;
+  document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === activeTab));
   els.searchWrap.classList.toggle("hidden", state.tab !== "list");
   if (state.tab !== "list") els.search.value = state.query = "";
 
@@ -881,7 +915,6 @@ function setHeader(kicker, title) {
 
 function setTab(tab) {
   state.tab = tab;
-  state.selectedId = tab === "detail" ? state.selectedId : state.selectedId;
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1106,17 +1139,17 @@ function getActions() {
 function jobCard(job) {
   const flag = job.rejected || job.declined ? `<span class="pill hot">Closed</span>` : job.stage === 5 ? `<span class="pill offer">Offer</span>` : isStale(job) ? `<span class="pill stale">Stale</span>` : "";
   return `
-    <button class="card job-card" data-action="detail" data-id="${job.firestoreId}">
+    <div class="card job-card" data-action="detail" data-id="${job.firestoreId}" role="button" tabindex="0">
       <div class="job-main">
         ${logo(job)}
         <div class="job-copy">
-          <div style="display:flex;align-items:center;gap:6px;min-width:0"><div class="job-company">${esc(job.company || "Untitled")}</div>${flag}</div>
+          <div class="job-company-line"><div class="job-company">${esc(job.company || "Untitled")}</div>${flag}</div>
           <div class="job-role">${esc(job.role || "")}${job.loc ? " / " + esc(job.loc) : ""}</div>
         </div>
       </div>
       ${stageTrack(job)}
       <div class="job-role">${esc(STAGES[job.stage || 0] || "")}${job.recruiterName ? " / " + esc(job.recruiterName) : ""}</div>
-    </button>
+    </div>
   `;
 }
 
@@ -1170,7 +1203,9 @@ function stageTrack(job, clickable = false) {
   const stage = Number(job.stage || 0);
   return `<div class="track">${STAGES_SHORT.map((s, i) => `
     <div class="dot-wrap">
-      <button class="dot ${i < stage ? "done" : i === stage ? "current" : ""}" ${clickable ? `data-action="stage" data-id="${job.firestoreId}" data-step="${i}"` : ""} aria-label="${esc(STAGES[i])}"></button>
+      ${clickable
+        ? `<button class="dot ${i < stage ? "done" : i === stage ? "current" : ""}" data-action="stage" data-id="${job.firestoreId}" data-step="${i}" aria-label="${esc(STAGES[i])}"></button>`
+        : `<span class="dot ${i < stage ? "done" : i === stage ? "current" : ""}" aria-hidden="true"></span>`}
       <div class="dot-label">${esc(s)}</div>
     </div>
   `).join("")}</div>`;

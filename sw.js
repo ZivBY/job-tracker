@@ -1,4 +1,4 @@
-const CACHE = 'job-tracker-v2';
+const CACHE = 'job-tracker-v3';
 const ASSETS = [
   '/job-tracker/',
   '/job-tracker/index.html',
