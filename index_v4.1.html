@@ -1914,6 +1914,35 @@ body::before {
   padding: clamp(18px, 2vw, 24px);
 }
 
+.modal {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#modal .modal {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+#modal .modal-btns {
+  position: sticky;
+  bottom: calc(-1.5rem - env(safe-area-inset-bottom));
+  margin-inline: -1.25rem;
+  margin-bottom: calc(-1.5rem - env(safe-area-inset-bottom));
+  padding: 12px 1.25rem calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255,253,247,0), rgba(255,253,247,0.98) 22%, rgba(237,245,245,0.98));
+  border-top: 1px solid rgba(33,61,55,0.12);
+}
+
+@media (min-width: 600px) {
+  #modal .modal-btns {
+    margin-inline: -1.5rem;
+    margin-bottom: -1.5rem;
+    padding-inline: 1.5rem;
+    bottom: -1.5rem;
+  }
+}
+
 .detail-extras .field-label:first-child {
   margin-top: 0;
 }
@@ -4591,21 +4620,42 @@ window.adminRemoveUser = async function(uid) {
 function setJdStatus(msg, type) { const el = document.getElementById('jd-status'); el.textContent = msg; el.className = 'jd-status ' + type; }
 
 function fillForm(data) {
-  if (data.company)  document.getElementById('f-company').value  = data.company;
-  if (data.role)     document.getElementById('f-role').value     = data.role;
-  if (data.industry) document.getElementById('f-industry').value = data.industry;
-  if (data.location) document.getElementById('f-loc').value      = data.location;
-  if (data.url)      document.getElementById('f-url').value      = data.url;
+  data = data || {};
+  const filled = [];
+  if (data.company)  { document.getElementById('f-company').value  = data.company; filled.push('company'); }
+  if (data.role)     { document.getElementById('f-role').value     = data.role; filled.push('role'); }
+  if (data.industry) { document.getElementById('f-industry').value = data.industry; filled.push('industry'); }
+  if (data.location) { document.getElementById('f-loc').value      = data.location; filled.push('location'); }
+  if (data.url)      { document.getElementById('f-url').value      = data.url; }
   if (data.type) {
     const sel = document.getElementById('f-type');
     const m = [...sel.options].find(o => o.text.toLowerCase().includes(data.type.toLowerCase()));
-    if (m) sel.value = m.value;
+    if (m) { sel.value = m.value; filled.push('employment type'); }
   }
   _extractedPostDate = data.postedDate || null;
   _extractedSalary   = data.salary || null;
+  if (_extractedPostDate) filled.push('posted date');
+  if (_extractedSalary) filled.push('salary');
+  return filled;
+}
+
+function reportExtractionResult(data, source) {
+  const filled = fillForm(data);
+  const hasRequired = !!(data && (data.company || data.role));
   const dateMsg   = _extractedPostDate ? ' · Posted ' + fmtDate(_extractedPostDate) : '';
   const salaryMsg = _extractedSalary ? ' · ' + _extractedSalary : '';
-  setJdStatus('✓ Fields filled — review and save' + dateMsg + salaryMsg, 'success');
+  if (hasRequired) {
+    setJdStatus('✓ Fields filled — review and save' + dateMsg + salaryMsg, 'success');
+    return true;
+  }
+  if (filled.length) {
+    setJdStatus('Only partial details came through (' + filled.join(', ') + '). Add company and role before saving.', 'error');
+  } else if (source === 'url') {
+    setJdStatus('The page was reached, but the job details were not readable. Paste the job description text below instead.', 'error');
+  } else {
+    setJdStatus('Could not find company or role in that text. Add the missing fields manually before saving.', 'error');
+  }
+  return false;
 }
 
 async function callProxy(body) {
@@ -4626,7 +4676,8 @@ window.extractFromUrl = async function() {
   try {
     const extracted = await callProxy({ url });
     if (!extracted.url) extracted.url = url;
-    fillForm(extracted);
+    const ok = reportExtractionResult(extracted, 'url');
+    if (!ok) setTimeout(() => document.getElementById('jd-text').focus(), 100);
   } catch(e) {
     setJdStatus('Could not fetch this URL — paste the job description text below instead.', 'error');
     setTimeout(() => document.getElementById('jd-text').focus(), 100);
@@ -4644,7 +4695,7 @@ window.extractFromText = async function() {
     const url = document.getElementById('jd-url').value.trim();
     const extracted = await callProxy({ text });
     if (!extracted.url && url) extracted.url = url;
-    fillForm(extracted);
+    reportExtractionResult(extracted, 'text');
   } catch(e) { setJdStatus('Extraction failed. Fill in the fields manually.', 'error'); }
   btn.disabled = false; btn.textContent = 'Extract from text';
 };
