@@ -322,6 +322,133 @@ a { color: inherit; }
 .pill.hot { background: rgba(232,122,108,0.18); color: var(--coral-dark); }
 .pill.offer { background: var(--marigold); color: var(--pine-deep); }
 .pill.stale { background: rgba(111,138,120,0.18); color: var(--muted); }
+.pill.screen { background: rgba(240,180,41,0.18); color: var(--marigold-dark); }
+.pill.final { background: rgba(232,122,108,0.18); color: var(--coral-dark); }
+.pill.interview { background: rgba(111,138,120,0.18); color: var(--pine-mid); }
+.cal-head-action {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+}
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 18px;
+}
+.cal-day {
+  min-height: 58px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  padding: 8px 0 7px;
+}
+.cal-day.today {
+  background: var(--pine-deep);
+  color: var(--paper);
+  border-color: var(--pine-deep);
+}
+.cal-day-name {
+  font-size: 9px;
+  font-weight: 800;
+  color: inherit;
+  opacity: 0.62;
+  line-height: 1;
+}
+.cal-day-num {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: inherit;
+}
+.cal-day.today .cal-day-num { color: var(--marigold); }
+.cal-day-dots {
+  height: 5px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.cal-day-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--coral);
+}
+.agenda { display: grid; gap: 15px; }
+.agenda-label {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 2px 8px;
+}
+.agenda-list { display: grid; gap: 8px; }
+.agenda-card {
+  min-height: 66px;
+  padding: 11px 12px;
+  display: grid;
+  grid-template-columns: 54px 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+}
+.agenda-time {
+  color: var(--pine-deep);
+  font-size: 10px;
+  line-height: 1.15;
+}
+.agenda-time strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.agenda-time span {
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+.agenda-card .logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.agenda-title {
+  color: var(--pine-deep);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agenda-sub {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+.agenda-card .pill {
+  font-size: 8.5px;
+  padding: 3px 7px;
+  text-transform: none;
+  letter-spacing: 0;
+}
 .track {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -861,17 +988,26 @@ function renderAdd() {
 function renderCalendar() {
   setHeader("Calendar", "This <i>week</i>");
   const events = getEvents();
+  const today = new Date();
   const week = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
     return d;
   });
+  const grouped = groupAgenda(events, week[0], week[6]);
   els.view.innerHTML = `
-    <div class="chip-row">${week.map(d => {
+    <button class="cal-head-action" aria-label="Calendar menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="cal-week">${week.map(d => {
       const count = events.filter(e => sameDay(e.date, d)).length;
-      return `<div class="chip ${sameDay(d, new Date()) ? "active" : ""}">${d.toLocaleDateString("en-US", { weekday: "short" })} ${d.getDate()}${count ? " / " + count : ""}</div>`;
+      return `<div class="cal-day ${sameDay(d, today) ? "today" : ""}">
+        <div class="cal-day-name">${d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1)}</div>
+        <div class="cal-day-num">${d.getDate()}</div>
+        <div class="cal-day-dots">${Array.from({ length: Math.min(count, 3) }).map(() => '<span class="cal-day-dot"></span>').join("")}</div>
+      </div>`;
     }).join("")}</div>
-    <div class="stack">${events.length ? events.map(eventCard).join("") : empty("Add screen/interview dates to see them here.")}</div>
+    <div class="agenda">${grouped.length ? grouped.map(agendaGroup).join("") : empty("Add screen/interview dates to see them here.")}</div>
   `;
 }
 
@@ -1116,6 +1252,46 @@ function pushEvent(events, job, value, label, kind) {
   if (!isNaN(date)) events.push({ job, date, ts: date.getTime(), label, kind });
 }
 
+function groupAgenda(events, from, to) {
+  const start = startOfDay(from).getTime();
+  const end = startOfDay(to).getTime() + 86400000 - 1;
+  const visible = events.filter(e => e.ts >= start && e.ts <= end);
+  const groups = [];
+  visible.forEach(event => {
+    const key = startOfDay(event.date).toISOString();
+    let group = groups.find(g => g.key === key);
+    if (!group) {
+      group = { key, label: agendaLabel(event.date), events: [] };
+      groups.push(group);
+    }
+    group.events.push(event);
+  });
+  return groups;
+}
+
+function agendaLabel(date) {
+  const today = startOfDay(new Date()).getTime();
+  const day = startOfDay(date).getTime();
+  const diff = Math.round((day - today) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function durationLabel(kind) {
+  if (kind === "screen") return "30m";
+  if (kind === "deadline") return "due";
+  return "1h";
+}
+
+function eventPill(event) {
+  if (event.kind === "screen") return "Screen";
+  if (event.kind === "final") return "Final";
+  if (event.kind === "deadline") return "Decide";
+  const match = String(event.label || "").match(/Round\s+(\d+)/i);
+  return match ? "Round " + match[1] : "Round";
+}
+
 function getActions() {
   const today = startOfDay(new Date()).getTime();
   return activeJobs().flatMap(job => {
@@ -1209,6 +1385,32 @@ function stageTrack(job, clickable = false) {
       <div class="dot-label">${esc(s)}</div>
     </div>
   `).join("")}</div>`;
+}
+
+function agendaGroup(group) {
+  return `
+    <section>
+      <div class="agenda-label">${esc(group.label)}</div>
+      <div class="agenda-list">${group.events.map(calendarEventCard).join("")}</div>
+    </section>
+  `;
+}
+
+function calendarEventCard(event) {
+  const pillClass = event.kind === "deadline" ? "hot" : event.kind;
+  const time = event.date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(" ", "");
+  const [clock, meridiem = ""] = time.split(/(?=AM|PM)/);
+  return `
+    <button class="card agenda-card" data-action="detail" data-id="${event.job.firestoreId}">
+      <div class="agenda-time"><strong>${esc(clock)}</strong><span>${esc(meridiem)} / ${durationLabel(event.kind)}</span></div>
+      ${logo(event.job, 30)}
+      <div style="min-width:0">
+        <div class="agenda-title">${esc(event.job.company || "Untitled")}</div>
+        <div class="agenda-sub">${esc(event.job.role || event.label)}${event.label ? " / " + esc(event.label) : ""}</div>
+      </div>
+      <span class="pill ${pillClass}">${esc(eventPill(event))}</span>
+    </button>
+  `;
 }
 
 function logo(job, size = 42) {
