@@ -1,7 +1,8 @@
-const CACHE = 'job-tracker-v1';
+const CACHE = 'job-tracker-v2';
 const ASSETS = [
   '/job-tracker/',
   '/job-tracker/index.html',
+  '/job-tracker/index_mobile.html',
   '/job-tracker/manifest.json',
   '/job-tracker/icon-192.png',
   '/job-tracker/icon-512.png'

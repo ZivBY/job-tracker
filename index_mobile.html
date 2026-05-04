@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quiet Signal">
+<meta name="theme-color" content="#f3eee2">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<title>Quiet Signal</title>
+<script>
+if (location.hostname === '127.0.0.1') {
+  location.replace('http://localhost' + (location.port ? ':' + location.port : '') + location.pathname + location.search + location.hash);
+}
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f3eee2;
+  --bg-soft: #ebe5d4;
+  --paper: #fbf7ec;
+  --paper-2: #f6f0df;
+  --pine: #2d4a3e;
+  --pine-deep: #1f372d;
+  --pine-mid: #3f5d4a;
+  --pine-soft: #6f8a78;
+  --marigold: #f0b429;
+  --marigold-dark: #c98c0d;
+  --coral: #e87a6c;
+  --coral-dark: #c45a4d;
+  --line: rgba(45,74,62,0.16);
+  --line-strong: rgba(45,74,62,0.28);
+  --text: #1f372d;
+  --text-2: #3f5d4a;
+  --muted: #6f7a72;
+  --subtle: #8c8775;
+  --danger: #b94b43;
+  --success: #2d6a4f;
+  --shadow: 0 10px 30px rgba(31,55,45,0.12);
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  --serif: Georgia, "Times New Roman", serif;
+}
+html, body { min-height: 100%; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--sans);
+  background-image: radial-gradient(rgba(111,138,120,0.12) 0.8px, transparent 0.8px);
+  background-size: 14px 14px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button, input, textarea, select { font: inherit; }
+button { border: 0; cursor: pointer; }
+input, textarea, select { color: var(--text); }
+input::placeholder, textarea::placeholder { color: var(--subtle); opacity: 1; }
+a { color: inherit; }
+.hidden { display: none !important; }
+.screen {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.boot, .login, .denied {
+  min-height: 100svh;
+  padding: max(72px, env(safe-area-inset-top) + 54px) 28px 34px;
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 52px;
+}
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  color: var(--marigold);
+  font-weight: 800;
+}
+.brand-name {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.hero-title {
+  font-family: var(--serif);
+  font-size: clamp(42px, 12vw, 56px);
+  line-height: 0.98;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  margin-bottom: 14px;
+}
+.hero-title i { color: var(--coral-dark); font-weight: 400; }
+.hero-copy {
+  max-width: 310px;
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.login-actions {
+  margin-top: auto;
+  display: grid;
+  gap: 10px;
+}
+.primary-btn, .secondary-btn, .danger-btn {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.primary-btn { background: var(--pine-deep); color: var(--paper); box-shadow: 0 8px 18px rgba(31,55,45,0.18); }
+.secondary-btn { background: transparent; color: var(--pine-deep); border: 1px solid var(--line-strong); }
+.danger-btn { background: rgba(232,122,108,0.18); color: var(--danger); }
+.fine-print { text-align: center; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.app {
+  min-height: 100svh;
+  padding-bottom: calc(94px + env(safe-area-inset-bottom));
+}
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: calc(env(safe-area-inset-top) + 12px) 18px 10px;
+  background: linear-gradient(180deg, rgba(243,238,226,0.98), rgba(243,238,226,0.88));
+  backdrop-filter: blur(16px);
+}
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.page-title {
+  font-family: var(--serif);
+  font-size: 31px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  margin-top: 4px;
+}
+.page-title i { color: var(--coral-dark); font-weight: 400; }
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--marigold);
+  color: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 2px 8px rgba(31,55,45,0.04);
+}
+.content { padding: 6px 16px 18px; }
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(31,55,45,0.035);
+}
+.hero-card {
+  background: var(--pine-deep);
+  color: var(--paper);
+  border-radius: 24px;
+  padding: 18px;
+  margin: 8px 0 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.hero-card > * { position: relative; }
+.metric-large {
+  font-family: var(--serif);
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin: 4px 0 15px;
+}
+.metric-large span { font-size: 17px; color: rgba(251,247,236,0.62); font-style: italic; }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.stat {
+  border-radius: 15px;
+  padding: 10px 11px;
+  background: rgba(251,247,236,0.07);
+  border: 1px solid rgba(251,247,236,0.10);
+}
+.stat-label {
+  font-size: 10px;
+  color: rgba(251,247,236,0.56);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stat-value {
+  margin-top: 2px;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 700;
+}
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 6px 9px;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.section-title i { color: var(--coral-dark); font-weight: 400; }
+.section-link {
+  color: var(--pine-mid);
+  font-size: 12px;
+  font-weight: 800;
+  background: transparent;
+}
+.stack { display: grid; gap: 9px; }
+.job-card, .action-card, .event-card {
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.job-card { flex-direction: column; align-items: stretch; }
+.job-main { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+.job-copy { flex: 1; min-width: 0; }
+.job-company, .action-title, .event-title { font-size: 15px; font-weight: 800; color: var(--pine-deep); line-height: 1.25; }
+.job-role, .action-sub, .event-sub { font-size: 12px; color: var(--muted); line-height: 1.35; margin-top: 2px; }
+.chip-row { display: flex; gap: 7px; overflow-x: auto; padding: 8px 2px 12px; scrollbar-width: none; }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 8px 13px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--pine);
+  font-size: 12px;
+  font-weight: 800;
+}
+.chip.active { background: var(--pine-deep); color: var(--paper); border-color: var(--pine-deep); }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: var(--paper-2);
+  color: var(--pine-mid);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.pill.hot { background: rgba(232,122,108,0.18); color: var(--coral-dark); }
+.pill.offer { background: var(--marigold); color: var(--pine-deep); }
+.pill.stale { background: rgba(111,138,120,0.18); color: var(--muted); }
+.track {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  align-items: center;
+}
+.dot-wrap {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  min-width: 0;
+}
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 99px;
+  border: 1.5px solid var(--line-strong);
+  background: transparent;
+}
+.dot.done { background: var(--pine); border-color: var(--pine); }
+.dot.current { background: var(--coral); border-color: var(--coral); box-shadow: 0 0 0 4px rgba(232,122,108,0.16); }
+.dot-label {
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--subtle);
+  font-size: 9px;
+  font-weight: 700;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 13px;
+  margin: 8px 0 2px;
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 14px;
+}
+.empty {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 18px;
+  color: var(--muted);
+  padding: 26px 18px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.detail-hero {
+  margin-top: 8px;
+  padding: 18px;
+  border-radius: 24px;
+  background: var(--pine-deep);
+  color: var(--paper);
+}
+.detail-title {
+  font-family: var(--serif);
+  font-size: 31px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin-top: 13px;
+}
+.detail-meta { color: rgba(251,247,236,0.68); font-size: 13px; margin-top: 5px; line-height: 1.35; }
+.quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
+.quick-actions button {
+  min-height: 42px;
+  border-radius: 14px;
+  background: rgba(251,247,236,0.08);
+  border: 1px solid rgba(251,247,236,0.12);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 800;
+}
+.form-card { padding: 15px; display: grid; gap: 12px; }
+.field { display: grid; gap: 5px; }
+.field label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.field input, .field textarea, .field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 13px;
+  padding: 11px 12px;
+  outline: 0;
+  font-size: 15px;
+}
+.field textarea { min-height: 92px; resize: vertical; line-height: 1.4; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.status { min-height: 18px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.status.error { color: var(--danger); }
+.status.success { color: var(--success); }
+.tabs {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 30;
+  height: 66px;
+  border-radius: 999px;
+  background: var(--pine-deep);
+  box-shadow: 0 16px 34px rgba(31,55,45,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  padding: 0 8px;
+}
+.tab {
+  color: rgba(251,247,236,0.56);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.tab .tab-icon { font-size: 18px; line-height: 1; }
+.tab.active { color: var(--marigold); }
+.tab.add {
+  width: 54px;
+  height: 54px;
+  justify-self: center;
+  margin-top: -20px;
+  border-radius: 999px;
+  background: var(--marigold);
+  color: var(--pine-deep);
+  box-shadow: 0 10px 20px rgba(240,180,41,0.38);
+  font-size: 26px;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(12px);
+  z-index: 80;
+  max-width: calc(100vw - 36px);
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--pine-deep);
+  color: var(--paper);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+  font-size: 13px;
+  font-weight: 700;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--danger); }
+.toast.success { background: var(--success); }
+@media (min-width: 760px) {
+  body { display: flex; justify-content: center; }
+  .screen, .app { width: min(430px, 100vw); }
+  .tabs { left: 50%; right: auto; width: min(402px, calc(100vw - 28px)); transform: translateX(-50%); }
+}
+</style>
+</head>
+<body>
+<main id="boot-screen" class="screen boot">
+  <div class="brand"><div class="brand-mark">Q</div><div class="brand-name">Quiet Signal</div></div>
+  <h1 class="hero-title">Loading your <i>signal</i>.</h1>
+  <p id="boot-status" class="hero-copy">Checking your session...</p>
+</main>
+
+<main id="login-screen" class="screen login hidden">
+  <div class="brand"><div class="brand-mark">Q</div><div class="brand-name">Quiet Signal</div></div>
+  <h1 class="hero-title">Your job search, <i>organized</i>.</h1>
+  <p class="hero-copy">Track every application, interview, and follow-up in one calm place.</p>
+  <div class="login-actions">
+    <button class="primary-btn" id="google-btn">Continue with Google</button>
+    <p id="local-login-help" class="fine-print hidden">If localhost sign-in stalls, use the GitHub Pages version for authentication.</p>
+  </div>
+</main>
+
+<main id="denied-screen" class="screen denied hidden">
+  <div class="brand"><div class="brand-mark">Q</div><div class="brand-name">Quiet Signal</div></div>
+  <h1 class="hero-title">Access <i>restricted</i>.</h1>
+  <p class="hero-copy">This tracker is invite-only for now. Ask the owner to approve your Google account.</p>
+  <div class="login-actions"><button class="secondary-btn" id="denied-signout">Sign out</button></div>
+</main>
+
+<main id="app-screen" class="app hidden">
+  <div class="top">
+    <div class="top-row">
+      <div>
+        <div id="page-kicker" class="eyebrow">Today</div>
+        <h1 id="page-title" class="page-title">Hi.</h1>
+      </div>
+      <div id="avatar" class="avatar">QS</div>
+    </div>
+    <div id="search-wrap" class="search hidden">
+      <span>Search</span>
+      <input id="search-input" type="search" placeholder="Company, role, notes..." autocomplete="off">
+    </div>
+  </div>
+
+  <section id="view" class="content"></section>
+
+  <nav class="tabs" aria-label="Main navigation">
+    <button class="tab active" data-tab="home"><span class="tab-icon">H</span><span>Home</span></button>
+    <button class="tab" data-tab="list"><span class="tab-icon">L</span><span>List</span></button>
+    <button class="tab add" data-tab="add" aria-label="Add application">+</button>
+    <button class="tab" data-tab="calendar"><span class="tab-icon">C</span><span>Cal</span></button>
+    <button class="tab" data-tab="profile"><span class="tab-icon">M</span><span>Me</span></button>
+  </nav>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDUNgIm11WNevESCPMbN440xnu-TGbdURE",
+  authDomain: "job-tracker-c23c5.firebaseapp.com",
+  projectId: "job-tracker-c23c5",
+  storageBucket: "job-tracker-c23c5.firebasestorage.app",
+  messagingSenderId: "847394813329",
+  appId: "1:847394813329:web:2370a4c3cd9a59a8b21630"
+};
+
+const STAGES = ["Interested", "Applied", "Screen", "Interview", "Final round", "Offer"];
+const STAGES_SHORT = ["Int.", "App.", "Scrn", "Intvw", "Final", "Offer"];
+const PALETTE = ["#1f372d", "#e87a6c", "#c98c0d", "#3f5d4a", "#7c5c8a", "#6f8a78", "#2d4a3e"];
+const PROXY = "https://jd-proxy.benyehuda-ziv.workers.dev";
+const ADMIN_EMAIL = "benyehuda.ziv@gmail.com";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
+setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+const state = {
+  user: null,
+  jobs: [],
+  tab: "home",
+  selectedId: null,
+  filter: "all",
+  query: "",
+  readOnly: false,
+  unsubscribe: null,
+  extractedPostDate: null,
+  extractedSalary: "",
+  profileName: "there"
+};
+
+const els = {
+  boot: document.getElementById("boot-screen"),
+  login: document.getElementById("login-screen"),
+  denied: document.getElementById("denied-screen"),
+  app: document.getElementById("app-screen"),
+  view: document.getElementById("view"),
+  title: document.getElementById("page-title"),
+  kicker: document.getElementById("page-kicker"),
+  avatar: document.getElementById("avatar"),
+  searchWrap: document.getElementById("search-wrap"),
+  search: document.getElementById("search-input"),
+  toast: document.getElementById("toast")
+};
+
+document.getElementById("google-btn").addEventListener("click", signIn);
+document.getElementById("denied-signout").addEventListener("click", signOut);
+els.search.addEventListener("input", e => { state.query = e.target.value.trim().toLowerCase(); render(); });
+document.querySelector(".tabs").addEventListener("click", e => {
+  const btn = e.target.closest("[data-tab]");
+  if (!btn) return;
+  setTab(btn.dataset.tab);
+});
+document.addEventListener("click", e => {
+  const action = e.target.closest("[data-action]");
+  if (!action) return;
+  handleAction(action.dataset.action, action.dataset);
+});
+document.addEventListener("input", e => {
+  const el = e.target.closest("[data-save]");
+  if (!el) return;
+  debounceSave(el.dataset.save + el.dataset.id, () => saveField(el.dataset.id, { [el.dataset.save]: el.value }), 700);
+});
+
+getRedirectResult(auth).catch(e => showToast(authError(e), "error"));
+setTimeout(() => {
+  if (!els.boot.classList.contains("hidden")) {
+    showOnly("login");
+    document.getElementById("local-login-help").classList.toggle("hidden", location.hostname !== "localhost");
+  }
+}, 8000);
+
+onAuthStateChanged(auth, async user => {
+  state.user = user;
+  const viewingUid = new URLSearchParams(location.search).get("view");
+  if (viewingUid) {
+    state.readOnly = true;
+    showOnly("app");
+    loadJobs(viewingUid);
+    return;
+  }
+  if (!user) {
+    cleanup();
+    showOnly("login");
+    return;
+  }
+  await rememberUser(user);
+  const allowed = await isAllowed(user);
+  if (!allowed) {
+    cleanup();
+    showOnly("denied");
+    return;
+  }
+  state.readOnly = false;
+  state.profileName = getFirstName(user);
+  setAvatar(user);
+  showOnly("app");
+  loadJobs(user.uid);
+});
+
+function showOnly(which) {
+  els.boot.classList.toggle("hidden", which !== "boot");
+  els.login.classList.toggle("hidden", which !== "login");
+  els.denied.classList.toggle("hidden", which !== "denied");
+  els.app.classList.toggle("hidden", which !== "app");
+}
+
+async function signIn() {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    showToast(authError(e), "error");
+    if (["auth/popup-blocked", "auth/popup-closed-by-user", "auth/cancelled-popup-request"].includes(e.code)) {
+      await signInWithRedirect(auth, provider);
+    }
+  }
+}
+
+async function signOut() {
+  cleanup();
+  await fbSignOut(auth);
+}
+
+function cleanup() {
+  if (state.unsubscribe) state.unsubscribe();
+  state.unsubscribe = null;
+  state.jobs = [];
+  state.selectedId = null;
+}
+
+async function rememberUser(user) {
+  const email = (user.email || "").toLowerCase();
+  if (!email) return;
+  const safeEmail = email.replace(/\./g, "_");
+  await setDoc(doc(db, "emailToUid", safeEmail), { uid: user.uid, email }, { merge: true }).catch(console.error);
+}
+
+async function isAllowed(user) {
+  if ((user.email || "").toLowerCase() === ADMIN_EMAIL) return true;
+  try {
+    const snap = await getDoc(doc(db, "allowlist", user.uid));
+    return snap.exists();
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+}
+
+function loadJobs(uid) {
+  cleanup();
+  const q = query(collection(db, "users", uid, "jobs"), orderBy("createdAt", "desc"));
+  state.unsubscribe = onSnapshot(q, snap => {
+    state.jobs = snap.docs
+      .map(d => ({ firestoreId: d.id, ...d.data() }))
+      .filter(j => j.firestoreId !== "__profile" && j._type !== "profile");
+    render();
+  }, e => {
+    console.error(e);
+    showToast("Connection error", "error");
+  });
+}
+
+function render() {
+  document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === state.tab));
+  els.searchWrap.classList.toggle("hidden", state.tab !== "list");
+  if (state.tab !== "list") els.search.value = state.query = "";
+
+  if (state.tab === "home") return renderHome();
+  if (state.tab === "list") return renderList();
+  if (state.tab === "detail") return renderDetail();
+  if (state.tab === "add") return renderAdd();
+  if (state.tab === "calendar") return renderCalendar();
+  if (state.tab === "profile") return renderProfile();
+}
+
+function renderHome() {
+  setHeader("Today", "Hi, <i>" + esc(state.profileName) + "</i>.");
+  const active = activeJobs();
+  const events = getEvents().filter(e => e.ts >= startOfDay(new Date()).getTime()).slice(0, 3);
+  const actions = getActions().slice(0, 4);
+  els.view.innerHTML = `
+    <div class="hero-card">
+      <div class="eyebrow" style="color:rgba(251,247,236,0.7)">This week</div>
+      <div class="metric-large">${active.length} <span>applications</span></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">Active</div><div class="stat-value">${active.length}</div></div>
+        <div class="stat"><div class="stat-label">Interviews</div><div class="stat-value" style="color:var(--marigold)">${active.filter(j => j.stage >= 3 && j.stage < 5).length}</div></div>
+        <div class="stat"><div class="stat-label">Offers</div><div class="stat-value" style="color:var(--coral)">${active.filter(j => j.stage === 5).length}</div></div>
+      </div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Up next <i>this week</i></h2><button class="section-link" data-action="tab" data-target="calendar">See all</button></div>
+    <div class="stack">${events.length ? events.map(eventCard).join("") : empty("No scheduled interviews or deadlines yet.")}</div>
+    <div class="section-head"><h2 class="section-title">Needs <i>attention</i></h2><button class="section-link" data-action="tab" data-target="list">Open list</button></div>
+    <div class="stack">${actions.length ? actions.map(actionCard).join("") : empty("You are caught up. No next actions queued.")}</div>
+  `;
+}
+
+function renderList() {
+  setHeader("Applications", "All <i>" + filteredJobs(false).length + "</i>");
+  const jobs = filteredJobs(true);
+  const filters = [
+    ["all", "All", filteredJobs(false).length],
+    ["active", "Active", activeJobs().length],
+    ["interview", "Interview", activeJobs().filter(j => j.stage >= 3 && j.stage < 5).length],
+    ["offer", "Offer", activeJobs().filter(j => j.stage === 5).length],
+    ["closed", "Closed", state.jobs.filter(j => j.rejected || j.declined).length],
+    ["archived", "Archive", state.jobs.filter(j => j.archived).length]
+  ];
+  els.view.innerHTML = `
+    <div class="chip-row">${filters.map(([id, label, count]) => `<button class="chip ${state.filter === id ? "active" : ""}" data-action="filter" data-filter="${id}">${label} ${count}</button>`).join("")}</div>
+    <div class="stack">${jobs.length ? jobs.map(jobCard).join("") : empty("No applications match this view.")}</div>
+  `;
+}
+
+function renderDetail() {
+  const job = selectedJob();
+  if (!job) { setTab("list"); return; }
+  setHeader("Application", esc(job.company));
+  const stage = Number(job.stage || 0);
+  els.view.innerHTML = `
+    <button class="section-link" data-action="tab" data-target="list" style="margin:2px 0 12px">Back to list</button>
+    <div class="detail-hero">
+      <div class="job-main">
+        ${logo(job, 50)}
+        <div class="job-copy">
+          <div class="eyebrow" style="color:rgba(251,247,236,0.68)">${esc(STAGES[stage] || "Application")}</div>
+          <div class="detail-title">${esc(job.company || "Untitled")}</div>
+          <div class="detail-meta">${esc(job.role || "")}${job.loc ? " / " + esc(job.loc) : ""}</div>
+        </div>
+      </div>
+      <div style="margin-top:16px">${stageTrack(job, !state.readOnly)}</div>
+      <div class="quick-actions">
+        <button data-action="stage" data-id="${job.firestoreId}" data-step="${Math.max(0, stage - 1)}">Back</button>
+        <button data-action="stage" data-id="${job.firestoreId}" data-step="${Math.min(5, stage + 1)}">Advance</button>
+        <button data-action="close" data-id="${job.firestoreId}">${job.rejected ? "Reopen" : "Close"}</button>
+      </div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Notes</h2></div>
+    <div class="form-card card">
+      <div class="field"><label>Stage notes</label><textarea data-id="${job.firestoreId}" data-save="notes" ${state.readOnly ? "readonly" : ""} placeholder="Add follow-up notes, prep, or decisions...">${esc(job.notes || "")}</textarea></div>
+      <div class="two-col">
+        <div class="field"><label>Recruiter</label><input data-id="${job.firestoreId}" data-save="recruiterName" ${state.readOnly ? "readonly" : ""} value="${esc(job.recruiterName || "")}" placeholder="Name"></div>
+        <div class="field"><label>Salary</label><input data-id="${job.firestoreId}" data-save="salary" ${state.readOnly ? "readonly" : ""} value="${esc(job.salary || "")}" placeholder="$"></div>
+      </div>
+      <div class="field"><label>Job URL</label><input data-id="${job.firestoreId}" data-save="url" ${state.readOnly ? "readonly" : ""} value="${esc(job.url || "")}" placeholder="https://"></div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Interview rounds</h2><button class="section-link" data-action="round-add" data-id="${job.firestoreId}">Add</button></div>
+    <div class="stack">${renderRounds(job)}</div>
+  `;
+}
+
+function renderAdd() {
+  setHeader("Add", "New <i>application</i>");
+  els.view.innerHTML = `
+    <div class="form-card card">
+      <div class="field"><label>Job posting URL</label><input id="jd-url" type="url" placeholder="https://jobs.lever.co/..."></div>
+      <button class="secondary-btn" data-action="extract-url">Extract from URL</button>
+      <div class="field"><label>Job description text</label><textarea id="jd-text" placeholder="Paste the job description..."></textarea></div>
+      <button class="secondary-btn" data-action="extract-text">Extract from text</button>
+      <div id="jd-status" class="status"></div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Details</h2></div>
+    <div class="form-card card">
+      <div class="two-col">
+        <div class="field"><label>Company</label><input id="f-company" autocomplete="organization" placeholder="Stripe"></div>
+        <div class="field"><label>Role</label><input id="f-role" placeholder="Product Designer"></div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>Industry</label><input id="f-industry" placeholder="Fintech"></div>
+        <div class="field"><label>Location</label><input id="f-loc" placeholder="Remote"></div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>Type</label><select id="f-type"><option>Full-time</option><option>Contract</option><option>Part-time</option></select></div>
+        <div class="field"><label>Stage</label><select id="f-stage">${STAGES.map((s, i) => `<option value="${i}">${s}</option>`).join("")}</select></div>
+      </div>
+      <div class="field"><label>Posting URL</label><input id="f-url" type="url" placeholder="https://"></div>
+      <div class="field"><label>Recruiter</label><input id="f-recruiter" placeholder="Name"></div>
+      <button class="primary-btn" data-action="add-job">Save application</button>
+    </div>
+  `;
+}
+
+function renderCalendar() {
+  setHeader("Calendar", "This <i>week</i>");
+  const events = getEvents();
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  els.view.innerHTML = `
+    <div class="chip-row">${week.map(d => {
+      const count = events.filter(e => sameDay(e.date, d)).length;
+      return `<div class="chip ${sameDay(d, new Date()) ? "active" : ""}">${d.toLocaleDateString("en-US", { weekday: "short" })} ${d.getDate()}${count ? " / " + count : ""}</div>`;
+    }).join("")}</div>
+    <div class="stack">${events.length ? events.map(eventCard).join("") : empty("Add screen/interview dates to see them here.")}</div>
+  `;
+}
+
+function renderProfile() {
+  setHeader("Profile", "My <i>signal</i>");
+  const visible = state.jobs.filter(j => !j.archived);
+  const active = activeJobs();
+  const applied = visible.length;
+  const screenPlus = visible.filter(j => !j.rejected && !j.declined && j.stage >= 2).length;
+  const interviews = visible.filter(j => !j.rejected && !j.declined && j.stage >= 3).length;
+  const offers = visible.filter(j => !j.rejected && !j.declined && j.stage === 5).length;
+  els.view.innerHTML = `
+    <div class="card job-card" style="margin-top:8px">
+      <div class="job-main">
+        <div class="avatar">${initials(state.user)}</div>
+        <div class="job-copy">
+          <div class="job-company">${esc(state.user?.displayName || state.user?.email || "Quiet Signal")}</div>
+          <div class="job-role">${active.length} active applications</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Last 30 days</h2></div>
+    <div class="stat-grid" style="grid-template-columns:1fr 1fr">
+      ${profileStat("Applications", applied, "tracked")}
+      ${profileStat("Response", applied ? Math.round((screenPlus / applied) * 100) + "%" : "0%", "screen plus")}
+      ${profileStat("Interviews", interviews, "active")}
+      ${profileStat("Offers", offers, "current")}
+    </div>
+    <div class="section-head"><h2 class="section-title">Account</h2></div>
+    <div class="form-card card">
+      <button class="secondary-btn" data-action="share">Copy read-only link</button>
+      <button class="danger-btn" data-action="signout">Sign out</button>
+    </div>
+  `;
+}
+
+function setHeader(kicker, title) {
+  els.kicker.textContent = kicker;
+  els.title.innerHTML = title;
+}
+
+function setTab(tab) {
+  state.tab = tab;
+  state.selectedId = tab === "detail" ? state.selectedId : state.selectedId;
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function handleAction(action, data) {
+  if (action === "tab") return setTab(data.target);
+  if (action === "filter") { state.filter = data.filter; return render(); }
+  if (action === "detail") { state.selectedId = data.id; state.tab = "detail"; return render(); }
+  if (action === "stage") return advanceStage(data.id, Number(data.step));
+  if (action === "close") return toggleRejected(data.id);
+  if (action === "round-add") return addRound(data.id);
+  if (action === "round-status") return setRoundStatus(data.id, Number(data.idx), data.status);
+  if (action === "extract-url") return extractFromUrl();
+  if (action === "extract-text") return extractFromText();
+  if (action === "add-job") return addJob();
+  if (action === "signout") return signOut();
+  if (action === "share") return copyShareLink();
+}
+
+async function saveField(fid, fields) {
+  if (state.readOnly || !state.user) return;
+  try {
+    await updateDoc(doc(db, "users", state.user.uid, "jobs", fid), fields);
+    showToast("Synced", "success", 900);
+  } catch (e) {
+    console.error(e);
+    showToast("Save failed", "error");
+  }
+}
+
+async function advanceStage(fid, nextStage) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job) return;
+  const stage = Math.max(0, Math.min(5, nextStage));
+  const hist = [...(job.stageHistory || []), { stage, ts: Date.now() }];
+  const interviewRounds = stage === 3 && !(job.interviewRounds || []).length
+    ? [{ date: "", type: "", with: "", notes: "", status: "" }]
+    : (job.interviewRounds || []);
+  await saveField(fid, { stage, stageHistory: hist, interviewRounds });
+}
+
+async function toggleRejected(fid) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job) return;
+  await saveField(fid, { rejected: !job.rejected, declined: false, endedAt: !job.rejected ? Date.now() : null });
+}
+
+async function addRound(fid) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job) return;
+  const rounds = [...(job.interviewRounds || []), { date: "", type: "", with: "", notes: "", status: "" }];
+  await saveField(fid, { interviewRounds: rounds });
+}
+
+async function setRoundStatus(fid, idx, status) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job) return;
+  const rounds = [...(job.interviewRounds || [])];
+  if (!rounds[idx]) return;
+  const next = rounds[idx].status === status ? "" : status;
+  rounds[idx] = { ...rounds[idx], status: next, completed: next === "completed", completedAt: next === "completed" ? new Date().toISOString() : null };
+  const updates = { interviewRounds: rounds };
+  if (next === "rejected") Object.assign(updates, { rejected: true, declined: false, endedAt: Date.now() });
+  if (next === "withdrew") Object.assign(updates, { declined: true, rejected: false, endedAt: Date.now() });
+  await saveField(fid, updates);
+}
+
+async function extractFromUrl() {
+  const url = document.getElementById("jd-url").value.trim();
+  if (!url) return;
+  setJdStatus("Fetching page...", "");
+  try {
+    const data = await callProxy({ url });
+    if (!data.url) data.url = url;
+    fillForm(data);
+  } catch (e) {
+    console.error(e);
+    setJdStatus("Could not fetch this URL. Paste the text instead.", "error");
+  }
+}
+
+async function extractFromText() {
+  const text = document.getElementById("jd-text").value.trim();
+  if (!text) return;
+  setJdStatus("Extracting...", "");
+  try {
+    fillForm(await callProxy({ text }));
+  } catch (e) {
+    console.error(e);
+    setJdStatus("Extraction failed. Fill in the fields manually.", "error");
+  }
+}
+
+async function callProxy(body) {
+  const res = await fetch(PROXY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error("Worker error " + res.status);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  const raw = data.content && data.content[0] ? data.content[0].text : "";
+  return JSON.parse(raw.replace(/```json|```/g, "").trim());
+}
+
+function fillForm(data) {
+  setValue("f-company", data.company);
+  setValue("f-role", data.role);
+  setValue("f-industry", data.industry);
+  setValue("f-loc", data.location || data.loc);
+  setValue("f-url", data.url);
+  state.extractedPostDate = data.postedDate || null;
+  state.extractedSalary = data.salary || "";
+  setJdStatus("Fields filled. Review and save.", "success");
+}
+
+async function addJob() {
+  if (state.readOnly || !state.user) return;
+  const company = value("f-company");
+  const role = value("f-role");
+  if (!company || !role) {
+    setJdStatus("Company and role are required.", "error");
+    return;
+  }
+  const stage = Number(value("f-stage") || 0);
+  const job = {
+    company,
+    role,
+    industry: value("f-industry"),
+    loc: value("f-loc"),
+    type: value("f-type") || "Full-time",
+    stage,
+    rejected: false,
+    declined: false,
+    archived: false,
+    notes: "",
+    url: value("f-url"),
+    recruiterName: value("f-recruiter"),
+    emoji: company[0].toUpperCase(),
+    color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+    stageHistory: [{ stage, ts: Date.now() }],
+    stageData: {},
+    stageNotes: {},
+    interviewRounds: [],
+    attachments: [],
+    contacts: [],
+    postedDate: state.extractedPostDate,
+    salary: state.extractedSalary,
+    createdAt: serverTimestamp()
+  };
+  try {
+    await addDoc(collection(db, "users", state.user.uid, "jobs"), job);
+    state.tab = "list";
+    showToast("Application saved", "success");
+    render();
+  } catch (e) {
+    console.error(e);
+    setJdStatus("Save failed.", "error");
+  }
+}
+
+function filteredJobs(includeQuery) {
+  let jobs = [...state.jobs];
+  if (state.filter === "active") jobs = jobs.filter(j => !j.archived && !j.rejected && !j.declined);
+  else if (state.filter === "interview") jobs = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage >= 3 && j.stage < 5);
+  else if (state.filter === "offer") jobs = jobs.filter(j => !j.archived && !j.rejected && !j.declined && j.stage === 5);
+  else if (state.filter === "closed") jobs = jobs.filter(j => j.rejected || j.declined);
+  else if (state.filter === "archived") jobs = jobs.filter(j => j.archived);
+  else jobs = jobs.filter(j => !j.archived);
+  if (includeQuery && state.query) {
+    jobs = jobs.filter(j => [j.company, j.role, j.loc, j.industry, j.recruiterName, j.notes, j.salary].join(" ").toLowerCase().includes(state.query));
+  }
+  return jobs;
+}
+
+function activeJobs() {
+  return state.jobs.filter(j => !j.archived && !j.rejected && !j.declined);
+}
+
+function selectedJob() {
+  return state.jobs.find(j => j.firestoreId === state.selectedId);
+}
+
+function getEvents() {
+  const events = [];
+  activeJobs().forEach(job => {
+    const sd = job.stageData || {};
+    if (sd[2]?.screenDate) pushEvent(events, job, sd[2].screenDate, "Screen", "screen");
+    (job.interviewRounds || []).forEach((r, idx) => {
+      if (r.date && !r.completed && r.status !== "rejected" && r.status !== "withdrew") {
+        pushEvent(events, job, r.date, "Round " + (idx + 1) + (r.type ? " / " + r.type : ""), "interview");
+      }
+    });
+    if (sd[4]?.finalDate) pushEvent(events, job, sd[4].finalDate, "Final round", "final");
+    if (sd[5]?.offerDeadline) pushEvent(events, job, sd[5].offerDeadline, "Offer deadline", "deadline");
+  });
+  return events.sort((a, b) => a.ts - b.ts);
+}
+
+function pushEvent(events, job, value, label, kind) {
+  const date = new Date(value);
+  if (!isNaN(date)) events.push({ job, date, ts: date.getTime(), label, kind });
+}
+
+function getActions() {
+  const today = startOfDay(new Date()).getTime();
+  return activeJobs().flatMap(job => {
+    const items = [];
+    const stageAt = stageEnteredAt(job);
+    const quietDays = Math.floor((today - startOfDay(new Date(stageAt)).getTime()) / 86400000);
+    const upcoming = getEvents().filter(e => e.job.firestoreId === job.firestoreId && e.ts >= Date.now());
+    if (upcoming[0] && upcoming[0].ts - Date.now() < 72 * 3600000) {
+      items.push({ job, kind: "Prep", title: job.company + " / " + upcoming[0].label, sub: fmtDateTime(upcoming[0].date), priority: upcoming[0].ts });
+    }
+    if (job.stage >= 1 && job.stage < 5 && quietDays >= 7 && !upcoming.length) {
+      items.push({ job, kind: "Follow up", title: job.company + " has been quiet", sub: quietDays + " days since the last stage change", priority: today + quietDays });
+    }
+    if (!job.url || (job.stage >= 2 && !job.recruiterName) || !job.notes) {
+      items.push({ job, kind: "Complete", title: job.company + " has missing details", sub: "Fill gaps for better prep and follow-up", priority: today + 99 });
+    }
+    return items;
+  }).sort((a, b) => a.priority - b.priority);
+}
+
+function jobCard(job) {
+  const flag = job.rejected || job.declined ? `<span class="pill hot">Closed</span>` : job.stage === 5 ? `<span class="pill offer">Offer</span>` : isStale(job) ? `<span class="pill stale">Stale</span>` : "";
+  return `
+    <button class="card job-card" data-action="detail" data-id="${job.firestoreId}">
+      <div class="job-main">
+        ${logo(job)}
+        <div class="job-copy">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0"><div class="job-company">${esc(job.company || "Untitled")}</div>${flag}</div>
+          <div class="job-role">${esc(job.role || "")}${job.loc ? " / " + esc(job.loc) : ""}</div>
+        </div>
+      </div>
+      ${stageTrack(job)}
+      <div class="job-role">${esc(STAGES[job.stage || 0] || "")}${job.recruiterName ? " / " + esc(job.recruiterName) : ""}</div>
+    </button>
+  `;
+}
+
+function eventCard(event) {
+  return `
+    <button class="card event-card" data-action="detail" data-id="${event.job.firestoreId}">
+      ${logo(event.job, 38)}
+      <div class="job-copy">
+        <div class="event-title">${esc(event.job.company || "")}</div>
+        <div class="event-sub">${esc(event.label)} / ${fmtDateTime(event.date)}</div>
+      </div>
+      <span class="pill ${event.kind === "deadline" ? "hot" : ""}">${esc(event.kind)}</span>
+    </button>
+  `;
+}
+
+function actionCard(item) {
+  return `
+    <button class="card action-card" data-action="detail" data-id="${item.job.firestoreId}" style="border-left:3px solid ${item.kind === "Prep" ? "var(--marigold)" : item.kind === "Follow up" ? "var(--coral)" : "var(--pine)"}">
+      ${logo(item.job, 38)}
+      <div class="job-copy">
+        <div class="eyebrow">${esc(item.kind)}</div>
+        <div class="action-title">${esc(item.title)}</div>
+        <div class="action-sub">${esc(item.sub)}</div>
+      </div>
+    </button>
+  `;
+}
+
+function renderRounds(job) {
+  const rounds = job.interviewRounds || [];
+  if (!rounds.length) return empty("No interview rounds yet.");
+  return rounds.map((r, i) => `
+    <div class="card form-card">
+      <div class="job-main">
+        <div class="logo" style="background:var(--pine)">${i + 1}</div>
+        <div class="job-copy">
+          <div class="job-company">${esc(r.type || "Interview round")}</div>
+          <div class="job-role">${esc(r.with || "Interviewer TBD")}${r.date ? " / " + esc(fmtDateTime(r.date)) : ""}</div>
+        </div>
+      </div>
+      <div class="chip-row" style="padding-bottom:0">
+        ${["completed", "rejected", "withdrew"].map(status => `<button class="chip ${r.status === status ? "active" : ""}" data-action="round-status" data-id="${job.firestoreId}" data-idx="${i}" data-status="${status}">${status}</button>`).join("")}
+      </div>
+      ${r.notes ? `<div class="job-role">${esc(r.notes)}</div>` : ""}
+    </div>
+  `).join("");
+}
+
+function stageTrack(job, clickable = false) {
+  const stage = Number(job.stage || 0);
+  return `<div class="track">${STAGES_SHORT.map((s, i) => `
+    <div class="dot-wrap">
+      <button class="dot ${i < stage ? "done" : i === stage ? "current" : ""}" ${clickable ? `data-action="stage" data-id="${job.firestoreId}" data-step="${i}"` : ""} aria-label="${esc(STAGES[i])}"></button>
+      <div class="dot-label">${esc(s)}</div>
+    </div>
+  `).join("")}</div>`;
+}
+
+function logo(job, size = 42) {
+  const color = job.color || PALETTE[0];
+  const letter = esc(job.emoji || (job.company || "?")[0]);
+  return `<div class="logo" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.32)}px;background:${esc(color)}">${letter}</div>`;
+}
+
+function profileStat(label, value, note) {
+  return `<div class="card" style="padding:14px"><div class="eyebrow">${esc(label)}</div><div class="stat-value" style="color:var(--pine-deep)">${esc(value)}</div><div class="job-role">${esc(note)}</div></div>`;
+}
+
+function empty(text) {
+  return `<div class="empty">${esc(text)}</div>`;
+}
+
+function setAvatar(user) {
+  if (user?.photoURL) els.avatar.innerHTML = `<img src="${esc(user.photoURL)}" alt="">`;
+  else els.avatar.textContent = initials(user);
+}
+
+function initials(user) {
+  const source = user?.displayName || user?.email || "Quiet Signal";
+  return source.split(/[ @._-]+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join("") || "QS";
+}
+
+function getFirstName(user) {
+  const source = user?.displayName || user?.email?.split("@")[0] || "there";
+  return source.split(/[ ._-]+/).filter(Boolean)[0] || "there";
+}
+
+function setJdStatus(msg, type) {
+  const el = document.getElementById("jd-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "status " + (type || "");
+}
+
+function value(id) {
+  return document.getElementById(id)?.value.trim() || "";
+}
+
+function setValue(id, val) {
+  if (val) document.getElementById(id).value = val;
+}
+
+function showToast(message, type = "", duration = 2200) {
+  els.toast.textContent = message;
+  els.toast.className = "toast show " + type;
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => els.toast.className = "toast", duration);
+}
+
+function authError(e) {
+  if (e?.code === "auth/unauthorized-domain") return "Sign in blocked for this domain.";
+  if (e?.code === "auth/popup-blocked") return "Popup blocked. Trying redirect.";
+  if (e?.code === "auth/popup-closed-by-user") return "Sign in was closed.";
+  return "Sign in failed.";
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function fmtDateTime(value) {
+  const d = new Date(value);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function startOfDay(d) {
+  const out = new Date(d);
+  out.setHours(0, 0, 0, 0);
+  return out;
+}
+
+function sameDay(a, b) {
+  return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+
+function stageEnteredAt(job) {
+  const hist = job.stageHistory || [];
+  const entry = [...hist].reverse().find(h => h.stage === job.stage);
+  return entry?.ts || job.createdAt?.toMillis?.() || Date.now();
+}
+
+function isStale(job) {
+  if (job.rejected || job.declined || job.archived || job.stage >= 5) return false;
+  return Date.now() - stageEnteredAt(job) > 14 * 86400000;
+}
+
+const timers = {};
+function debounceSave(key, fn, delay) {
+  clearTimeout(timers[key]);
+  timers[key] = setTimeout(fn, delay);
+}
+
+async function copyShareLink() {
+  if (!state.user) return;
+  const url = location.origin + location.pathname + "?view=" + encodeURIComponent(state.user.uid);
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast("Share link copied", "success");
+  } catch {
+    showToast(url, "success", 5000);
+  }
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
