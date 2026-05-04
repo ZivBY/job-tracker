@@ -481,6 +481,49 @@ a { color: inherit; }
   gap: 8px;
 }
 .round-form-grid .two-col { gap: 8px; }
+.round-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+}
+.round-summary-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--success);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+.round-summary-copy { min-width: 0; flex: 1; }
+.round-summary-title {
+  color: var(--pine-deep);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.round-summary-meta {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.round-edit-btn {
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--pine-mid);
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
 .track {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -761,6 +804,7 @@ const state = {
   selectedCalendarDate: startOfDay(new Date()).toISOString(),
   calendarMode: "day",
   calendarMenuOpen: false,
+  expandedCompletedRounds: new Set(),
   readOnly: false,
   unsubscribe: null,
   extractedPostDate: null,
@@ -1119,6 +1163,8 @@ function handleAction(action, data) {
   if (action === "round-add") return addRound(data.id);
   if (action === "round-status") return setRoundStatus(data.id, Number(data.idx), data.status);
   if (action === "round-remove") return removeRound(data.id, Number(data.idx));
+  if (action === "round-expand") { state.expandedCompletedRounds.add(data.id + ":" + data.idx); return render(); }
+  if (action === "round-collapse") { state.expandedCompletedRounds.delete(data.id + ":" + data.idx); return render(); }
   if (action === "cal-day") {
     state.selectedCalendarDate = startOfDay(new Date(data.date)).toISOString();
     state.calendarMode = "day";
@@ -1201,6 +1247,7 @@ async function setRoundStatus(fid, idx, status) {
   const rounds = [...(job.interviewRounds || [])];
   if (!rounds[idx]) return;
   const next = rounds[idx].status === status ? "" : status;
+  state.expandedCompletedRounds.delete(fid + ":" + idx);
   rounds[idx] = { ...rounds[idx], status: next, completed: next === "completed", completedAt: next === "completed" ? new Date().toISOString() : null };
   const updates = { interviewRounds: rounds };
   if (next === "rejected") Object.assign(updates, { rejected: true, declined: false, endedAt: Date.now() });
@@ -1448,8 +1495,26 @@ function actionCard(item) {
 function renderRounds(job) {
   const rounds = job.interviewRounds || [];
   if (!rounds.length) return empty("No interview rounds yet.");
-  return rounds.map((r, i) => `
-    <div class="card form-card">
+  return rounds.map((r, i) => {
+    const roundKey = job.firestoreId + ":" + i;
+    const isCompleted = r.status === "completed" || r.completed;
+    const isCollapsed = isCompleted && !state.expandedCompletedRounds.has(roundKey);
+    const title = r.type || "Round " + (i + 1);
+    const meta = [r.date ? fmtDateTime(r.date) : "", r.with || "", r.completedAt ? "Completed " + fmtDateTime(r.completedAt) : "Completed"].filter(Boolean).join(" / ");
+    if (isCollapsed) {
+      return `
+        <div class="card round-summary-card">
+          <div class="round-summary-badge">✓</div>
+          <div class="round-summary-copy">
+            <div class="round-summary-title">${esc(title)}</div>
+            <div class="round-summary-meta">${esc(meta)}</div>
+          </div>
+          <button class="round-edit-btn" data-action="round-expand" data-id="${job.firestoreId}" data-idx="${i}">Edit</button>
+        </div>
+      `;
+    }
+    return `
+      <div class="card form-card">
       <div class="job-main">
         <div class="logo" style="background:var(--pine)">${i + 1}</div>
         <div class="job-copy">
@@ -1482,9 +1547,11 @@ function renderRounds(job) {
       <div class="chip-row" style="padding-bottom:0">
         ${["completed", "rejected", "withdrew"].map(status => `<button class="chip ${r.status === status ? "active" : ""}" data-action="round-status" data-id="${job.firestoreId}" data-idx="${i}" data-status="${status}">${status}</button>`).join("")}
         ${state.readOnly ? "" : `<button class="chip" data-action="round-remove" data-id="${job.firestoreId}" data-idx="${i}">Remove</button>`}
+        ${isCompleted ? `<button class="chip" data-action="round-collapse" data-id="${job.firestoreId}" data-idx="${i}">Collapse</button>` : ""}
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function stageTrack(job, clickable = false) {
