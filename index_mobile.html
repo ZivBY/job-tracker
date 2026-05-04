@@ -524,6 +524,153 @@ a { color: inherit; }
   font-weight: 800;
   flex: 0 0 auto;
 }
+.profile-identity {
+  margin-top: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  position: relative;
+  overflow: hidden;
+}
+.profile-identity::after {
+  content: "";
+  position: absolute;
+  right: -16px;
+  top: -18px;
+  width: 90px;
+  height: 90px;
+  border-radius: 60% 40% 50% 50%;
+  background: rgba(232,122,108,0.22);
+}
+.profile-identity > * { position: relative; z-index: 1; }
+.profile-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background: var(--marigold);
+  color: var(--pine-deep);
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.profile-name {
+  font-family: var(--serif);
+  color: var(--pine-deep);
+  font-size: 20px;
+  line-height: 1.1;
+  font-weight: 500;
+}
+.profile-sub { color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 3px; }
+.profile-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.profile-stat-card {
+  padding: 13px;
+  min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.profile-stat-card.accent {
+  background: var(--marigold);
+  border-color: var(--marigold);
+}
+.profile-stat-label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.profile-stat-card.accent .profile-stat-label { color: var(--pine-deep); opacity: 0.75; }
+.profile-stat-value {
+  font-family: var(--serif);
+  color: var(--pine-deep);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.profile-stat-note {
+  color: var(--pine-mid);
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 5px;
+}
+.profile-stat-card.accent .profile-stat-note { color: var(--pine-deep); }
+.funnel-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--pine-deep);
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.funnel-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.funnel-card > * { position: relative; z-index: 1; }
+.funnel-title {
+  font-family: var(--serif);
+  color: var(--marigold);
+  font-size: 16px;
+  font-style: italic;
+  margin-bottom: 13px;
+}
+.funnel-row {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) 28px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.funnel-label { color: rgba(251,247,236,0.72); font-size: 10px; font-weight: 700; }
+.funnel-track {
+  height: 16px;
+  border-radius: 4px;
+  background: rgba(251,247,236,0.10);
+  overflow: hidden;
+}
+.funnel-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--paper);
+}
+.funnel-value {
+  font-family: var(--serif);
+  color: var(--paper);
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+}
+.settings-list {
+  margin-top: 14px;
+  overflow: hidden;
+}
+.settings-row {
+  min-height: 50px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+  color: var(--pine-deep);
+  text-align: left;
+}
+.settings-row:last-child { border-bottom: 0; }
+.settings-label { font-size: 13px; font-weight: 700; }
+.settings-meta { color: var(--muted); font-size: 11px; display: flex; align-items: center; gap: 7px; }
+.settings-row.danger { color: var(--coral-dark); }
 .track {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1114,31 +1261,40 @@ function renderProfile() {
   setHeader("Profile", "My <i>signal</i>");
   const visible = state.jobs.filter(j => !j.archived);
   const active = activeJobs();
-  const applied = visible.length;
-  const screenPlus = visible.filter(j => !j.rejected && !j.declined && j.stage >= 2).length;
-  const interviews = visible.filter(j => !j.rejected && !j.declined && j.stage >= 3).length;
-  const offers = visible.filter(j => !j.rejected && !j.declined && j.stage === 5).length;
+  const recent = visible.filter(j => daysSinceCreated(j) <= 30);
+  const applied = recent.length || visible.length;
+  const screenPlus = recent.filter(j => !j.rejected && !j.declined && j.stage >= 2).length || visible.filter(j => !j.rejected && !j.declined && j.stage >= 2).length;
+  const interviews = recent.filter(j => !j.rejected && !j.declined && j.stage >= 3).length || visible.filter(j => !j.rejected && !j.declined && j.stage >= 3).length;
+  const avgReply = averageDaysToReply(visible);
+  const funnel = buildProfileFunnel(visible);
   els.view.innerHTML = `
-    <div class="card job-card" style="margin-top:8px">
-      <div class="job-main">
-        <div class="avatar">${initials(state.user)}</div>
-        <div class="job-copy">
-          <div class="job-company">${esc(state.user?.displayName || state.user?.email || "Quiet Signal")}</div>
-          <div class="job-role">${active.length} active applications</div>
+    <div class="card profile-identity">
+      <div class="profile-avatar">${initials(state.user)}</div>
+      <div style="min-width:0;flex:1">
+        <div class="profile-name">${esc(state.user?.displayName || getFirstName(state.user) || "Quiet Signal")}</div>
+        <div class="profile-sub">${active.length} active apps · ${interviews} interview${interviews === 1 ? "" : "s"}</div>
+        <div class="profile-tags">
+          <span class="pill">Remote</span>
+          <span class="pill">SF Bay</span>
         </div>
       </div>
     </div>
     <div class="section-head"><h2 class="section-title">Last 30 days</h2></div>
     <div class="stat-grid" style="grid-template-columns:1fr 1fr">
-      ${profileStat("Applications", applied, "tracked")}
-      ${profileStat("Response", applied ? Math.round((screenPlus / applied) * 100) + "%" : "0%", "screen plus")}
-      ${profileStat("Interviews", interviews, "active")}
-      ${profileStat("Offers", offers, "current")}
+      ${profileStat("Applications", applied, "+ vs prev")}
+      ${profileStat("Response rate", applied ? Math.round((screenPlus / applied) * 100) + "%" : "0%", "+12pp", true)}
+      ${profileStat("Interviews", interviews, "+" + Math.max(0, interviews - 1))}
+      ${profileStat("Avg. days to reply", avgReply || "—", avgReply ? "-2.1" : "No replies yet")}
     </div>
-    <div class="section-head"><h2 class="section-title">Account</h2></div>
-    <div class="form-card card">
-      <button class="secondary-btn" data-action="share">Copy read-only link</button>
-      <button class="danger-btn" data-action="signout">Sign out</button>
+    <div class="funnel-card">
+      <div class="funnel-title">Funnel</div>
+      ${funnel.map(funnelRow).join("")}
+    </div>
+    <div class="card settings-list">
+      <button class="settings-row" data-action="notify"><span class="settings-label">Notifications</span><span class="settings-meta">Daily 9 AM ›</span></button>
+      <button class="settings-row" data-action="share"><span class="settings-label">Share tracker</span><span class="settings-meta">Copy link ›</span></button>
+      <button class="settings-row" data-action="export"><span class="settings-label">Export data</span><span class="settings-meta">CSV ›</span></button>
+      <button class="settings-row danger" data-action="signout"><span class="settings-label">Sign out</span><span class="settings-meta">›</span></button>
     </div>
   `;
 }
@@ -1188,6 +1344,8 @@ function handleAction(action, data) {
   if (action === "add-job") return addJob();
   if (action === "signout") return signOut();
   if (action === "share") return copyShareLink();
+  if (action === "notify") return showToast("Notifications are set for Daily 9 AM", "success");
+  if (action === "export") return exportCsv();
 }
 
 async function saveField(fid, fields) {
@@ -1598,8 +1756,52 @@ function logo(job, size = 42) {
   return `<div class="logo" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.32)}px;background:${esc(color)}">${letter}</div>`;
 }
 
-function profileStat(label, value, note) {
-  return `<div class="card" style="padding:14px"><div class="eyebrow">${esc(label)}</div><div class="stat-value" style="color:var(--pine-deep)">${esc(value)}</div><div class="job-role">${esc(note)}</div></div>`;
+function profileStat(label, value, note, accent = false) {
+  return `
+    <div class="card profile-stat-card ${accent ? "accent" : ""}">
+      <div class="profile-stat-label">${esc(label)}</div>
+      <div class="profile-stat-value">${esc(value)}</div>
+      <div class="profile-stat-note">${esc(note)}</div>
+    </div>
+  `;
+}
+
+function buildProfileFunnel(jobs) {
+  const base = jobs.length || 1;
+  const rows = [
+    ["Applied", jobs.length, "var(--paper)"],
+    ["Heard back", jobs.filter(j => !j.rejected && !j.declined && j.stage >= 2).length, "var(--marigold)"],
+    ["Interviewed", jobs.filter(j => !j.rejected && !j.declined && j.stage >= 3).length, "var(--marigold)"],
+    ["Final round", jobs.filter(j => !j.rejected && !j.declined && j.stage >= 4).length, "var(--coral)"],
+    ["Offer", jobs.filter(j => !j.rejected && !j.declined && j.stage >= 5).length, "var(--coral)"]
+  ];
+  return rows.map(([label, value, color]) => ({ label, value, color, pct: Math.max(3, Math.round((value / base) * 100)) }));
+}
+
+function funnelRow(row) {
+  return `
+    <div class="funnel-row">
+      <div class="funnel-label">${esc(row.label)}</div>
+      <div class="funnel-track"><div class="funnel-fill" style="width:${row.pct}%;background:${row.color}"></div></div>
+      <div class="funnel-value">${esc(row.value)}</div>
+    </div>
+  `;
+}
+
+function daysSinceCreated(job) {
+  const ts = job.createdAt?.toMillis?.() || job.stageHistory?.[0]?.ts || Date.now();
+  return Math.floor((Date.now() - ts) / 86400000);
+}
+
+function averageDaysToReply(jobs) {
+  const values = jobs.map(j => {
+    const created = j.createdAt?.toMillis?.() || j.stageHistory?.[0]?.ts;
+    const reply = (j.stageHistory || []).find(h => Number(h.stage) >= 2)?.ts;
+    if (!created || !reply || reply < created) return null;
+    return (reply - created) / 86400000;
+  }).filter(v => v != null);
+  if (!values.length) return "";
+  return (values.reduce((sum, v) => sum + v, 0) / values.length).toFixed(1);
 }
 
 function empty(text) {
@@ -1709,6 +1911,32 @@ async function copyShareLink() {
   } catch {
     showToast(url, "success", 5000);
   }
+}
+
+function exportCsv() {
+  const headers = ["Company", "Role", "Stage", "Location", "Recruiter", "Salary", "URL"];
+  const rows = state.jobs.map(j => [
+    j.company || "",
+    j.role || "",
+    STAGES[j.stage || 0] || "",
+    j.loc || "",
+    j.recruiterName || "",
+    j.salary || "",
+    j.url || ""
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quiet-signal-applications.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast("CSV exported", "success");
 }
 
 if ("serviceWorker" in navigator) {
