@@ -2061,10 +2061,15 @@ const TUTORIAL_STEPS = [
     selector: '#search-fab',
     before: () => {
       const fab = document.getElementById('search-fab');
-      if (fab && !fab.classList.contains('open')) toggleSearch();
+      const input = document.getElementById('search-input');
+      const results = document.getElementById('search-results');
+      searchQuery = '';
+      if (input) { input.value = ''; input.blur(); }
+      if (fab) fab.classList.remove('open', 'has-query');
+      if (results) results.classList.remove('open');
     },
     title: 'Search across everything',
-    copy: 'The floating search checks companies, roles, notes, contacts, recruiters, attachments, URLs, salary, and stage fields, then lets you jump straight to a match.'
+    copy: 'Tap the floating search button to search companies, roles, notes, contacts, recruiters, attachments, URLs, salary, and stage fields, then jump straight to a match.'
   },
   {
     selector: '#sidebar, #mobile-stats-content, #tab-stats',
