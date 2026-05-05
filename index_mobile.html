@@ -901,6 +901,84 @@ a { color: inherit; }
 }
 .next-actions .light { background: white; color: var(--coral-dark); }
 .next-actions .outline { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.58); }
+.prep-hero {
+  margin-top: 8px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.prep-ring {
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  background: conic-gradient(var(--marigold) calc(var(--pct, 60) * 1%), var(--bg-soft) 0);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.prep-ring-inner {
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background: var(--paper);
+  display: grid;
+  place-items: center;
+  color: var(--pine-deep);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+}
+.prep-context-card {
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+.prep-context-line {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.prep-context-line strong { color: var(--pine-deep); min-width: 74px; }
+.prep-task {
+  padding: 13px 14px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 11px;
+  align-items: flex-start;
+}
+.prep-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--line-strong);
+  background: transparent;
+  margin-top: 1px;
+}
+.prep-task-title {
+  color: var(--pine-deep);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.prep-task-copy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.42;
+  margin-top: 4px;
+}
+.prep-source {
+  color: var(--pine-mid);
+  font-size: 10px;
+  font-weight: 800;
+  margin-top: 6px;
+}
 .timeline { display: grid; gap: 0; margin: 8px 4px 18px; }
 .timeline-row {
   display: grid;
@@ -1128,6 +1206,7 @@ const state = {
   jobs: [],
   tab: "home",
   selectedId: null,
+  prepJobId: null,
   filter: "all",
   query: "",
   selectedCalendarDate: startOfDay(new Date()).toISOString(),
@@ -1285,7 +1364,7 @@ function loadJobs(uid) {
 }
 
 function render() {
-  const activeTab = state.tab === "detail" ? "list" : state.tab;
+  const activeTab = (state.tab === "detail" || state.tab === "prep") ? "list" : state.tab;
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === activeTab));
   els.searchWrap.classList.toggle("hidden", state.tab !== "list");
   if (state.tab !== "list") els.search.value = state.query = "";
@@ -1293,6 +1372,7 @@ function render() {
   if (state.tab === "home") return renderHome();
   if (state.tab === "list") return renderList();
   if (state.tab === "detail") return renderDetail();
+  if (state.tab === "prep") return renderPrep();
   if (state.tab === "add") return renderAdd();
   if (state.tab === "calendar") return renderCalendar();
   if (state.tab === "profile") return renderProfile();
@@ -1390,6 +1470,35 @@ function renderDetail() {
     </div>
     <div class="section-head" id="timeline-section"><h2 class="section-title">Interview rounds</h2><button class="section-link" data-action="round-add" data-id="${job.firestoreId}">Add</button></div>
     <div class="stack">${renderRounds(job)}</div>
+  `;
+}
+
+function renderPrep() {
+  const job = state.jobs.find(j => j.firestoreId === (state.prepJobId || state.selectedId));
+  if (!job) { setTab("list"); return; }
+  const prep = prepContext(job);
+  const tasks = prepTasks(job, prep);
+  const doneCount = tasks.filter(t => t.done).length;
+  const pct = Math.round((doneCount / tasks.length) * 100);
+  setHeader("Prep", "Get <i>ready</i>.");
+  els.view.innerHTML = `
+    <button class="section-link" data-action="detail" data-id="${job.firestoreId}" style="margin:2px 0 12px">Back to application</button>
+    <div class="prep-hero">
+      <div class="prep-ring" style="--pct:${pct}"><div class="prep-ring-inner">${pct}%</div></div>
+      <div style="min-width:0;flex:1">
+        <div class="job-company">${esc(job.company || "Untitled")}</div>
+        <div class="job-role">${esc(prep.roundLabel)}${prep.when ? " / " + esc(prep.when) : ""}</div>
+        <div class="profile-tags"><span class="pill hot">${esc(prep.typeLabel)}</span><span class="pill">${doneCount} of ${tasks.length} done</span></div>
+      </div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Context</h2></div>
+    <div class="card prep-context-card">
+      <div class="prep-context-line"><strong>People</strong><span>${esc(prep.people || "No interviewers saved yet.")}</span></div>
+      <div class="prep-context-line"><strong>Notes</strong><span>${esc(prep.notes || "No notes saved yet. Add reminders in the application detail notes.")}</span></div>
+      <div class="prep-context-line"><strong>Role</strong><span>${esc(job.role || "Role not set")}${job.loc ? " / " + esc(job.loc) : ""}</span></div>
+    </div>
+    <div class="section-head"><h2 class="section-title">Checklist</h2></div>
+    <div class="stack">${tasks.map(prepTaskCard).join("")}</div>
   `;
 }
 
@@ -1549,6 +1658,11 @@ function handleAction(action, data) {
   if (action === "export") return exportCsv();
   if (action === "favorite") return showToast("Saved as a priority application", "success");
   if (action === "detail-menu") return showToast("More actions are coming here", "success");
+  if (action === "open-prep") {
+    state.prepJobId = data.id || state.selectedId;
+    state.tab = "prep";
+    return render();
+  }
   if (action === "focus-notes") return scrollToId("notes-section");
   if (action === "focus-timeline") return scrollToId("timeline-section");
   if (action === "focus-contacts") return showToast("Contacts live in the editable detail fields for now", "success");
@@ -1868,7 +1982,7 @@ function nextStepCard(next, job) {
       <div class="next-title">${esc(next.title)}</div>
       <div class="next-sub">${esc(next.sub)}</div>
       <div class="next-actions">
-        <button class="light" data-action="focus-timeline">${esc(next.primary)}</button>
+        <button class="light" data-action="open-prep" data-id="${job.firestoreId}">Open prep ↗</button>
         <button class="outline" data-action="${next.secondary === "Close" ? "close" : "focus-timeline"}" data-id="${job.firestoreId}">${esc(next.secondary)}</button>
       </div>
     </div>
@@ -1898,6 +2012,98 @@ function timelineRow(item) {
         <div class="timeline-date">${esc(item.date)}</div>
         <div class="timeline-title">${esc(item.title)}</div>
         <div class="timeline-sub">${esc(item.sub)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function prepContext(job) {
+  const nowTs = Date.now();
+  const rounds = job.interviewRounds || [];
+  const upcomingRoundIdx = rounds.findIndex(r => r.date && !r.completed && r.status !== "rejected" && r.status !== "withdrew" && new Date(r.date).getTime() >= nowTs);
+  const round = upcomingRoundIdx >= 0 ? rounds[upcomingRoundIdx] : rounds.find(r => !r.completed && r.status !== "rejected" && r.status !== "withdrew") || rounds[0] || {};
+  const typeLabel = round.type || (job.stage >= 4 ? "Final round" : job.stage >= 3 ? "Interview" : job.stage >= 2 ? "Screen" : "Interview");
+  const people = [
+    round.with,
+    job.recruiterName,
+    ...(job.contacts || []).map(c => [c.name, c.title].filter(Boolean).join(" · "))
+  ].filter(Boolean).join(", ");
+  const notes = [job.notes, job.stageNotes?.[job.stage], round.notes].filter(Boolean).join(" / ");
+  return {
+    round,
+    typeLabel,
+    roundLabel: upcomingRoundIdx >= 0 ? "Round " + (upcomingRoundIdx + 1) : typeLabel,
+    when: round.date ? fmtDateTime(round.date) : "",
+    people,
+    notes
+  };
+}
+
+function prepTasks(job, prep) {
+  const type = prep.typeLabel.toLowerCase();
+  const tasks = [
+    {
+      title: "Research the company, product, and recent signals",
+      copy: "Review the company site, product, recent news, and role context so you can connect your answers to why this opportunity matters.",
+      source: "Indeed recommends researching the company, role, product, and culture before the interview.",
+      done: !!job.url
+    },
+    {
+      title: "Map your experience to the job description",
+      copy: "Use the role title, saved job URL, salary, location, and notes to pick the 3 strengths you want this interviewer to remember.",
+      source: "Indeed highlights reviewing the job description and aligning your background to the role.",
+      done: !!job.notes
+    },
+    {
+      title: "Prepare 3-5 STAR stories",
+      copy: "Draft concise Situation, Task, Action, Result stories. Prioritize examples that match this interview type: " + prep.typeLabel + ".",
+      source: "MIT CAPD recommends STAR stories for behavioral interviews.",
+      done: false
+    },
+    {
+      title: "Prepare questions for the people in this round",
+      copy: prep.people ? "Use your saved people context: " + prep.people + ". Ask about priorities, success measures, team rituals, and what they need from this role." : "Add interviewer names as you learn them, then prepare role-specific questions for each person.",
+      source: "MIT and Indeed both recommend preparing thoughtful questions in advance.",
+      done: !!prep.people
+    },
+    {
+      title: prepSpecificTitle(type),
+      copy: prepSpecificCopy(type, job, prep),
+      source: "Tailored from common interview-type expectations and prep guidance.",
+      done: false
+    }
+  ];
+  return tasks;
+}
+
+function prepSpecificTitle(type) {
+  if (type.includes("technical")) return "Rehearse your technical walkthrough";
+  if (type.includes("case")) return "Practice the case structure out loud";
+  if (type.includes("presentation")) return "Run the presentation end-to-end";
+  if (type.includes("panel")) return "Plan answers for multiple perspectives";
+  if (type.includes("hiring manager")) return "Clarify operating style and success metrics";
+  if (type.includes("screen") || type.includes("phone")) return "Tighten your pitch and logistics";
+  return "Run a focused mock interview";
+}
+
+function prepSpecificCopy(type, job, prep) {
+  if (type.includes("technical")) return "Review likely tools, systems, tradeoffs, and one recent project you can explain from problem to decision to result.";
+  if (type.includes("case")) return "Practice clarifying the prompt, stating assumptions, structuring the problem, and summarizing your recommendation.";
+  if (type.includes("presentation")) return "Time the deck, rehearse transitions, and prepare backup answers for tradeoffs, impact, and what you would do next.";
+  if (type.includes("panel")) return "Prepare concise intros for each interviewer and rotate eye contact/answers across design, product, business, and culture concerns.";
+  if (type.includes("hiring manager")) return "Prepare examples about prioritization, collaboration, conflict, decision quality, and what success looks like in the first 90 days.";
+  if (type.includes("screen") || type.includes("phone")) return "Have your compensation/location constraints, motivation, availability, and 60-second background answer ready.";
+  return "Mock the round using your saved notes: " + (prep.notes || job.role || "role context") + ".";
+}
+
+function prepTaskCard(task) {
+  return `
+    <div class="card prep-task">
+      <div class="prep-check" style="${task.done ? "background:var(--pine);border-color:var(--pine)" : ""}">${task.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M5 12l4 4L19 6"/></svg>' : ""}</div>
+      <div>
+        <div class="prep-task-title">${esc(task.title)}</div>
+        <div class="prep-task-copy">${esc(task.copy)}</div>
+        <div class="prep-source">${esc(task.source)}</div>
       </div>
     </div>
   `;
