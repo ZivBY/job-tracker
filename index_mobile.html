@@ -960,6 +960,8 @@ a { color: inherit; }
   border: 1.5px solid var(--line-strong);
   background: transparent;
   margin-top: 1px;
+  display: grid;
+  place-items: center;
 }
 .prep-task-title {
   color: var(--pine-deep);
@@ -1663,6 +1665,7 @@ function handleAction(action, data) {
     state.tab = "prep";
     return render();
   }
+  if (action === "prep-toggle") return togglePrepTask(data.id, data.key);
   if (action === "focus-notes") return scrollToId("notes-section");
   if (action === "focus-timeline") return scrollToId("timeline-section");
   if (action === "focus-contacts") return showToast("Contacts live in the editable detail fields for now", "success");
@@ -1732,6 +1735,16 @@ async function setRoundStatus(fid, idx, status) {
   if (next === "rejected") Object.assign(updates, { rejected: true, declined: false, endedAt: Date.now() });
   if (next === "withdrew") Object.assign(updates, { declined: true, rejected: false, endedAt: Date.now() });
   await saveField(fid, updates);
+}
+
+async function togglePrepTask(fid, key) {
+  const job = state.jobs.find(j => j.firestoreId === fid);
+  if (!job || !key) return;
+  const prepChecklist = { ...(job.prepChecklist || {}) };
+  prepChecklist[key] = !prepChecklist[key];
+  job.prepChecklist = prepChecklist;
+  render();
+  await saveField(fid, { prepChecklist });
 }
 
 async function extractFromUrl() {
@@ -2021,8 +2034,13 @@ function prepContext(job) {
   const nowTs = Date.now();
   const rounds = job.interviewRounds || [];
   const upcomingRoundIdx = rounds.findIndex(r => r.date && !r.completed && r.status !== "rejected" && r.status !== "withdrew" && new Date(r.date).getTime() >= nowTs);
-  const round = upcomingRoundIdx >= 0 ? rounds[upcomingRoundIdx] : rounds.find(r => !r.completed && r.status !== "rejected" && r.status !== "withdrew") || rounds[0] || {};
+  let roundIdx = upcomingRoundIdx;
+  if (roundIdx < 0) roundIdx = rounds.findIndex(r => !r.completed && r.status !== "rejected" && r.status !== "withdrew");
+  if (roundIdx < 0 && rounds.length) roundIdx = 0;
+  const round = roundIdx >= 0 ? rounds[roundIdx] : {};
   const typeLabel = round.type || (job.stage >= 4 ? "Final round" : job.stage >= 3 ? "Interview" : job.stage >= 2 ? "Screen" : "Interview");
+  const typeKey = typeLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "interview";
+  const scope = "round-" + (roundIdx >= 0 ? roundIdx : "general") + "-" + typeKey;
   const people = [
     round.with,
     job.recruiterName,
@@ -2031,6 +2049,8 @@ function prepContext(job) {
   const notes = [job.notes, job.stageNotes?.[job.stage], round.notes].filter(Boolean).join(" / ");
   return {
     round,
+    roundIdx,
+    scope,
     typeLabel,
     roundLabel: upcomingRoundIdx >= 0 ? "Round " + (upcomingRoundIdx + 1) : typeLabel,
     when: round.date ? fmtDateTime(round.date) : "",
@@ -2041,36 +2061,42 @@ function prepContext(job) {
 
 function prepTasks(job, prep) {
   const type = prep.typeLabel.toLowerCase();
+  const done = key => !!(job.prepChecklist || {})[prep.scope + ":" + key];
   const tasks = [
     {
+      key: prep.scope + ":research",
       title: "Research the company, product, and recent signals",
       copy: "Review the company site, product, recent news, and role context so you can connect your answers to why this opportunity matters.",
       source: "Indeed recommends researching the company, role, product, and culture before the interview.",
-      done: !!job.url
+      done: done("research")
     },
     {
+      key: prep.scope + ":jd-map",
       title: "Map your experience to the job description",
       copy: "Use the role title, saved job URL, salary, location, and notes to pick the 3 strengths you want this interviewer to remember.",
       source: "Indeed highlights reviewing the job description and aligning your background to the role.",
-      done: !!job.notes
+      done: done("jd-map")
     },
     {
+      key: prep.scope + ":star",
       title: "Prepare 3-5 STAR stories",
       copy: "Draft concise Situation, Task, Action, Result stories. Prioritize examples that match this interview type: " + prep.typeLabel + ".",
       source: "MIT CAPD recommends STAR stories for behavioral interviews.",
-      done: false
+      done: done("star")
     },
     {
+      key: prep.scope + ":questions",
       title: "Prepare questions for the people in this round",
       copy: prep.people ? "Use your saved people context: " + prep.people + ". Ask about priorities, success measures, team rituals, and what they need from this role." : "Add interviewer names as you learn them, then prepare role-specific questions for each person.",
       source: "MIT and Indeed both recommend preparing thoughtful questions in advance.",
-      done: !!prep.people
+      done: done("questions")
     },
     {
+      key: prep.scope + ":type-specific",
       title: prepSpecificTitle(type),
       copy: prepSpecificCopy(type, job, prep),
       source: "Tailored from common interview-type expectations and prep guidance.",
-      done: false
+      done: done("type-specific")
     }
   ];
   return tasks;
@@ -2097,9 +2123,10 @@ function prepSpecificCopy(type, job, prep) {
 }
 
 function prepTaskCard(task) {
+  const fid = state.prepJobId || state.selectedId;
   return `
     <div class="card prep-task">
-      <div class="prep-check" style="${task.done ? "background:var(--pine);border-color:var(--pine)" : ""}">${task.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M5 12l4 4L19 6"/></svg>' : ""}</div>
+      <button class="prep-check" data-action="prep-toggle" data-id="${fid}" data-key="${esc(task.key)}" aria-label="${task.done ? "Mark incomplete" : "Mark complete"}" style="${task.done ? "background:var(--pine);border-color:var(--pine)" : ""}">${task.done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M5 12l4 4L19 6"/></svg>' : ""}</button>
       <div>
         <div class="prep-task-title">${esc(task.title)}</div>
         <div class="prep-task-copy">${esc(task.copy)}</div>
