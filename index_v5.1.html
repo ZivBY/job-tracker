@@ -460,7 +460,7 @@ textarea.gen-notes { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; 
 .tour-overlay.active { display: block; }
 .tour-shade { position: absolute; inset: 0; background: transparent; pointer-events: auto; }
 .tour-spotlight { position: absolute; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(20,20,20,0.46), 0 18px 44px rgba(0,0,0,0.18), 0 0 0 2px rgba(255,255,255,0.96); transition: top 0.22s ease, left 0.22s ease, width 0.22s ease, height 0.22s ease; pointer-events: none; }
-.tour-card { position: absolute; width: min(360px, calc(100vw - 28px)); background: white; border: 0.5px solid #d0cdc6; border-radius: 12px; padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,0.22); pointer-events: auto; transition: top 0.22s ease, left 0.22s ease; }
+.tour-card { position: absolute; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow-y: auto; background: white; border: 0.5px solid #d0cdc6; border-radius: 12px; padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,0.22); pointer-events: auto; transition: top 0.22s ease, left 0.22s ease; }
 .tour-card::before { content: ""; position: absolute; width: 14px; height: 14px; background: white; border-left: 0.5px solid #d0cdc6; border-top: 0.5px solid #d0cdc6; transform: rotate(45deg); }
 .tour-card[data-place="bottom"]::before { top: -8px; left: var(--tour-arrow-left, 28px); }
 .tour-card[data-place="top"]::before { bottom: -8px; left: var(--tour-arrow-left, 28px); transform: rotate(225deg); }
@@ -2154,6 +2154,11 @@ function positionTutorialCard(target) {
     cardTop = Math.min(Math.max(14, top + height / 2 - cardRect.height / 2), window.innerHeight - cardRect.height - 14);
     cardLeft = left + width + gap;
   }
+
+  const visibleCardHeight = Math.min(cardRect.height, window.innerHeight - 28);
+  const visibleCardWidth = Math.min(cardRect.width, window.innerWidth - 28);
+  cardTop = Math.min(Math.max(14, cardTop), Math.max(14, window.innerHeight - visibleCardHeight - 14));
+  cardLeft = Math.min(Math.max(14, cardLeft), Math.max(14, window.innerWidth - visibleCardWidth - 14));
 
   const anchorX = left + width / 2;
   const anchorY = top + height / 2;
