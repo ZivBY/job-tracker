@@ -1,0 +1,12 @@
+{
+  "name": "job-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Validation commands for the static Job Tracker application",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node scripts/check-source.cjs",
+    "audit:fixtures": "node scripts/build-audit-fixtures.cjs"
+  },
+  "engines": { "node": ">=22" }
+}
