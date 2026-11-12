@@ -439,6 +439,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+// Keep this identical to mobile: getAuth restores existing sessions through the
+// SDK's default persistence hierarchy. Do not force a different store per page.
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const { escapeHtml, inlineArg, httpUrl, renderValue, renderJob, localDate, applyFields, applicationMatch } = window.TrackerSafety;
