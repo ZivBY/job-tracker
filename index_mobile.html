@@ -1179,7 +1179,7 @@ a { color: inherit; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDUNgIm11WNevESCPMbN440xnu-TGbdURE",
@@ -1198,10 +1198,11 @@ const ADMIN_EMAIL = "benyehuda.ziv@gmail.com";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+// Keep this identical to desktop: getAuth restores existing sessions through the
+// SDK's default persistence hierarchy. Do not force a different store per page.
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account" });
-setPersistence(auth, browserLocalPersistence).catch(console.error);
 
 const state = {
   user: null,
@@ -1285,6 +1286,7 @@ document.addEventListener("focusout", () => {
   }, 0);
 });
 
+let authRevision = 0;
 getRedirectResult(auth).catch(e => showToast(authError(e), "error"));
 setTimeout(() => {
   if (!els.boot.classList.contains("hidden")) {
@@ -1294,7 +1296,15 @@ setTimeout(() => {
 }, 8000);
 
 onAuthStateChanged(auth, async user => {
+  const revision = ++authRevision;
+  showOnly("boot");
+  cleanup();
   state.user = user;
+  state.readOnly = false;
+  state.profileName = "there";
+  els.title.textContent = "";
+  els.kicker.textContent = "";
+  els.avatar.innerHTML = "";
   const viewingUid = new URLSearchParams(location.search).get("view");
   if (viewingUid) {
     state.readOnly = true;
@@ -1303,12 +1313,13 @@ onAuthStateChanged(auth, async user => {
     return;
   }
   if (!user) {
-    cleanup();
     showOnly("login");
     return;
   }
   await rememberUser(user);
+  if (revision !== authRevision) return;
   const allowed = await isAllowed(user);
+  if (revision !== authRevision) return;
   if (!allowed) {
     cleanup();
     showOnly("denied");
@@ -1340,6 +1351,7 @@ async function signIn() {
 }
 
 async function signOut() {
+  ++authRevision;
   cleanup();
   await fbSignOut(auth);
 }
@@ -1348,6 +1360,7 @@ function cleanup() {
   if (state.unsubscribe) state.unsubscribe();
   state.unsubscribe = null;
   state.jobs = [];
+  els.view.innerHTML = "";
   state.tab = "home";
   state.selectedId = null;
   Object.values(timers).forEach(clearTimeout);
@@ -1369,7 +1382,7 @@ async function isAllowed(user) {
   if ((user.email || "").toLowerCase() === ADMIN_EMAIL) return true;
   try {
     const snap = await getDoc(doc(db, "allowlist", user.uid));
-    return snap.exists();
+    return snap.exists() && snap.data().approved === true;
   } catch (e) {
     console.error(e);
     return false;
@@ -1378,17 +1391,22 @@ async function isAllowed(user) {
 
 function loadJobs(uid) {
   cleanup();
+  const revision = authRevision;
+  let active = true;
   const q = query(collection(db, "users", uid, "jobs"), orderBy("createdAt", "desc"));
-  state.unsubscribe = onSnapshot(q, snap => {
+  const unsubscribe = onSnapshot(q, snap => {
+    if (!active || revision !== authRevision) return;
     state.jobs = snap.docs
-      .map(d => ({ firestoreId: d.id, ...d.data() }))
+      .map(d => ({ ...d.data(), firestoreId: d.id }))
       .filter(j => j.firestoreId !== "__profile" && j._type !== "profile");
     if (shouldDeferSnapshotRender()) state.pendingSnapshotRender = true;
     else render();
   }, e => {
+    if (!active || revision !== authRevision) return;
     console.error(e);
     showToast("Connection error", "error");
   });
+  state.unsubscribe = () => { active = false; unsubscribe(); };
 }
 
 function render() {
