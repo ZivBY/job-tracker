@@ -1,6 +1,6 @@
 {
   "verifiedAtUtc": "2026-11-13T17:21:09.3058029Z",
-  "deployedByThisWork": false,
+  "deployedByThisWork": true,
   "testCommand": "npm test",
   "testsPassed": 56,
   "testsFailed": 0,
@@ -18,17 +18,20 @@
     "ENABLE_EXTRACTION": "false"
   },
   "providerCalls": "All test provider calls mocked; no real tokens or mail read",
-  "productionAcceptance": "Not performed; live containment remains root-controlled",
+  "productionAcceptance": "Staged deployment and retained bindings/secret names verified; live OAuth/provider acceptance still pending.",
   "sources": {
     "test/security.test.mjs": "b0479cedfdc34a7290983d48901ac5e2eba2d0e624efb34ade27d1ce3a3ca479",
     "test/runtime.test.mjs": "f0c0996d9928486381089d14e9e5d430080cbde83d1f17ed68739abc2fd8b504",
     "src/coordinator.mjs": "1dd0f875788b2e0966db8cf3a2701f544219bfbac1f5072a9f78cd22602c36e9",
     "src/common.mjs": "dea24530191dd6bc2f8c0517f7e065d26d741c8c4ae46e4294afbbbd54f84f0d",
     "package-lock.json": "2b6a582d9141b819a710bb9e5f887c80b3d0dbda3750ec58512be2315934e2e9",
-    "wrangler.jsonc": "9cc5a1d94e72cf63d4144e7c28422d0c62153378158dba13efddb704242863f1",
+    "wrangler.jsonc": "8baf139cb72d8184e1497e6419963fad60ac2c1d93fadc9a8fb47291b38a5b93",
     "src/index.mjs": "c184c7ea3a9055547ab79fcca3ab9d432d283fd93e8f3ec238b57aaa009451b4",
     "src/features.mjs": "58570c8e9de945e9927cf253cf950a3a8630242531b0420efd6f3f68e4e20bdc",
     "src/auth.mjs": "f500d4a1e1db3900a4a39dbd3bc80965501612180a78b001f037c15f7cbdb9ed",
     "package.json": "b6b1319218675338fd13048ba68c66663fbc2a81a6da50abffa2b60845d7cc82"
-  }
+  },
+  "configurationCheckedAtUtc": "2026-11-13T17:29:00.848923+00:00",
+  "stagedDeploymentVersion": "207c2b61-5057-4ce7-b4fd-1de3dd742adb",
+  "configurationChangeAfterTests": "Explicitly disabled Cloudflare version preview URLs; staged Wrangler deployment succeeded with identical tested source and both feature flags false."
 }
