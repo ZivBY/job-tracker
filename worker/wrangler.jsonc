@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jd-proxy",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-11-12",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true, "head_sampling_rate": 1, "logs": { "enabled": true, "invocation_logs": false } },
+  "vars": {
+    "ENABLE_EXTRACTION": "false",
+    "ENABLE_GMAIL": "false",
+    "FIREBASE_PROJECT_ID": "job-tracker-c23c5",
+    "FIREBASE_ADMIN_EMAIL": "benyehuda.ziv@gmail.com",
+    "GMAIL_CLIENT_ID": "767227330829-hsggt7ikpd5b5sph72cjn1mfqjp9clbc.apps.googleusercontent.com",
+    "OAUTH_REDIRECT_URI": "https://jd-proxy.benyehuda-ziv.workers.dev/gmail/callback",
+    "APP_URL": "https://zivby.github.io/job-tracker/",
+    "ALLOWED_ORIGIN": "https://zivby.github.io",
+    "ANTHROPIC_MODEL": "claude-sonnet-4-6"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "SECURITY_COORDINATOR", "class_name": "SecurityCoordinator" }]
+  },
+  "kv_namespaces": [{ "binding": "GMAIL_TOKENS", "id": "2ac647b17b0b4bd692363b486595da7f" }],
+  "migrations": [{ "tag": "secure-v2", "new_sqlite_classes": ["SecurityCoordinator"] }]
+}

@@ -40,10 +40,10 @@ function fixture() {
     getDocs: async () => ({ docs: [] }), deleteDoc: async () => {}, fetch: async () => { throw new Error('No external network in tests'); }
   };
   context.window = context;
-  vm.createContext(context); vm.runInContext(safety, context); vm.runInContext(source, context);
+  vm.createContext(context); vm.runInContext(safety, context); vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'worker-client.js'), 'utf8'), context); vm.runInContext(source, context);
   const run = js => vm.runInContext(js, context);
   const setJobs = jobs => run('jobs = ' + JSON.stringify(jobs));
-  run("currentUser = { uid: 'owner', email: ADMIN_EMAIL }; isReadOnly = false;");
+  run("currentUser = { uid: 'owner', email: ADMIN_EMAIL, getIdToken: async () => 'fixture-token' }; isReadOnly = false;");
   for (const [id, value] of Object.entries({ 'f-company': 'New Company', 'f-role': 'New Role', 'f-stage': '1', 'f-type': 'Full-time', 'f-applied-date': '2026-10-08' })) element(id).value = value;
   return { context, run, setJobs, element, writes, additions, historyWrites, downloads, events };
 }
@@ -126,6 +126,8 @@ test('pending drafts survive snapshots and failed writes, then retry successfull
 
 test('failed Gmail update is never marked applied or reported as saved', async () => {
   const f = fixture(); f.setJobs([baseJob()]);
+  f.run("gmailRenderedSuggestions = [{company:'Acme',suggestedStage:2}]; gmailHistoryStamp = 'fixture-scan';");
+  f.context.getDoc = async () => ({ exists: () => true, data: () => ({ scannedAt: 'fixture-scan', suggestions: [{ company: 'Acme', suggestedStage: 2 }] }) });
   f.context.updateDoc = async () => { throw new Error('write failed'); };
   await f.run("applyGmailSuggestion('j1',2,0)");
   assert.equal(f.additions.length, 0);

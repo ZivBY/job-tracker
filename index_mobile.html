@@ -1183,6 +1183,7 @@ a { color: inherit; }
 
 <div id="toast" class="toast"></div>
 
+<script src="worker-client.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1295,6 +1296,8 @@ document.addEventListener("focusout", () => {
 });
 
 let authRevision = 0;
+const workerClient = window.TrackerWorker.createClient({ origin: PROXY, session: () => ({ user: state.user, revision: authRevision, readOnly: state.readOnly }) });
+let extractionRevision = 0, extractingJob = false;
 getRedirectResult(auth).catch(e => showToast(authError(e), "error"));
 setTimeout(() => {
   if (!els.boot.classList.contains("hidden")) {
@@ -1365,6 +1368,7 @@ async function signOut() {
 }
 
 function cleanup() {
+  ++extractionRevision; extractingJob = false;
   if (state.unsubscribe) state.unsubscribe();
   state.unsubscribe = null;
   state.jobs = [];
@@ -1823,42 +1827,38 @@ async function togglePrepTask(fid, key) {
 
 async function extractFromUrl() {
   const url = document.getElementById("jd-url").value.trim();
-  if (!url) return;
-  setJdStatus("Fetching page...", "");
-  try {
-    const data = await callProxy({ url });
-    if (!data.url) data.url = url;
-    fillForm(data);
-  } catch (e) {
-    console.error(e);
-    setJdStatus("Could not fetch this URL. Paste the text instead.", "error");
-  }
+  if (url) await runExtraction({ url }, url);
 }
-
 async function extractFromText() {
   const text = document.getElementById("jd-text").value.trim();
-  if (!text) return;
-  setJdStatus("Extracting...", "");
+  if (text) await runExtraction({ text });
+}
+async function runExtraction(body, fallbackUrl = "") {
+  if (state.readOnly || !state.user || extractingJob) return;
+  const owner = workerClient.capture(), revision = ++extractionRevision;
+  extractingJob = true;
+  setJdStatus("Extracting job details with Anthropic...", "");
   try {
-    fillForm(await callProxy({ text }));
+    const data = await callProxy(body, owner);
+    if (!workerClient.isCurrent(owner) || revision !== extractionRevision) return;
+    if (!data.url && fallbackUrl) data.url = fallbackUrl;
+    fillForm(data);
   } catch (e) {
-    console.error(e);
-    setJdStatus("Extraction failed. Fill in the fields manually.", "error");
+    if (workerClient.isCurrent(owner) && revision === extractionRevision) setJdStatus(window.TrackerWorker.errorMessage(e), "error");
+  } finally {
+    if (workerClient.isCurrent(owner) && revision === extractionRevision) extractingJob = false;
   }
 }
-
-async function callProxy(body) {
-  const res = await fetch(PROXY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error("Worker error " + res.status);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  const raw = data.content && data.content[0] ? data.content[0].text : "";
-  return JSON.parse(raw.replace(/```json|```/g, "").trim());
+async function callProxy(body, owner) {
+  const data = await workerClient.request('/extract', body, owner);
+  return data.job;
 }
 
 function fillForm(data) {
   const fields = { "f-company": data.company, "f-role": data.role, "f-industry": data.industry,
     "f-loc": data.location || data.loc, "f-url": data.url, "f-salary": data.salary };
+  const type = ['Full-time', 'Contract', 'Part-time'].find(option => option.toLowerCase() === String(data.type || '').toLowerCase());
+  if (type) fields['f-type'] = type;
   Object.entries(fields).forEach(([id, val]) => {
     state.addDraft[id] = val ?? "";
     if (state.tab === "add") setValue(id, val);
@@ -1922,6 +1922,7 @@ async function addJob() {
     await addDoc(collection(db, "users", userId, "jobs"), job);
     if (state.user?.uid !== userId) return;
     state.addDraft = {};
+    ++extractionRevision; extractingJob = false;
     state.extractedPostDate = null;
     state.extractedSalary = "";
     state.tab = "list";

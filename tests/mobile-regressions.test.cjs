@@ -21,7 +21,7 @@ function harness(names, overrides = {}) {
   const button = { disabled: false, textContent: '' };
   const state = { jobs: [], user: { uid: 'test-user' }, readOnly: false, expandedCompletedRounds: new Set(), addDraft: { 'f-company': 'Example Co' }, extractedPostDate: '2026-09-20', extractedSalary: '$180k', addingJob: false };
   const context = vm.createContext({
-    state, writes, inputs, Date, Math, Set, Number, console: { error() {} },
+    state, writes, inputs, Date, Math, Set, Number, extractionRevision: 0, extractingJob: false, console: { error() {} },
     STAGES: ['Interested', 'Applied', 'Screen', 'Interview', 'Final round', 'Offer'], PALETTE: ['green'],
     value: id => inputs[id] || '', serverTimestamp: () => 1000,
     collection: (...parts) => parts, db: {},
@@ -80,9 +80,10 @@ test('failed add retains its draft and permits retry', async () => {
 test('background extraction updates the retained draft without requiring Add DOM', () => {
   const { context, state } = harness(['fillForm'], { setValue() { throw new Error('should not touch hidden form'); } });
   state.tab = 'list';
-  context.fillForm({ company: 'New Company', role: 'Director', salary: '$200k', postedDate: '2026-10-01' });
+  context.fillForm({ company: 'New Company', role: 'Director', type: 'Contract', salary: '$200k', postedDate: '2026-10-01' });
   assert.equal(state.addDraft['f-company'], 'New Company');
   assert.equal(state.addDraft['f-salary'], '$200k');
+  assert.equal(state.addDraft['f-type'], 'Contract');
   context.fillForm({ company: 'Another Company', role: 'Manager' });
   assert.equal(state.addDraft['f-salary'], '');
   assert.equal(state.extractedPostDate, null);

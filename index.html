@@ -400,19 +400,29 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
     <div class="admin-panel">
       <div class="admin-handle"></div>
       <h3>📧 Sync inbox</h3>
-      <p>Connect Gmail to scan for recruiter emails and get suggested stage updates.</p>
+      <p>Connect Gmail to get suggested stage updates. Scanning is optional: selected message text and metadata go to Anthropic only after your separate scan confirmation.</p>
       <div id="gmail-connect-section">
-        <button class="admin-add-btn" style="width:100%;margin-bottom:8px;" onclick="connectGmail()">Connect Gmail</button>
+        <p id="gmail-reconnect-notice">Older Gmail connections must be replaced. Connect the same Gmail address used to sign in to this tracker.</p>
+        <label style="display:block;font-size:12px;margin-bottom:12px;"><input type="checkbox" id="gmail-link-consent"> I authorize a read-only Gmail connection to this tracker account. A successful reconnect replaces the older link; connecting does not scan my mail.</label>
+        <button class="admin-add-btn" id="gmail-connect-btn" style="width:100%;margin-bottom:8px;" onclick="connectGmail()">Connect Gmail</button>
       </div>
       <div id="gmail-connected-section" style="display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <span style="font-size:12px;color:#1D9E75;font-weight:500;">✓ Gmail connected</span>
-          <button onclick="disconnectGmail()" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0ddd6;background:transparent;color:#aaa;cursor:pointer;">Disconnect</button>
+          <button id="gmail-disconnect-btn" onclick="disconnectGmail()" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0ddd6;background:transparent;color:#aaa;cursor:pointer;">Disconnect</button>
         </div>
+        <p style="font-size:12px;">A scan sends selected Gmail message text, sender, subject and date, plus company names and stages from your tracker, to Anthropic to suggest updates. Review each suggestion before applying it; no job changes happen automatically.</p>
+        <label style="display:block;font-size:12px;margin-bottom:12px;"><input type="checkbox" id="gmail-scan-consent"> I agree to send this information to Anthropic for this scan.</label>
         <button class="admin-add-btn" style="width:100%;margin-bottom:12px;" id="gmail-scan-btn" onclick="scanGmail()">Scan last 14 days</button>
-        <div class="admin-status" id="gmail-status"></div>
         <div id="gmail-suggestions"></div>
       </div>
+      <button class="admin-add-btn" id="gmail-revoke-retry-btn" style="display:none;width:100%;margin-top:12px;" onclick="disconnectGmail()">Finish disconnecting Gmail</button>
+      <div id="gmail-manual-recovery" style="display:none;margin-top:12px;">
+        <p>To finish disconnecting, open <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener noreferrer">your Google Account connections</a>, select Job Tracker and remove its access. Then return here to confirm.</p>
+        <label style="display:block;font-size:12px;margin-bottom:12px;"><input type="checkbox" id="gmail-manual-revoke-confirm"> I removed Job Tracker's access in my Google Account.</label>
+        <button class="admin-add-btn" id="gmail-manual-revoke-btn" style="width:100%;" onclick="disconnectGmail(true)">Finish after removing access</button>
+      </div>
+      <div class="admin-status" id="gmail-status" role="status" aria-live="polite"></div>
       <button class="btn-cancel" style="width:100%;margin-top:1rem;" onclick="hideGmailPanel()">Done</button>
     </div>
   </div>
@@ -430,6 +440,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 </div>
 
 <script src="tracker-safety.js"></script>
+<script src="worker-client.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -479,6 +490,8 @@ let jobs = [], currentFilter = 'all', openNotes = new Set(), pendingArchive = nu
 let activeStageTab = {}; // fid -> stageIndex
 let currentUser = null, unsubscribe = null, isReadOnly = false;
 let authRevision = 0;
+const workerClient = window.TrackerWorker.createClient({ origin: PROXY, session: () => ({ user: currentUser, revision: authRevision, readOnly: isReadOnly }) });
+let extractionRevision = 0, extractingJob = false;
 let _extractedPostDate = null, _extractedSalary = null;
 let addingJob = false, pendingAddRef = null, pendingAddOwnerUid = null;
 const pendingFields = new Map(), draftFields = new Map(), writeChains = new Map(), saveTimers = new Map();
@@ -672,6 +685,7 @@ onAuthStateChanged(auth, async user => {
   try {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     jobs = [];
+    resetGmailState();
     for (const id of ['jobs-list', 'overview-list', 'stats', 'gmail-suggestions']) document.getElementById(id).innerHTML = '';
     if (currentUser?.uid !== user?.uid) {
       resetApplicationForm();
@@ -841,97 +855,132 @@ window.hideShareModal = function() { hide('share-modal'); };
 
 // ── Gmail sync ────────────────────────────────────────────────────────────────
 
-let gmailConnected = false;
+let gmailConnected = false, gmailBusy = false, gmailGeneration = 0, gmailRevocationPending = false, gmailManualRevocationRequired = false;
+let gmailRenderedSuggestions = [], gmailHistoryStamp = null;
 
+function gmailContext() { return { owner: workerClient.capture(), generation: ++gmailGeneration }; }
+function gmailCurrent(ctx) { return !!ctx && ctx.generation === gmailGeneration && workerClient.isCurrent(ctx.owner); }
+function setGmailBusy(busy) {
+  gmailBusy = busy;
+  for (const id of ['gmail-connect-btn', 'gmail-disconnect-btn', 'gmail-scan-btn', 'gmail-revoke-retry-btn', 'gmail-manual-revoke-btn']) document.getElementById(id).disabled = busy;
+  document.getElementById('gmail-connect-btn').disabled = busy || gmailRevocationPending;
+  document.getElementById('gmail-scan-btn').textContent = busy ? 'Please wait...' : 'Scan last 14 days';
+}
+function setGmailConnection(connected, reconnectRequired = false, revocationPending = false, manualRevocationRequired = false) {
+  gmailManualRevocationRequired = manualRevocationRequired;
+  gmailRevocationPending = revocationPending = revocationPending || manualRevocationRequired;
+  gmailConnected = connected = connected && !revocationPending;
+  document.getElementById('gmail-connect-section').style.display = connected ? 'none' : 'block';
+  document.getElementById('gmail-connected-section').style.display = connected ? 'block' : 'none';
+  document.getElementById('gmail-connect-btn').textContent = reconnectRequired ? 'Reconnect Gmail' : 'Connect Gmail';
+  document.getElementById('gmail-connect-btn').disabled = gmailBusy || revocationPending;
+  document.getElementById('gmail-revoke-retry-btn').style.display = revocationPending && !manualRevocationRequired ? 'block' : 'none';
+  document.getElementById('gmail-manual-recovery').style.display = manualRevocationRequired ? 'block' : 'none';
+  document.getElementById('gmail-manual-revoke-confirm').checked = false;
+}
+function resetGmailState() {
+  ++gmailGeneration;
+  setGmailBusy(false);
+  setGmailConnection(false);
+  gmailRenderedSuggestions = []; gmailHistoryStamp = null;
+  document.getElementById('gmail-link-consent').checked = false;
+  document.getElementById('gmail-scan-consent').checked = false;
+  document.getElementById('gmail-suggestions').innerHTML = '';
+  setGmailStatus('', '');
+}
+function gmailError(e, ctx) {
+  if (!gmailCurrent(ctx)) return;
+  if (['not_connected', 'reconnect_required', 'gmail_refresh_failed'].includes(e.code)) setGmailConnection(false, true);
+  if (['revocation_failed', 'revocation_pending'].includes(e.code)) setGmailConnection(false, true, true);
+  setGmailStatus(window.TrackerWorker.errorMessage(e), 'error');
+}
 window.showGmailPanel = async function() {
-  show('gmail-modal');
-  await checkGmailStatus();
-  await loadGmailHistory();
+  if (isReadOnly || !currentUser) return;
+  resetGmailState();
+  const ctx = gmailContext();
+  show('gmail-modal'); setGmailBusy(true);
+  await checkGmailStatus(ctx);
+  if (gmailCurrent(ctx) && gmailConnected) await loadGmailHistory(ctx);
+  if (gmailCurrent(ctx)) setGmailBusy(false);
 };
-
 window.hideGmailPanel = function() {
   hide('gmail-modal');
-  setGmailStatus('', '');
+  resetGmailState();
 };
-
-async function loadGmailHistory() {
-  if (!currentUser) return;
+async function loadGmailHistory(ctx) {
+  if (!gmailCurrent(ctx)) return;
   try {
-    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'));
+    const snap = await getDoc(doc(db, 'users', ctx.owner.uid, 'gmailSync', 'latest'));
+    if (!gmailCurrent(ctx)) return;
     if (snap.exists()) {
       const data = snap.data();
-      if (data.suggestions && data.suggestions.length > 0) {
-        renderGmailSuggestions(data.suggestions, data.scannedAt);
-      }
+      if (Array.isArray(data.suggestions)) renderGmailSuggestions(data.suggestions, data.scannedAt);
     }
-  } catch(e) { /* no history yet */ }
+  } catch { if (gmailCurrent(ctx)) setGmailStatus('Saved suggestions could not be loaded. You can retry later.', 'error'); }
 }
-
-async function saveGmailHistory(suggestions) {
-  if (isReadOnly || !currentUser) return;
-  try {
-    await setDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'), {
-      suggestions,
-      scannedAt: new Date().toISOString()
-    });
-  } catch(e) { console.error('Could not save Gmail history', e); }
+async function saveGmailHistory(suggestions, scannedAt, ctx) {
+  if (!gmailCurrent(ctx)) return false;
+  await setDoc(doc(db, 'users', ctx.owner.uid, 'gmailSync', 'latest'), { suggestions, scannedAt });
+  return gmailCurrent(ctx);
 }
-
 function setGmailStatus(msg, type) {
   const el = document.getElementById('gmail-status');
   el.textContent = msg;
   el.className = 'admin-status' + (type ? ' ' + type : '');
 }
-
-async function checkGmailStatus() {
-  if (!currentUser) return;
+async function checkGmailStatus(ctx) {
   try {
-    const res = await fetch(PROXY + '/gmail/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: currentUser.uid })
-    });
-    const data = await res.json();
-    gmailConnected = data.connected;
-    document.getElementById('gmail-connect-section').style.display = gmailConnected ? 'none' : 'block';
-    document.getElementById('gmail-connected-section').style.display = gmailConnected ? 'block' : 'none';
-  } catch(e) {
-    setGmailStatus('Could not check Gmail status', 'error');
-  }
+    const data = await workerClient.request('/gmail/status', {}, ctx.owner);
+    if (!gmailCurrent(ctx)) return;
+    setGmailConnection(data.connected, data.reconnectRequired, data.revocationPending, data.manualRevocationRequired);
+    if (data.manualRevocationRequired) setGmailStatus('This connection could not be confirmed. Remove Job Tracker access in Google, then confirm below to finish disconnecting.', 'error');
+    else if (data.revocationPending) setGmailStatus('Google access revocation is still pending. Finish disconnecting Gmail before reconnecting; if a request just failed, wait 30 seconds before retrying.', 'error');
+    else if (data.reconnectRequired) setGmailStatus('Reconnect Gmail to establish a verified account link before scanning.', '');
+  } catch (e) { gmailError(e, ctx); }
 }
-
 window.connectGmail = async function() {
-  if (isReadOnly || !currentUser) return;
+  if (isReadOnly || !currentUser || gmailBusy || gmailRevocationPending) return;
+  if (!document.getElementById('gmail-link-consent').checked) { setGmailStatus('Review the connection notice and select the consent checkbox first.', 'error'); return; }
+  const ctx = gmailContext();
+  document.getElementById('gmail-link-consent').checked = false;
+  setGmailBusy(true); setGmailStatus('Opening Google to verify your Gmail connection...', 'loading');
   try {
-    const res = await fetch(PROXY + '/gmail/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: currentUser.uid })
-    });
-    const data = await res.json();
-    if (data.authUrl) {
-      window.location.href = data.authUrl;
-    }
-  } catch(e) {
-    setGmailStatus('Could not start Gmail connection', 'error');
-  }
+    const data = await workerClient.request('/gmail/auth', { consentToLink: true }, ctx.owner);
+    if (gmailCurrent(ctx)) window.location.href = data.authUrl;
+  } catch (e) { gmailError(e, ctx); }
+  finally { if (gmailCurrent(ctx)) setGmailBusy(false); }
 };
-
-window.disconnectGmail = async function() {
-  if (isReadOnly || !currentUser) return;
-  await fetch(PROXY + '/gmail/disconnect', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid: currentUser.uid })
-  });
-  gmailConnected = false;
-  document.getElementById('gmail-connect-section').style.display = 'block';
-  document.getElementById('gmail-connected-section').style.display = 'none';
-  document.getElementById('gmail-suggestions').innerHTML = '';
+window.disconnectGmail = async function(confirmManualRevocation = false) {
+  if (isReadOnly || !currentUser || gmailBusy) return;
+  const manual = confirmManualRevocation === true;
+  if (manual && (!gmailManualRevocationRequired || !document.getElementById('gmail-manual-revoke-confirm').checked)) {
+    setGmailStatus('Remove Job Tracker access in Google and select the confirmation checkbox before continuing.', 'error');
+    return;
+  }
+  const ctx = gmailContext(); setGmailBusy(true);
+  document.getElementById('gmail-manual-revoke-confirm').checked = false;
+  try {
+    const result = await workerClient.request('/gmail/disconnect', manual ? { confirmManualRevocation: true } : {}, ctx.owner);
+    if (!gmailCurrent(ctx)) return;
+    setGmailConnection(false);
+    document.getElementById('gmail-suggestions').innerHTML = '';
+    gmailRenderedSuggestions = []; gmailHistoryStamp = null;
+    setGmailStatus(result.confirmation === 'owner'
+      ? 'Connection cleared based on your confirmation. Google access removal was not independently verified.'
+      : 'Gmail disconnected and Google access revoked.', '');
+  } catch (e) {
+    gmailError(e, ctx);
+    if (gmailCurrent(ctx) && ['revocation_failed', 'revocation_pending', 'request_in_progress'].includes(e.code)) {
+      await checkGmailStatus(ctx);
+      if (gmailCurrent(ctx)) setGmailStatus(window.TrackerWorker.errorMessage(e), 'error');
+    }
+  }
+  finally { if (gmailCurrent(ctx)) setGmailBusy(false); }
 };
 
 function renderGmailSuggestions(suggestions, scannedAt) {
   suggestions = Array.isArray(suggestions) ? suggestions : [];
+  gmailRenderedSuggestions = suggestions; gmailHistoryStamp = scannedAt || null;
   const container = document.getElementById('gmail-suggestions');
   if (!suggestions || suggestions.length === 0) {
     container.innerHTML = '<div style="font-size:13px;color:#888;text-align:center;padding:1rem;">No relevant recruiter emails found.</div>';
@@ -983,54 +1032,50 @@ function renderGmailSuggestions(suggestions, scannedAt) {
 }
 
 window.scanGmail = async function() {
-  if (isReadOnly || !currentUser) return;
-  const btn = document.getElementById('gmail-scan-btn');
-  btn.disabled = true; btn.textContent = 'Scanning...';
-  setGmailStatus('Scanning your inbox...', 'loading');
-
+  if (isReadOnly || !currentUser || gmailBusy) return;
+  if (!gmailConnected) { setGmailStatus('Connect Gmail before scanning.', 'error'); return; }
+  if (!document.getElementById('gmail-scan-consent').checked) { setGmailStatus('Review the Anthropic disclosure and select the consent checkbox for this scan.', 'error'); return; }
+  const ctx = gmailContext();
+  document.getElementById('gmail-scan-consent').checked = false;
+  setGmailBusy(true); setGmailStatus('Scanning the last 14 days and requesting suggestions...', 'loading');
   try {
-    const companies = jobs
-      .filter(j => !j.archived && !j.rejected && !j.declined)
-      .map(j => ({ company: j.company, stage: STAGES[j.stage] || '', firestoreId: j.firestoreId, currentStage: j.stage }));
-
-    const res = await fetch(PROXY + '/gmail/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: currentUser.uid, companies })
-    });
-    const data = await res.json();
-
-    if (data.error === 'not_connected') {
-      setGmailStatus('Gmail not connected. Please reconnect.', 'error');
-      gmailConnected = false;
-      document.getElementById('gmail-connect-section').style.display = 'block';
-      document.getElementById('gmail-connected-section').style.display = 'none';
+    const companies = jobs.filter(j => !j.archived && !j.rejected && !j.declined)
+      .map(j => ({ company: String(j.company || ''), currentStage: Number.isInteger(j.stage) ? j.stage : 0 }));
+    const data = await workerClient.request('/gmail/scan', { companies, consentToAiProcessing: true }, ctx.owner);
+    if (!gmailCurrent(ctx)) return;
+    const suggestions = data.suggestions.map(s => ({ ...s, applied: false }));
+    const scannedAt = new Date().toISOString();
+    try {
+      if (!(await saveGmailHistory(suggestions, scannedAt, ctx))) return;
+    } catch {
+      if (gmailCurrent(ctx)) setGmailStatus('The scan completed, but suggestions could not be saved. Retry later; no jobs changed.', 'error');
       return;
     }
-
-    setGmailStatus('', '');
-    const suggestions = (data.suggestions || []).map(s => ({ ...s, applied: false }));
-    await saveGmailHistory(suggestions);
-    renderGmailSuggestions(suggestions, new Date().toISOString());
-
-  } catch(e) {
-    setGmailStatus('Scan failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Scan last 14 days';
-  }
+    if (!gmailCurrent(ctx)) return;
+    setGmailStatus('Review suggestions below. No job changes have been applied.', '');
+    renderGmailSuggestions(suggestions, scannedAt);
+  } catch (e) { gmailError(e, ctx); }
+  finally { if (gmailCurrent(ctx)) setGmailBusy(false); }
 };
 
 async function applyGmailSuggestion(fid, newStage, idx) {
   if (isReadOnly || !currentUser || !Number.isInteger(newStage) || newStage < 0 || newStage > 5) return;
+  const owner = workerClient.capture();
+  const stamp = gmailHistoryStamp;
   const j = jobs.find(x => x.firestoreId === fid);
-  if (!j || j.archived) return;
+  if (!j || j.archived || !Number.isInteger(idx)) return;
+  const displayed = gmailRenderedSuggestions[idx];
+  if (!displayed || displayed.suggestedStage !== newStage || String(displayed.company || '').trim().toLowerCase() !== String(j.company || '').trim().toLowerCase()) return;
 
-  // Get the suggestion to check for interview rounds
+  // Get only this displayed scan; another tab may have saved newer suggestions.
   let suggestion = null;
   try {
-    const snap = await getDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'));
-    if (snap.exists()) suggestion = (snap.data().suggestions || [])[idx];
-  } catch(e) {}
+    const snap = await getDoc(doc(db, 'users', owner.uid, 'gmailSync', 'latest'));
+    if (!workerClient.isCurrent(owner)) return;
+    if (!snap.exists() || snap.data().scannedAt !== stamp) { setGmailStatus('Suggestions changed. Reopen Sync inbox before applying an update.', 'error'); return; }
+    suggestion = displayed;
+  } catch { if (workerClient.isCurrent(owner)) setGmailStatus('Could not verify this suggestion. Retry later.', 'error'); return; }
+  if (!workerClient.isCurrent(owner)) return;
 
   const hist = [...(j.stageHistory || []), { stage: newStage, ts: now() }];
   j.stage = newStage; j.stageHistory = hist;
@@ -1056,28 +1101,30 @@ async function applyGmailSuggestion(fid, newStage, idx) {
   }
 
   render();
-  if (!(await saveField(fid, updates))) return;
+  if (!(await saveField(fid, updates)) || !workerClient.isCurrent(owner)) return;
 
   // Mark suggestion as applied in Firestore history
-  if (currentUser) {
+  if (workerClient.isCurrent(owner)) {
     try {
-      const snap = await getDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'));
-      if (snap.exists()) {
+      const snap = await getDoc(doc(db, 'users', owner.uid, 'gmailSync', 'latest'));
+      if (!workerClient.isCurrent(owner)) return;
+      if (snap.exists() && snap.data().scannedAt === stamp) {
         const data = snap.data();
         const suggestions = [...(data.suggestions || [])];
         if (suggestions[idx]) suggestions[idx] = { ...suggestions[idx], applied: true };
-        await setDoc(doc(db, 'users', currentUser.uid, 'gmailSync', 'latest'), { ...data, suggestions });
+        await setDoc(doc(db, 'users', owner.uid, 'gmailSync', 'latest'), { suggestions, scannedAt: data.scannedAt });
+        if (!workerClient.isCurrent(owner)) return;
         renderGmailSuggestions(suggestions, data.scannedAt);
       }
     } catch(e) {}
   }
-  showToast('Stage updated ✓', 'synced');
+  if (workerClient.isCurrent(owner)) showToast('Stage updated ✓', 'synced');
 }
 
-// Check if returning from Gmail OAuth
-if (new URLSearchParams(window.location.search).get('gmail') === 'connected') {
-  window.history.replaceState({}, '', window.location.pathname);
-  setTimeout(() => showToast('Gmail connected ✓', 'synced'), 1000);
+// Callback query parameters are not proof of connection. Verify through status
+// when the user opens Sync inbox; never scan automatically after a redirect.
+if (['connected', 'error'].includes(new URLSearchParams(window.location.search).get('gmail'))) {
+  setTimeout(() => showToast('Gmail authorization returned. Open Sync inbox to verify the connection.', ''), 1000);
 }
 
 // ── Admin panel ───────────────────────────────────────────────────────────────
@@ -1318,45 +1365,37 @@ function fillForm(data) {
   setJdStatus('✓ Fields filled — review and save' + dateMsg + salaryMsg, 'success');
 }
 
-async function callProxy(body) {
-  const res = await fetch(PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error('Worker error ' + res.status);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  const raw = data.content && data.content[0] ? data.content[0].text : '';
-  return JSON.parse(raw.replace(/```json|```/g, '').trim());
+async function callProxy(body, owner) {
+  const data = await workerClient.request('/extract', body, owner);
+  return data.job;
 }
-
+async function runExtraction(body, fallbackUrl = '') {
+  if (isReadOnly || !currentUser || extractingJob) return;
+  const owner = workerClient.capture(), revision = ++extractionRevision;
+  extractingJob = true;
+  for (const id of ['jd-btn', 'jd-text-btn']) document.getElementById(id).disabled = true;
+  setJdStatus('Extracting job details with Anthropic...', 'loading');
+  try {
+    const extracted = await callProxy(body, owner);
+    if (!workerClient.isCurrent(owner) || revision !== extractionRevision) return;
+    if (!extracted.url && fallbackUrl) extracted.url = fallbackUrl;
+    fillForm(extracted);
+  } catch (e) {
+    if (workerClient.isCurrent(owner) && revision === extractionRevision) setJdStatus(window.TrackerWorker.errorMessage(e), 'error');
+  } finally {
+    if (workerClient.isCurrent(owner) && revision === extractionRevision) {
+      extractingJob = false;
+      for (const id of ['jd-btn', 'jd-text-btn']) document.getElementById(id).disabled = false;
+    }
+  }
+}
 window.extractFromUrl = async function() {
   const url = document.getElementById('jd-url').value.trim();
-  if (!url) return;
-  const btn = document.getElementById('jd-btn');
-  btn.disabled = true; btn.textContent = 'Fetching...';
-  setJdStatus('Fetching page...', 'loading');
-  try {
-    const extracted = await callProxy({ url });
-    if (!extracted.url) extracted.url = url;
-    fillForm(extracted);
-  } catch(e) {
-    setJdStatus('Could not fetch this URL — paste the job description text below instead.', 'error');
-    setTimeout(() => document.getElementById('jd-text').focus(), 100);
-  }
-  btn.disabled = false; btn.textContent = 'Extract';
+  if (url) await runExtraction({ url }, url);
 };
-
 window.extractFromText = async function() {
   const text = document.getElementById('jd-text').value.trim();
-  if (!text) return;
-  const btn = document.getElementById('jd-text-btn');
-  btn.disabled = true; btn.textContent = 'Extracting...';
-  setJdStatus('Extracting with Claude...', 'loading');
-  try {
-    const url = document.getElementById('jd-url').value.trim();
-    const extracted = await callProxy({ text });
-    if (!extracted.url && url) extracted.url = url;
-    fillForm(extracted);
-  } catch(e) { setJdStatus('Extraction failed. Fill in the fields manually.', 'error'); }
-  btn.disabled = false; btn.textContent = 'Extract from text';
+  if (text) await runExtraction({ text }, document.getElementById('jd-url').value.trim());
 };
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -1376,6 +1415,8 @@ window.hideModal = function() {
 };
 
 function resetApplicationForm() {
+  ++extractionRevision; extractingJob = false;
+  for (const id of ['jd-btn', 'jd-text-btn']) document.getElementById(id).disabled = false;
   hide('modal');
   ['f-company','f-role','f-loc','f-url','jd-url','jd-text','f-recruiter','f-referral-name']
     .forEach(id => document.getElementById(id).value = '');
