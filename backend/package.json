@@ -1,0 +1,13 @@
+{
+  "name": "job-tracker-firestore-tests",
+  "private": true,
+  "scripts": {
+    "test": "node run-tests.cjs"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.3.0",
+    "firebase-tools": "15.36.0"
+  }
+}

@@ -1148,6 +1148,13 @@ a { color: inherit; }
   <div class="login-actions"><button class="secondary-btn" id="denied-signout">Sign out</button></div>
 </main>
 
+<main id="sharing-unavailable-screen" class="screen denied hidden">
+  <div class="brand"><div class="brand-mark">Q</div><div class="brand-name">Quiet Signal</div></div>
+  <h1 class="hero-title">Public sharing is <i>unavailable.</i></h1>
+  <p class="hero-copy">Sign in to view your own tracker.</p>
+  <div class="login-actions"><a class="primary-btn" id="own-tracker-link" href="index_mobile.html" style="display:block;text-align:center;text-decoration:none;">Open your tracker</a></div>
+</main>
+
 <main id="app-screen" class="app hidden">
   <div class="top">
     <div class="top-row">
@@ -1230,6 +1237,7 @@ const els = {
   boot: document.getElementById("boot-screen"),
   login: document.getElementById("login-screen"),
   denied: document.getElementById("denied-screen"),
+  sharing: document.getElementById("sharing-unavailable-screen"),
   app: document.getElementById("app-screen"),
   view: document.getElementById("view"),
   title: document.getElementById("page-title"),
@@ -1305,11 +1313,10 @@ onAuthStateChanged(auth, async user => {
   els.title.textContent = "";
   els.kicker.textContent = "";
   els.avatar.innerHTML = "";
-  const viewingUid = new URLSearchParams(location.search).get("view");
-  if (viewingUid) {
+  if (new URLSearchParams(location.search).has("view")) {
     state.readOnly = true;
-    showOnly("app");
-    loadJobs(viewingUid);
+    document.getElementById("own-tracker-link").href = location.origin + location.pathname;
+    showOnly("sharing");
     return;
   }
   if (!user) {
@@ -1336,6 +1343,7 @@ function showOnly(which) {
   els.boot.classList.toggle("hidden", which !== "boot");
   els.login.classList.toggle("hidden", which !== "login");
   els.denied.classList.toggle("hidden", which !== "denied");
+  els.sharing.classList.toggle("hidden", which !== "sharing");
   els.app.classList.toggle("hidden", which !== "app");
 }
 
@@ -1372,10 +1380,10 @@ function cleanup() {
 }
 
 async function rememberUser(user) {
-  const email = (user.email || "").toLowerCase();
+  const email = String(user.email || "").trim().toLowerCase();
   if (!email) return;
-  const safeEmail = email.replace(/\./g, "_");
-  await setDoc(doc(db, "emailToUid", safeEmail), { uid: user.uid, email }, { merge: true }).catch(console.error);
+  // Backend rules bind this self-registration to the authenticated UID/email.
+  await setDoc(doc(db, "userDirectory", user.uid), { uid: user.uid, email }).catch(console.error);
 }
 
 async function isAllowed(user) {
@@ -1659,7 +1667,7 @@ function renderProfile() {
       ${funnel.map(funnelRow).join("")}
     </div>
     <div class="card settings-list">
-      <button class="settings-row" data-action="share"><span class="settings-label">Share tracker</span><span class="settings-meta">Copy link ›</span></button>
+      <button class="settings-row" data-action="share"><span class="settings-label">Sharing</span><span class="settings-meta">Owner only ›</span></button>
       <button class="settings-row" data-action="export"><span class="settings-label">Export data</span><span class="settings-meta">CSV ›</span></button>
       <button class="settings-row danger" data-action="signout"><span class="settings-label">Sign out</span><span class="settings-meta">›</span></button>
     </div>
@@ -1710,7 +1718,7 @@ function handleAction(action, data) {
   if (action === "extract-text") return extractFromText();
   if (action === "add-job") return addJob();
   if (action === "signout") return signOut();
-  if (action === "share") return copyShareLink();
+  if (action === "share") return showSharingStatus();
   if (action === "export") return exportCsv();
   if (action === "open-prep") {
     state.prepJobId = data.id || state.selectedId;
@@ -2595,15 +2603,8 @@ function debounceSave(key, fn, delay) {
   }, delay);
 }
 
-async function copyShareLink() {
-  if (!state.user) return;
-  const url = location.origin + location.pathname + "?view=" + encodeURIComponent(state.user.uid);
-  try {
-    await navigator.clipboard.writeText(url);
-    showToast("Share link copied", "success");
-  } catch {
-    showToast(url, "success", 5000);
-  }
+function showSharingStatus() {
+  showToast("Public sharing is unavailable. Only you can view your tracker.", "", 5000);
 }
 
 function exportCsv() {

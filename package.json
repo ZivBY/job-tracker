@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "check": "node scripts/check-source.cjs",
-    "audit:fixtures": "node scripts/build-audit-fixtures.cjs"
+    "audit:fixtures": "node scripts/build-audit-fixtures.cjs",
+    "test:firestore": "npm --prefix backend test"
   },
   "engines": { "node": ">=22" }
 }

@@ -259,7 +259,16 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   </div>
 </div>
 
-<div id="readonly-banner" style="display:none;" class="readonly-banner">👀 You're viewing a shared tracker — read only</div>
+<div id="sharing-unavailable-screen" style="display:none;">
+  <div class="login-screen">
+    <div class="login-logo">🔒</div>
+    <div class="login-title">Public sharing is unavailable.</div>
+    <div class="login-sub">Sign in to view your own tracker.</div>
+    <a class="google-btn" id="own-tracker-link" href="./" style="text-decoration:none;">Open your tracker</a>
+  </div>
+</div>
+
+<div id="readonly-banner" style="display:none;" class="readonly-banner">Tracker access is limited to its owner.</div>
 
 <div id="app" style="display:none;">
   <div class="page">
@@ -413,10 +422,8 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
   <div class="modal-overlay" onclick="if(event.target.classList.contains('modal-overlay'))hideShareModal()">
     <div class="modal">
       <div class="modal-handle"></div>
-      <h3>Share your tracker</h3>
-      <p style="font-size:13px;color:#888;margin-bottom:12px;">Anyone with this link can view your tracker in read-only mode.</p>
-      <div class="share-url-box" id="share-url-display"></div>
-      <button class="copy-btn" id="copy-btn" onclick="copyShareUrl()">Copy link</button>
+      <h3>Sharing</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">Public sharing is unavailable. Only you can view your tracker.</p>
       <button class="btn-cancel" style="width:100%;margin-top:8px;" onclick="hideShareModal()">Done</button>
     </div>
   </div>
@@ -425,7 +432,7 @@ textarea { width: 100%; font-size: 13px; border: 0.5px solid #e0ddd6; border-rad
 <script src="tracker-safety.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -477,7 +484,7 @@ let addingJob = false, pendingAddRef = null, pendingAddOwnerUid = null;
 const pendingFields = new Map(), draftFields = new Map(), writeChains = new Map(), saveTimers = new Map();
 
 const urlParams = new URLSearchParams(window.location.search);
-const viewingUid = urlParams.get('view');
+const hasLegacyShareLink = urlParams.has('view');
 
 // ── Page navigation ───────────────────────────────────────────────────────────
 
@@ -665,7 +672,7 @@ onAuthStateChanged(auth, async user => {
   try {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     jobs = [];
-    for (const id of ['jobs-list', 'overview-list', 'stats', 'gmail-suggestions', 'share-url-display']) document.getElementById(id).innerHTML = '';
+    for (const id of ['jobs-list', 'overview-list', 'stats', 'gmail-suggestions']) document.getElementById(id).innerHTML = '';
     if (currentUser?.uid !== user?.uid) {
       resetApplicationForm();
       for (const id of ['admin-modal', 'gmail-modal', 'share-modal']) hide(id);
@@ -673,20 +680,18 @@ onAuthStateChanged(auth, async user => {
     hide('app');
     for (const id of ['admin-btn', 'gmail-btn', 'backup-btn']) document.getElementById(id).style.display = 'none';
     currentUser = user;
-    if (viewingUid) {
+    if (hasLegacyShareLink) {
       isReadOnly = true;
-      show('app'); hide('login-screen'); hide('denied-screen');
-      document.getElementById('readonly-banner').style.display = 'block';
-      document.getElementById('add-btn').style.display = 'none';
-      document.getElementById('share-btn').style.display = 'none';
-      document.getElementById('backup-btn').style.display = 'none';
-      document.getElementById('signout-btn').style.display = 'none';
-      loadJobs(viewingUid);
+      hide('app'); hide('login-screen'); hide('denied-screen'); hide('readonly-banner');
+      document.getElementById('own-tracker-link').href = window.location.origin + window.location.pathname;
+      show('sharing-unavailable-screen');
+      return;
     } else if (user) {
-      // Always write email→UID mapping regardless of access level
-      // This allows admin to look up any user who has attempted sign-in
-      const safeEmail = user.email.replace(/\./g, '_');
-      setDoc(doc(db, 'emailToUid', safeEmail), { uid: user.uid, email: user.email }).catch(() => {});
+      hide('sharing-unavailable-screen');
+      // Register only this authenticated UID. Backend rules bind the email to
+      // its verified token; legacy emailToUid mappings are never trusted.
+      const email = String(user.email || '').trim().toLowerCase();
+      if (email) setDoc(doc(db, 'userDirectory', user.uid), { uid: user.uid, email }).catch(() => {});
 
       const allowed = await isAllowed(user);
       if (revision !== authRevision) return;
@@ -710,6 +715,7 @@ onAuthStateChanged(auth, async user => {
       document.getElementById('page-sub').textContent = 'Welcome back, ' + (user.displayName ? user.displayName.split(' ')[0] : 'there');
       loadJobs(user.uid);
     } else {
+      hide('sharing-unavailable-screen');
       show('login-screen'); hide('app'); hide('denied-screen');
       document.getElementById('readonly-banner').style.display = 'none';
       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
@@ -806,8 +812,6 @@ document.addEventListener('visibilitychange', () => {
 
 window.showShareModal = function() {
   if (isReadOnly || !currentUser) return;
-  document.getElementById('share-url-display').textContent =
-    window.location.origin + window.location.pathname + '?view=' + currentUser.uid;
   show('share-modal');
 };
 
@@ -834,13 +838,6 @@ window.downloadBackup = async function() {
   finally { button.disabled = false; }
 };
 window.hideShareModal = function() { hide('share-modal'); };
-window.copyShareUrl = function() {
-  navigator.clipboard.writeText(document.getElementById('share-url-display').textContent).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = 'Copied!'; btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
-  });
-};
 
 // ── Gmail sync ────────────────────────────────────────────────────────────────
 
@@ -1137,18 +1134,26 @@ window.adminAddUser = async function() {
   const btn = document.getElementById('admin-add-btn');
   btn.disabled = true;
   setAdminStatus('Looking up user...', 'loading');
+  const adminUid = currentUser.uid, revision = authRevision;
 
   try {
-    const safeEmail = email.replace(/\./g, '_');
-    const emailSnap = await getDoc(doc(db, 'emailToUid', safeEmail));
-
-    if (!emailSnap.exists()) {
-      setAdminStatus('User not found. They need to visit the app and attempt to sign in first — even hitting "Access restricted" is enough. Then try again.', 'error');
-      btn.disabled = false;
+    const matches = await getDocs(query(collection(db, 'userDirectory'), where('email', '==', email)));
+    if (isReadOnly || !currentUser || currentUser.uid !== adminUid || currentUser.email !== ADMIN_EMAIL || revision !== authRevision) return;
+    if (matches.docs.length === 0) {
+      setAdminStatus('No verified directory registration found. Ask this user to open the updated app and sign in again, then retry. Existing access is unchanged.', 'error');
+      return;
+    }
+    if (matches.docs.length !== 1) {
+      setAdminStatus('More than one account matches this email. Review the accounts before approving access.', 'error');
+      return;
+    }
+    const entry = matches.docs[0], registration = entry.data();
+    if (!registration || registration.email !== email || typeof registration.uid !== 'string' || registration.uid !== entry.id || !entry.id) {
+      setAdminStatus('Directory registration could not be verified. Ask this user to sign in again before retrying.', 'error');
       return;
     }
 
-    const uid = emailSnap.data().uid;
+    const uid = entry.id;
     await setDoc(doc(db, 'allowlist', uid), { email, approved: true });
     setAdminStatus('✓ ' + email + ' has been approved!', 'success');
     document.getElementById('admin-email-input').value = '';
@@ -1156,8 +1161,9 @@ window.adminAddUser = async function() {
   } catch(e) {
     console.error('adminAddUser error:', e);
     setAdminStatus('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
-  btn.disabled = false;
 };
 
 window.adminRemoveUser = async function(uid) {

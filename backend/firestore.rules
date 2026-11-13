@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verifiedUser() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return verifiedUser()
+        && request.auth.token.email.lower() == 'benyehuda.ziv@gmail.com';
+    }
+
+    function approvedOwner(userId) {
+      return verifiedUser()
+        && request.auth.uid == userId
+        && (isAdmin()
+          || (exists(/databases/$(database)/documents/allowlist/$(request.auth.uid))
+            && get(/databases/$(database)/documents/allowlist/$(request.auth.uid)).data.approved == true));
+    }
+
+    function validOwnMapping(uid) {
+      return verifiedUser() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'email'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email.lower();
+    }
+
+    function gmailMetadata(data) {
+      return data.keys().hasOnly(['suggestions', 'scannedAt'])
+        && data.suggestions is list
+        && data.scannedAt is string;
+    }
+
+    match /allowlist/{uid} {
+      allow get: if isAdmin() || (verifiedUser() && request.auth.uid == uid);
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    match /userDirectory/{uid} {
+      // Fresh UID-keyed namespace: legacy mappings could have been forged
+      // before these rules existed, even when their email field looks valid.
+      allow get: if isAdmin() || (verifiedUser() && uid == request.auth.uid
+        && resource.data.uid == request.auth.uid
+        && resource.data.email == request.auth.token.email.lower());
+      allow list: if isAdmin();
+      // Unapproved verified users may register only their own identity, so
+      // the administrator can approve them after their first sign-in.
+      allow create: if validOwnMapping(uid);
+      allow update: if validOwnMapping(uid)
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if false;
+    }
+
+    match /emailToUid/{emailKey} {
+      // Preserve old data, but never use the formerly world-writable directory
+      // as approval evidence. Users self-register in userDirectory on sign-in.
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/jobs/{jobId} {
+      allow read, write: if approvedOwner(userId);
+    }
+
+    match /users/{userId}/gmailSync/{docId} {
+      // The client stores suggestion history only. OAuth credential documents
+      // are never readable/writable through these client rules.
+      allow get: if docId == 'latest' && approvedOwner(userId)
+        && gmailMetadata(resource.data);
+      allow create, update: if docId == 'latest' && approvedOwner(userId)
+        && gmailMetadata(request.resource.data);
+      allow delete: if docId == 'latest' && approvedOwner(userId);
+    }
+
+    // Unmatched paths, including token/credential collections, are denied.
+  }
+}
