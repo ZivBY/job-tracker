@@ -2,12 +2,16 @@ export class ApiError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
 }
 export const fail = (status, code, message) => { throw new ApiError(status, code, message); };
+const AI_DIAGNOSTIC_REASONS = new Set(['envelope_shape', 'stop_refusal', 'stop_max_tokens', 'stop_unexpected', 'content_shape', 'json_syntax', 'job_shape', 'job_field', 'job_type', 'job_date', 'suggestion_root', 'suggestion_shape', 'suggestion_field', 'suggestion_stage', 'suggestion_evidence', 'suggestion_rounds']);
+export function safeAiDiagnostic(error) {
+  return error instanceof ApiError && error.code === 'invalid_ai_response' && AI_DIAGNOSTIC_REASONS.has(error.diagnosticReason) ? error.diagnosticReason : undefined;
+}
 export function json(value, status = 200, headers = {}) {
   return new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers } });
 }
 export function errorResponse(error) {
   return error instanceof ApiError
-    ? json({ error: { code: error.code, message: error.message } }, error.status, error.status === 429 ? { 'Retry-After': '60' } : {})
+    ? json({ error: { code: error.code, message: error.message, ...(safeAiDiagnostic(error) ? { diagnosticReason: safeAiDiagnostic(error) } : {}) } }, error.status, error.status === 429 ? { 'Retry-After': '60' } : {})
     : json({ error: { code: 'service_unavailable', message: 'The service is temporarily unavailable.' } }, 503);
 }
 export function object(value, allowed, required = allowed) {

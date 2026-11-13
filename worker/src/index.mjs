@@ -1,4 +1,4 @@
-import { ApiError, fail, json, errorResponse, config, requestJson, object, str, randomToken, sha256, upstream, requireOk, parseTokenResponse, GMAIL_SCOPE, GOOGLE_TOKEN_URL, GMAIL_BASE } from './common.mjs';
+import { ApiError, fail, json, errorResponse, safeAiDiagnostic, config, requestJson, object, str, randomToken, sha256, upstream, requireOk, parseTokenResponse, GMAIL_SCOPE, GOOGLE_TOKEN_URL, GMAIL_BASE } from './common.mjs';
 import { verifyFirebase, checkApproval, verifyGoogleIdentity } from './auth.mjs';
 import { coordinate } from './coordinator.mjs';
 import { validateExtraction, validateScan, extractJob, scanGmail } from './features.mjs';
@@ -81,7 +81,7 @@ export function createWorker(dependencies = {}) {
   }
   return {
     async fetch(request, env) {
-      const started = Date.now(); let route = 'unknown', errorCode;
+      const started = Date.now(); let route = 'unknown', errorCode, diagnosticReason;
       let response;
       try {
         const url = new URL(request.url); route = ROUTES[url.pathname] ? url.pathname : 'unknown';
@@ -129,6 +129,7 @@ export function createWorker(dependencies = {}) {
         }
       } catch (error) {
         errorCode = error instanceof ApiError ? error.code : 'service_unavailable';
+        diagnosticReason = safeAiDiagnostic(error);
         response = errorResponse(error);
       }
       const headers = new Headers(response.headers);
@@ -140,7 +141,7 @@ export function createWorker(dependencies = {}) {
       if (response.status === 405) headers.set('Allow', route === '/gmail/callback' ? 'GET, OPTIONS' : 'POST, OPTIONS');
       if (response.status === 503) headers.set('Retry-After', '3600');
       // Never log full URLs: Google callback query strings contain credentials.
-      audit({ event: 'job_tracker_request', route, status: response.status, ...(errorCode ? { errorCode } : {}), durationMs: Date.now() - started });
+      audit({ event: 'job_tracker_request', route, status: response.status, ...(errorCode ? { errorCode } : {}), ...(diagnosticReason ? { diagnosticReason } : {}), durationMs: Date.now() - started });
       return new Response(response.body, { status: response.status, headers });
     }
   };

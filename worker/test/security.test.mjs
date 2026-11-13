@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { generateKeyPair, SignJWT } from 'jose';
 import { verifyFirebase, verifyGoogleIdentity, checkApproval, createFirebaseKeyResolver, FIREBASE_CERTS } from '../src/auth.mjs';
 import { createWorker } from '../src/index.mjs';
-import { ApiError, readLimited, requestJson, parseTokenResponse, sha256, GMAIL_SCOPE } from '../src/common.mjs';
+import { ApiError, readLimited, requestJson, parseTokenResponse, sha256, GMAIL_SCOPE, errorResponse } from '../src/common.mjs';
+import { JOB_SCHEMA, SUGGESTIONS_SCHEMA } from '../src/ai-schemas.mjs';
 import { supportedUrl, fetchJobPage, extractJob, validateJob, validateSuggestions, scanGmail, validateScan, emailText } from '../src/features.mjs';
 
 const { publicKey, privateKey } = await generateKeyPair('RS256');
@@ -194,6 +195,69 @@ test('AI failures/truncation/provider errors cannot masquerade as successful ext
   for (const reply of [okJson({ secret: 'upstream-sensitive-detail' }, 500), okJson({ stop_reason: 'max_tokens', content: [{ type: 'text', text: JSON.stringify(job) }] }), okJson({ stop_reason: 'end_turn', content: [{ type: 'text', text: '```json {} ```' }] })]) await assert.rejects(extractJob(body, env, async () => reply), error => !error.message.includes('upstream-sensitive-detail') && error.status === 502);
   const success = await extractJob(body, env, async (_, options) => { const input = JSON.parse(options.body); assert.equal(input.max_tokens, 800); assert(!JSON.stringify(input).includes('fake-ai-key')); return okJson({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(job) }] }); });
   assert.equal(success.job.company, 'Example'); assert.equal(success.job.url, '');
+});
+test('synthetic extraction requests native JSON grammar and preserves the supplied facts', async () => {
+  const synthetic = 'Synthetic Test Company is hiring an Operations Manager in San Francisco, CA. Full-time. Posted November 13, 2026. Salary USD 120,000 to 150,000.';
+  const result = await extractJob({ text: synthetic }, env, async (url, options) => {
+    assert.equal(url, 'https://api.anthropic.com/v1/messages');
+    const request = JSON.parse(options.body);
+    assert.deepEqual(request.output_config, { format: { type: 'json_schema', schema: JOB_SCHEMA } });
+    assert.equal(request.output_format, undefined, 'deprecated beta parameter is not sent');
+    assert.equal(options.headers['anthropic-beta'], undefined);
+    assert.equal(request.max_tokens, 800);
+    assert.equal(JSON.parse(request.messages[0].content).text, synthetic);
+    return okJson({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ company: 'Synthetic Test Company', role: 'Operations Manager', location: 'San Francisco, CA', type: 'Full-Time', url: '', postedDate: '2026-11-13', salary: 'USD 120,000 to 150,000' }) }] });
+  });
+  assert.deepEqual(result.job, { company: 'Synthetic Test Company', role: 'Operations Manager', location: 'San Francisco, CA', type: 'Full-time', url: '', postedDate: '2026-11-13', salary: 'USD 120,000 to 150,000' });
+});
+test('schema-enforced suggestions preserve evidence and canonicalize only recognized round labels', async () => {
+  const calls = [];
+  const response = await scanGmail({ companies: [{ company: 'Synthetic Test Company', currentStage: 1 }], consentToAiProcessing: true }, 'fake-access', env, async (url, options) => {
+    calls.push(url);
+    if (url.includes('/messages?')) return okJson({ messages: [{ id: 'fake-message' }] });
+    if (url.includes('/messages/fake-message?')) return okJson({ payload: { mimeType: 'text/plain', headers: [{ name: 'From', value: 'synthetic-recruiter@example.invalid' }, { name: 'Subject', value: 'Synthetic interview invitation' }], body: { data: Buffer.from('You are invited to a phone screen with Synthetic Test Company.').toString('base64url') } } });
+    assert.equal(url, 'https://api.anthropic.com/v1/messages');
+    const request = JSON.parse(options.body);
+    assert.deepEqual(request.output_config, { format: { type: 'json_schema', schema: SUGGESTIONS_SCHEMA } });
+    assert.equal(request.max_tokens, 2000);
+    return okJson({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify([{ company: 'Synthetic Test Company', suggestedStage: 2, reason: 'Phone screen invitation', emailIndex: 0, interviewRounds: [{ type: 'Phone Screen', notes: 'Invitation received' }] }]) }] });
+  });
+  assert.equal(calls.length, 3);
+  assert.deepEqual(response.suggestions[0], { company: 'Synthetic Test Company', suggestedStage: 2, reason: 'Phone screen invitation', emailFrom: 'synthetic-recruiter@example.invalid', emailSubject: 'Synthetic interview invitation', interviewRounds: [{ type: 'Phone screen', notes: 'Invitation received' }] });
+  assert.throws(() => validateJob({ ...job, type: 'Fulltime' }, ''), { code: 'invalid_ai_response', diagnosticReason: 'job_type' });
+  assert.throws(() => validateSuggestions([{ company: 'Example', suggestedStage: 2, reason: 'Invitation', emailIndex: 0, interviewRounds: [{ type: 'Unrecognized meeting', notes: '' }] }], [{ from: '', subject: '' }]), { diagnosticReason: 'suggestion_rounds' });
+});
+test('native schemas exclude unsupported bound keywords and close every object', () => {
+  function inspect(schema) {
+    for (const keyword of ['minimum', 'maximum', 'multipleOf', 'minLength', 'maxLength', 'maxItems', 'minItems', '$ref']) assert.equal(Object.hasOwn(schema, keyword), false, keyword);
+    if (schema.type === 'object') { assert.equal(schema.additionalProperties, false); assert.deepEqual(schema.required, Object.keys(schema.properties)); Object.values(schema.properties).forEach(inspect); }
+    if (schema.type === 'array') inspect(schema.items);
+  }
+  inspect(JOB_SCHEMA); inspect(SUGGESTIONS_SCHEMA);
+  assert.throws(() => validateJob({ ...job, role: 'x'.repeat(301) }, ''), { diagnosticReason: 'job_field' }, 'unsupported grammar bounds remain locally enforced');
+  assert.throws(() => validateSuggestions(Array.from({ length: 11 }, () => ({})), []), { diagnosticReason: 'suggestion_root' });
+});
+test('AI protocol failures expose only constant structural diagnostics, with no raw provider content', async () => {
+  const sensitive = 'synthetic-private@example.invalid fake-secret-token';
+  for (const [data, expected] of [
+    [null, 'envelope_shape'],
+    [{ stop_reason: 'refusal', content: [{ type: 'text', text: sensitive }] }, 'stop_refusal'],
+    [{ stop_reason: 'max_tokens', content: [{ type: 'text', text: sensitive }] }, 'stop_max_tokens'],
+    [{ stop_reason: 'unknown-private-value', content: [] }, 'stop_unexpected'],
+    [{ stop_reason: 'end_turn', content: [null] }, 'content_shape'],
+    [{ stop_reason: 'end_turn', content: [{ type: 'text', text: '```json\n' + JSON.stringify(job) + '\n```' }] }, 'json_syntax'],
+    [{ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ ...job, privateField: sensitive }) }] }, 'job_shape'],
+    [{ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ ...job, postedDate: '2026-02-30' }) }] }, 'job_date']
+  ]) {
+    const h = harness({ fetcher: async () => okJson(data) });
+    const result = await responseBody(h.worker.fetch(h.request('/extract', { text: 'Synthetic job description '.repeat(6) }), env));
+    assert.equal(result.status, 502); assert.equal(result.data.error.code, 'invalid_ai_response');
+    assert.equal(result.data.error.diagnosticReason, expected); assert.equal(h.events[0].diagnosticReason, expected);
+    const serialized = JSON.stringify({ response: result.data, events: h.events });
+    assert(!serialized.includes(sensitive)); assert(!serialized.includes('unknown-private-value')); assert(!serialized.includes('fake-ai-key'));
+  }
+  const forged = new ApiError(502, 'invalid_ai_response', 'Safe fixed message'); forged.diagnosticReason = sensitive;
+  assert.equal((await errorResponse(forged).json()).error.diagnosticReason, undefined, 'diagnostic allowlist blocks arbitrary values');
 });
 test('Gmail output sender/subject come from source evidence; malformed suggestion rejected', () => {
   const emails = [{ from: 'recruiter@example.com', subject: 'Interview' }];
