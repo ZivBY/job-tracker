@@ -16,7 +16,7 @@ for (const file of ['index.html', 'index_mobile.html']) {
     if (!fs.existsSync(path.resolve(root, match[1]))) { console.error(file + ': missing asset ' + match[1]); failures++; }
   }
 }
-for (const file of ['tracker-safety.js', 'sw.js']) {
+for (const file of ['tracker-safety.js', 'worker-client.js', 'sw.js']) {
   const result = spawnSync(process.execPath, ['--check', path.join(root, file)], { encoding: 'utf8' });
   if (result.status !== 0) { console.error(result.stderr); failures++; }
 }

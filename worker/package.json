@@ -1,0 +1,14 @@
+{
+  "name": "job-tracker-secure-worker",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check src/index.mjs && node --check src/coordinator.mjs",
+    "build": "wrangler deploy --dry-run --outdir dist"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": { "jose": "6.2.17" },
+  "devDependencies": { "wrangler": "4.161.0", "miniflare": "5.20261110.2-beta" }
+}

@@ -12,7 +12,7 @@ const STATIC_NAMES = new Set([
 // Unversioned executable code must revalidate alongside HTML, not stay in a
 // cache-first bucket after an update. Future incompatible helpers should use
 // content-hashed filenames in both the page and this asset list.
-const SCRIPT_NAMES = new Set(['tracker-safety.js']);
+const SCRIPT_NAMES = new Set(['tracker-safety.js', 'worker-client.js']);
 const ASSETS = ['', 'index.html', 'index_mobile.html', ...STATIC_NAMES, ...SCRIPT_NAMES]
   .map(name => new URL(name, BASE).href);
 

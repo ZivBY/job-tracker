@@ -95,6 +95,8 @@ test('install uses registration scope and reloads public shells/assets', async (
     assert.ok(requests.some(request => request.url === scope + 'index_mobile.html'));
     assert.ok(requests.some(request => request.url === scope + 'tracker-safety.js'));
     assert.equal(await (await w.cached('tracker-safety.js')).text(), 'public script');
+    assert.ok(requests.some(request => request.url === scope + 'worker-client.js'));
+    assert.equal(await (await w.cached('worker-client.js')).text(), 'public script');
     assert.ok(requests.every(request => request.url.startsWith(scope) && request.cache === 'reload'));
     assert.ok(requests.every(request => !new URL(request.url).search));
     assert.equal(await (await w.cached('')).text(), 'network');
@@ -215,14 +217,16 @@ test('only allowlisted static assets use cache-first', async () => {
 });
 
 test('unversioned helper revalidates with new HTML instead of serving stale executable code', async () => {
+  for (const helper of ['tracker-safety.js', 'worker-client.js']) {
   const w = worker();
-  await w.seed('job-tracker-v12', 'tracker-safety.js', new Response('old helper'));
+  await w.seed('job-tracker-v12', helper, new Response('old helper'));
   w.setNetwork(async () => new Response('new helper', { headers: { 'content-type': 'text/javascript' } }));
-  assert.equal(await (await w.request('tracker-safety.js', { mode: 'no-cors' })).text(), 'new helper');
+  assert.equal(await (await w.request(helper, { mode: 'no-cors' })).text(), 'new helper');
   assert.equal(w.fetches[0].init.cache, 'no-cache');
-  assert.equal(await (await w.cached('tracker-safety.js')).text(), 'new helper');
+  assert.equal(await (await w.cached(helper)).text(), 'new helper');
   w.setNetwork(async () => { throw new Error('offline'); });
-  assert.equal(await (await w.request('tracker-safety.js', { mode: 'no-cors' })).text(), 'new helper');
+  assert.equal(await (await w.request(helper, { mode: 'no-cors' })).text(), 'new helper');
+  }
 });
 
 test('HTML error responses cannot poison the helper cache', async () => {

@@ -60,7 +60,7 @@ function fixture(file, restoredUser = { uid: 'existing-owner', email: 'owner@exa
   };
   context.window = context;
   vm.createContext(context);
-  vm.runInContext(safety, context);
+  vm.runInContext(safety, context); vm.runInContext(fs.readFileSync(path.join(root, 'worker-client.js'), 'utf8'), context);
   const source = pages[file].match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import .*;\r?\n/gm, '');
   vm.runInContext(source, context);
   return { context, auth, authCalls, overrides, subscriptions, storageMutations, writes, element, run: js => vm.runInContext(js, context) };
